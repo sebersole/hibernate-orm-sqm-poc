@@ -1,10 +1,33 @@
-grammar Hql;
+parser grammar HqlParser;
 
 options {
 	tokenVocab=HqlLexer;
 }
 
 @header {
+/*
+ * Hibernate, Relational Persistence for Idiomatic Java
+ *
+ * Copyright (c) 2008-2012, Red Hat Inc. or third-party contributors as
+ * indicated by the @author tags or express copyright attribution
+ * statements applied by the authors.  All third-party contributions are
+ * distributed under license by Red Hat Inc.
+ *
+ * This copyrighted material is made available to anyone wishing to use, modify,
+ * copy, or redistribute it subject to the terms and conditions of the GNU
+ * Lesser General Public License, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this distribution; if not, write to:
+ * Free Software Foundation, Inc.
+ * 51 Franklin Street, Fifth Floor
+ * Boston, MA  02110-1301  USA
+ */
 package org.hibernate.hql.antlr;
 }
 
@@ -71,7 +94,28 @@ queryExpression
 // ORDER BY clause
 
 orderByClause
-	:
+	: order_by_key sortSpecification (COMMA sortSpecification)*
+	;
+
+sortSpecification
+	:	sortKey collationSpecification? orderingSpecification?
+	;
+
+sortKey
+	: expression
+	;
+
+collationSpecification
+	:	collate_key collateName
+	;
+
+collateName
+	:	dotIdentifierPath
+	;
+
+orderingSpecification
+	:	ascending_key
+	|	descending_key
 	;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,12 +134,12 @@ selectClause
 	;
 
 rootSelectExpression
-	:	rootDynamicInstantiation
+	:	dynamicInstantiation
 //	|	jpaSelectObjectSyntax
 	|	explicitSelectList
 	;
 
-rootDynamicInstantiation
+dynamicInstantiation
 	:	new_key dynamicInstantiationTarget LEFT_PAREN dynamicInstantiationArgs RIGHT_PAREN
 	;
 
@@ -112,8 +156,8 @@ path
 	:	IDENTIFIER
 		(
 				DOT IDENTIFIER
-			|	LEFT_SQUARE expression RIGHT_SQUARE
-			|	LEFT_SQUARE RIGHT_SQUARE
+			|	LEFT_BRACKET expression RIGHT_BRACKET
+			|	LEFT_BRACKET RIGHT_BRACKET
 		)*
 	;
 
@@ -122,8 +166,12 @@ dynamicInstantiationArgs
 	;
 
 dynamicInstantiationArg
+	:	dynamicInstantiationArgExpression (as_key IDENTIFIER)?
+	;
+
+dynamicInstantiationArgExpression
 	:	selectExpression
-	|	rootDynamicInstantiation
+	|	dynamicInstantiation
 	;
 
 //jpaSelectObjectSyntax
@@ -131,20 +179,15 @@ dynamicInstantiationArg
 //	;
 
 explicitSelectList
-	:	explicitSelectItem ( COMMA explicitSelectItem )*
+	:	explicitSelectItem (COMMA explicitSelectItem)*
 	;
 
 explicitSelectItem
-	:	selectExpression
+	:	selectExpression (as_key IDENTIFIER)?
 	;
 
 selectExpression
-	// todo : I don't like this essentially makng AS required
-	// but without that a query like:
-	//		select a.b from A a
-	// fails to parse properly, because it seems 'from' as the alias for the selectExpression
-	// ugh!
-	:	expression (as_key IDENTIFIER)?
+	:	expression
 	;
 
 aliasReference
@@ -213,14 +256,6 @@ groupingValue
 	:	expression collationSpecification?
 	;
 
-collationSpecification
-	:	collate_key collateName
-	;
-
-collateName
-	:	dotIdentifierPath
-	;
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //HAVING clause
 
@@ -257,7 +292,8 @@ expression
 	| expression PLUS expression			# AdditionExpression
 	| expression MINUS expression			# SubtractionExpression
 	| expression ASTERISK expression		# MultiplicationExpression
-	| expression SOLIDUS expression			# DivisionExpression
+	| expression SLASH expression			# DivisionExpression
+	| expression PERCENT expression			# ModuloExpression
 	| MINUS expression						# UnaryMinusExpression
 	| PLUS expression						# UnaryPlusExpression
 	| literal								# LiteralExpression
@@ -288,117 +324,131 @@ literal
 	;
 
 parameter
-	:
+	: COLON IDENTIFIER
+	| QUESTION_MARK (INTEGER_LITERAL)?
 	;
+
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Key word rules
 
 
 all_key
-	:	{isUpcomingTokenKeyword("all")}?  id=IDENTIFIER 
+	:	{isUpcomingTokenKeyword("all")}?  IDENTIFIER
 	;
 
 and_key
-	:	{isUpcomingTokenKeyword("and")}?  id=IDENTIFIER 
+	:	{isUpcomingTokenKeyword("and")}?  IDENTIFIER
 	;
 
 as_key
-	:	{isUpcomingTokenKeyword("as")}?  id=IDENTIFIER 
+	:	{isUpcomingTokenKeyword("as")}?  IDENTIFIER
+	;
+
+ascending_key
+	:	{(isUpcomingTokenKeyword("ascending") || isUpcomingTokenKeyword("asc"))}?  IDENTIFIER
 	;
 
 between_key
-	:	{isUpcomingTokenKeyword("between")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("between")}?  IDENTIFIER
 	;
 
 collate_key
-	:	{isUpcomingTokenKeyword("collate")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("collate")}?  IDENTIFIER
 	;
 
 class_key
-	:	{isUpcomingTokenKeyword("class")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("class")}?  IDENTIFIER
+	;
+
+descending_key
+	:	{(isUpcomingTokenKeyword("descending") || isUpcomingTokenKeyword("desc"))}?  IDENTIFIER
 	;
 
 distinct_key
-	:	{isUpcomingTokenKeyword("distinct")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("distinct")}?  IDENTIFIER
 	;
 
 empty_key
-	:	{isUpcomingTokenKeyword("escape")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("escape")}?  IDENTIFIER
 	;
 
 escape_key
-	:	{isUpcomingTokenKeyword("escape")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("escape")}?  IDENTIFIER
 	;
 
 except_key
-	:	{isUpcomingTokenKeyword("except")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("except")}?  IDENTIFIER
 	;
 
 fetch_key
-	:	{isUpcomingTokenKeyword("fetch")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("fetch")}?  IDENTIFIER
 	;
 
 from_key
-	:	{isUpcomingTokenKeyword("from")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("from")}?  IDENTIFIER
 	;
 
 group_by_key
-	:	{isUpcomingTokenKeyword(1,"group") && isUpcomingTokenKeyword(2,"by")}? id=IDENTIFIER
+	:	{isUpcomingTokenKeyword(1,"group") && isUpcomingTokenKeyword(2,"by")}?  IDENTIFIER IDENTIFIER
 	;
 
 having_key
-	:	{isUpcomingTokenKeyword("having")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("having")}?  IDENTIFIER
 	;
 
 in_key
-	:	{isUpcomingTokenKeyword("in")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("in")}?  IDENTIFIER
 	;
 
 is_key
-	:	{isUpcomingTokenKeyword("is")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("is")}?  IDENTIFIER
 	;
 
 intersect_key
-	:	{isUpcomingTokenKeyword("intersect")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("intersect")}?  IDENTIFIER
 	;
 
 like_key
-	:	{isUpcomingTokenKeyword("like")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("like")}?  IDENTIFIER
 	;
 
 member_of_key
-	:	{isUpcomingTokenKeyword(1,"member") && isUpcomingTokenKeyword(2,"of")}? id=IDENTIFIER
+	:	{isUpcomingTokenKeyword(1,"member") && isUpcomingTokenKeyword(2,"of")}?  IDENTIFIER IDENTIFIER
 	;
 
 new_key
-	:	{isUpcomingTokenKeyword("new")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("new")}?  IDENTIFIER
 	;
 
 not_key
-	:	{isUpcomingTokenKeyword("not")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("not")}?  IDENTIFIER
 	;
 
 object_key
-	:	{isUpcomingTokenKeyword("object")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("object")}?  IDENTIFIER
 	;
 
 or_key
-	:	{isUpcomingTokenKeyword("or")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("or")}?  IDENTIFIER
+	;
+
+order_by_key
+	:	{(isUpcomingTokenKeyword("order") && isUpcomingTokenKeyword(2, "by"))}?  IDENTIFIER IDENTIFIER
 	;
 
 properties_key
-	:	{isUpcomingTokenKeyword("properties")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("properties")}?  IDENTIFIER
 	;
 
 select_key
-	:	{isUpcomingTokenKeyword("select")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("select")}?  IDENTIFIER
 	;
 
 union_key
-	:	{isUpcomingTokenKeyword("union")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("union")}?  IDENTIFIER
 	;
 
 where_key
-	:	{isUpcomingTokenKeyword("where")}?  id=IDENTIFIER
+	:	{isUpcomingTokenKeyword("where")}?  IDENTIFIER
 	;

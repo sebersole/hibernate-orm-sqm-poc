@@ -1,5 +1,7 @@
 lexer grammar HqlLexer;
 
+
+@header {
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
@@ -22,14 +24,7 @@ lexer grammar HqlLexer;
  * Free Software Foundation, Inc.
  * 51 Franklin Street, Fifth Floor
  * Boston, MA  02110-1301  USA
- *
- * Portions of SQL grammar parsing copyright (C) 2003 by Lubos Vnuk.  All rights
- * reserved.  These portions are distributed under license by Red Hat Inc. and
- * are covered by the above LGPL notice.  If you redistribute this material,
- * with or without modification, you must preserve this copyright notice in its
- * entirety.
  */
-@header {
 package org.hibernate.hql.antlr;
 }
 
@@ -41,11 +36,12 @@ tokens {
 
 //VIRTUAL TOKENS
 	ALIAS_NAME,
-	ALIAS_REF,
+	ALIAS_REFERENCE,
+	ATTRIBUTE_REFERENCE,
 	BETWEEN_LIST,
 	COLLATE,
 	COLLECTION_EXPRESSION,
-	DOT_CLASS,
+	DISCRIMINATOR,
 	DYNAMIC_INSTANTIATION_ARG,
 	DYNAMIC_INSTANTIATION,
 	ENTITY_NAME,
@@ -61,7 +57,7 @@ tokens {
 	IS_NOT_NULL,
 	IS_NULL,
 	JAVA_CONSTANT,
-	JPA_PARAM,
+	JPA_POSITIONAL_PARAM,
 	NAMED_PARAM,
 	NOT_BETWEEN,
 	NOT_IN,
@@ -71,9 +67,8 @@ tokens {
 	PATH,
 	PERSISTER_JOIN,
 	PERSISTER_SPACE,
+	POSITIONAL_PARAM,
 	PROP_FETCH,
-	PROPERTY_JOIN,
-	PROPERTY_REFERENCE,
 	QUALIFIED_JOIN,
 	QUERY_SPEC,
 	QUERY,
@@ -115,6 +110,7 @@ tokens {
 	DISTINCT,
 	ELEMENTS,
 	ELSE,
+	EMPTY,
 	END,
 	ESCAPE,
 	EXCEPT,
@@ -248,7 +244,6 @@ UNICODE_ESCAPE
 
 TRUE : 'true';
 FALSE :	'false';
-
 NULL : 'null';
 
 EQUAL : '=';
@@ -258,16 +253,25 @@ GREATER_EQUAL : '>=';
 LESS : '<';
 LESS_EQUAL : '<=';
 
+COMMA :	',';
+DOT	: '.';
+LEFT_PAREN : '(';
+RIGHT_PAREN	: ')';
+LEFT_BRACKET : '[';
+RIGHT_BRACKET : ']';
+LEFT_BRACE : '{';
+RIGHT_BRACE : '}';
+PLUS : '+';
+MINUS :	'-';
+ASTERISK : '*';
+SLASH : '/';
+PERCENT	: '%';
+AMPERSAND : '&';
 SEMICOLON :	';';
-
 COLON : ':';
-
 PIPE : '|';
-
 DOUBLE_PIPE : '||';
-
-PARAM :	'?';
-
+QUESTION_MARK :	'?';
 ARROW :	'->';
 
 IDENTIFIER
@@ -278,44 +282,3 @@ QUOTED_IDENTIFIER
 	: '`' ( ESCAPE_SEQUENCE | ~('\\'|'`') )* '`'
 	;
 
-LEFT_PAREN
-	:	'('
-	;
-
-RIGHT_PAREN
-	:	')'
-	;
-
-LEFT_SQUARE
-	:	'['
-	;
-
-RIGHT_SQUARE
-	:	']'
-	;
-
-COMMA	:	','
-	;
-
-DOT	:	'.'
-	;
-
-PLUS	:	'+'
-	;
-
-MINUS	:	'-'
-	;
-
-ASTERISK
-	:	'*'
-	;
-
-SOLIDUS	:	'/'
-	;
-
-PERCENT	:	'%'
-	;
-
-AMPERSAND
-	:	'&'
-	;

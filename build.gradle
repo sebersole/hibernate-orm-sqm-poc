@@ -23,22 +23,26 @@ repositories {
 	jcenter()
 }
 
+ext.antlr4GeneratedSrcDir = file( "$buildDir/generated-src/antlr" )
+
+configurations {
+	antlrGenPackage
+	compile.extendsFrom antlr4
+}
+
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
+	antlrGenPackage fileTree('lib/grosenburg-genpackage')
 }
+
 
 antlr4 {
 	// ugh!  sucks that you have to specify package twice effectively
-	output = file( "$buildDir/generated-src/antlr/org/hibernate/hql/antlr" )
+	output = file( "$antlr4GeneratedSrcDir/org/hibernate/hql/antlr" )
 }
 
 // make the Java compile task depend on the antlr4 task
 compileJava.dependsOn antlr4
 
 // add the generated source files to the list of java sources
-sourceSets.main.java.srcDirs += antlr4.output
-
-// add antlr4 to classpath
-configurations {
-	compile.extendsFrom antlr4
-}
+sourceSets.main.java.srcDirs += antlr4GeneratedSrcDir
