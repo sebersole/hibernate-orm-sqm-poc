@@ -1,48 +1,87 @@
-buildscript {
-	repositories {
-		maven {
-			name 'JFrog OSS snapshot repo'
-			url  'https://oss.jfrog.org/oss-snapshot-local/'
-		}
-		jcenter()
-	}
-
-	dependencies {
-		classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1'
-	}
-}
-
 apply plugin: 'java'
-apply plugin: 'me.champeau.gradle.antlr4'
+apply plugin: 'antlr'
+apply plugin: 'org.hibernate.build.gradle.animalSniffer'
+
+apply plugin: 'maven-publish'
+apply plugin: 'maven-publish-auth'
+
+apply plugin: 'idea'
 
 sourceCompatibility = 1.6
 version = '1.0'
+
+buildscript {
+	repositories {
+		mavenCentral()
+		jcenter()
+		maven {
+			name 'jboss-nexus'
+			url "http://repository.jboss.org/nexus/content/groups/public/"
+		}
+		maven {
+			name "jboss-snapshots"
+			url "http://snapshots.jboss.org/maven2/"
+		}
+	}
+	dependencies {
+		classpath 'org.hibernate.build.gradle:gradle-maven-publish-auth:2.0.1'
+		classpath 'org.hibernate.build.gradle:gradle-animalSniffer-plugin:1.0.1.Final'
+	}
+}
 
 repositories {
     mavenCentral()
 	jcenter()
 }
 
-ext.antlr4GeneratedSrcDir = file( "$buildDir/generated-src/antlr" )
-
-configurations {
-	antlrGenPackage
-	compile.extendsFrom antlr4
-}
-
 dependencies {
+	antlr 'org.antlr:antlr4:4.5'
+
+	animalSnifferSignature 'org.codehaus.mojo.signature:java16:1.0@signature'
+
+	runtime 'org.antlr:antlr4-runtime:4.5'
+
     testCompile group: 'junit', name: 'junit', version: '4.11'
-	antlrGenPackage fileTree('lib/grosenburg-genpackage')
 }
 
-
-antlr4 {
-	// ugh!  sucks that you have to specify package twice effectively
-	output = file( "$antlr4GeneratedSrcDir/org/hibernate/hql/antlr" )
+tasks.generateGrammarSource {
+	outputDirectory = file( "${outputDirectory}/org/hibernate/hql/antlr" )
+	// ugh!  https://discuss.gradle.org/t/antlr-v4-visitor-generation/10017/1
+	if ( arguments == null ) {
+		arguments = ['-visitor']
+	}
+	else {
+		arguments += ['-visitor']
+	}
 }
 
-// make the Java compile task depend on the antlr4 task
-compileJava.dependsOn antlr4
+task compile
+tasks.withType( JavaCompile ).each {
+	tasks.compile.dependsOn it
+	it.options.compilerArgs += [
+			"-nowarn",
+			"-encoding", "UTF-8"
+	]
+}
 
-// add the generated source files to the list of java sources
-sourceSets.main.java.srcDirs += antlr4GeneratedSrcDir
+task wrapper(type: Wrapper) {
+	gradleVersion = 2.4
+}
+
+idea {
+	module {
+		jdkName = sourceCompatibility
+
+		excludeDirs = [file( ".gradle" )]
+		excludeDirs += file( "$buildDir/classes" )
+		excludeDirs += file( "$buildDir/packages" )
+		excludeDirs += file( "$buildDir/dependency-cache" )
+		excludeDirs += file( "$buildDir/libs" )
+		excludeDirs += file( "$buildDir/reports" )
+		excludeDirs += file( "$buildDir/resources" )
+		excludeDirs += file( "$buildDir/test-results" )
+		excludeDirs += file( "$buildDir/tmp" )
+
+		downloadSources = true
+	}
+}

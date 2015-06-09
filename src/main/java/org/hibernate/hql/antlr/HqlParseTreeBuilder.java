@@ -23,9 +23,13 @@
  */
 package org.hibernate.hql.antlr;
 
+import java.util.Collection;
+
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.antlr.v4.runtime.tree.xpath.XPath;
 
 /**
  * @author Steve Ebersole
@@ -36,18 +40,22 @@ public class HqlParseTreeBuilder {
 	 */
 	public static final HqlParseTreeBuilder INSTANCE = new HqlParseTreeBuilder();
 
-	public HqlParser.StatementContext parseHql(String hql) {
-		// Build the parser...
-		final HqlParser parser = new HqlParser(
-				new CommonTokenStream( new HqlLexer( new ANTLRInputStream( hql ) ) )
-		);
+	private boolean debugEnabled = true;
 
-		// Obtain the parse tree from the parser using the main `statement` rule
-		final HqlParser.StatementContext statementTree = parser.statement();
+	public HqlParser parseHql(String hql) {
+		// Build the lexer
+		HqlLexer hqlLexer = new HqlLexer( new ANTLRInputStream( hql ) );
+
+		// Build the parser...
+		final HqlParser parser = new HqlParser( new CommonTokenStream( hqlLexer ) );
 
 		// this part would be protected by logging most likely.  Print the parse tree structure
-		ParseTreeWalker.DEFAULT.walk( new HqlParseTreePrinter( parser ), statementTree );
+		if ( debugEnabled ) {
+			ParseTreeWalker.DEFAULT.walk( new HqlParseTreePrinter( parser ), parser.statement() );
+			hqlLexer.reset();
+			parser.reset();
+		}
 
-		return statementTree;
+		return parser;
 	}
 }

@@ -8,25 +8,8 @@ options {
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
- * Copyright (c) 2008-2012, Red Hat Inc. or third-party contributors as
- * indicated by the @author tags or express copyright attribution
- * statements applied by the authors.  All third-party contributions are
- * distributed under license by Red Hat Inc.
- *
- * This copyrighted material is made available to anyone wishing to use, modify,
- * copy, or redistribute it subject to the terms and conditions of the GNU
- * Lesser General Public License, as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
- * for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this distribution; if not, write to:
- * Free Software Foundation, Inc.
- * 51 Franklin Street, Fifth Floor
- * Boston, MA  02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.hql.antlr;
 }
@@ -39,10 +22,10 @@ package org.hibernate.hql.antlr;
  */
 }
 
-selectStatement
+statement
 	: selectStatement
 //	| updateStatement
-//	| deleteStateent
+//	| deleteStatement
 	;
 
 selectStatement
@@ -54,7 +37,7 @@ queryExpression
 	;
 
 updateStatement
-	: UPDATE ENTITY_NAME ALIAS? setClause whereClause
+	: UPDATE ENTITY_NAME ALIAS_NAME? setClause whereClause
 	;
 
 setClause
@@ -63,11 +46,11 @@ setClause
 
 assignment
 	: VERSIONED
-	| ATTRIBUTE_REFERENCE EQUALS expression
+	| ATTRIBUTE_REFERENCE EQUAL expression
 	;
 
 deleteStatement
-	: DELETE ENTITY_NAME ALIAS? whereClause
+	: DELETE ENTITY_NAME ALIAS_NAME? whereClause
 	;
 
 

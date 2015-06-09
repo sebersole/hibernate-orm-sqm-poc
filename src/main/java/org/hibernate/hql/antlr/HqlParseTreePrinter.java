@@ -17,16 +17,19 @@ public class HqlParseTreePrinter extends HqlParserBaseListener {
 
 	@Override
 	public void enterEveryRule(@NotNull ParserRuleContext ctx) {
-		System.out.println(
-				String.format(
-						"%s %s ['%s'] (%s -> %s)",
-						enterRulePadding(),
-						parser.getRuleNames()[ctx.getRuleIndex()],
-						ctx.getText(),
-						ctx.getStart(),
-						ctx.getStop()
-				)
-		);
+		final String ruleName = parser.getRuleNames()[ctx.getRuleIndex()];
+
+		if ( !ruleName.endsWith( "Keyword" ) ) {
+			System.out.println(
+					String.format(
+							"%s %s (%s) [`%s`]",
+							enterRulePadding(),
+							ctx.getClass().getSimpleName(),
+							ruleName,
+							ctx.getText()
+					)
+			);
+		}
 		super.enterEveryRule( ctx );
 	}
 
@@ -45,14 +48,20 @@ public class HqlParseTreePrinter extends HqlParserBaseListener {
 	@Override
 	public void exitEveryRule(@NotNull ParserRuleContext ctx) {
 		super.exitEveryRule( ctx );
-		System.out.println(
-				String.format(
-						"%s %s [%s]",
-						exitRulePadding(),
-						parser.getRuleNames()[ctx.getRuleIndex()],
-						ctx.getText()
-				)
-		);
+
+		final String ruleName = parser.getRuleNames()[ctx.getRuleIndex()];
+
+		if ( !ruleName.endsWith( "Keyword" ) ) {
+			System.out.println(
+					String.format(
+							"%s %s (%s) [`%s`]",
+							exitRulePadding(),
+							ctx.getClass().getSimpleName(),
+							parser.getRuleNames()[ctx.getRuleIndex()],
+							ctx.getText()
+					)
+			);
+		}
 	}
 
 	private String exitRulePadding() {

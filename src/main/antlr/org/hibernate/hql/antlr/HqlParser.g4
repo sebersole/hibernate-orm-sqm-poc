@@ -8,25 +8,8 @@ options {
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
- * Copyright (c) 2008-2012, Red Hat Inc. or third-party contributors as
- * indicated by the @author tags or express copyright attribution
- * statements applied by the authors.  All third-party contributions are
- * distributed under license by Red Hat Inc.
- *
- * This copyrighted material is made available to anyone wishing to use, modify,
- * copy, or redistribute it subject to the terms and conditions of the GNU
- * Lesser General Public License, as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
- * for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this distribution; if not, write to:
- * Free Software Foundation, Inc.
- * 51 Franklin Street, Fifth Floor
- * Boston, MA  02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.hql.antlr;
 }
@@ -76,9 +59,8 @@ package org.hibernate.hql.antlr;
 }
 
 statement
-	: selectStatement
-//	| updateStatement
-//	| deleteStateent
+//	: ( selectStatement | updateStatement | deleteStatement | insertStatement ) EOF
+	: ( selectStatement ) EOF
 	;
 
 selectStatement
@@ -86,7 +68,7 @@ selectStatement
 	;
 
 queryExpression
-	:	querySpec ( ( union_key | intersect_key | except_key ) all_key? querySpec )*
+	:	querySpec ( ( unionKeyword | intersectKeyword | exceptKeyword ) allKeyword? querySpec )*
 	;
 
 
@@ -94,19 +76,19 @@ queryExpression
 // ORDER BY clause
 
 orderByClause
-	: order_by_key sortSpecification (COMMA sortSpecification)*
+	: orderByKeyword sortSpecification (COMMA sortSpecification)*
 	;
 
 sortSpecification
-	:	sortKey collationSpecification? orderingSpecification?
+	:	sortKeyword collationSpecification? orderingSpecification?
 	;
 
-sortKey
+sortKeyword
 	: expression
 	;
 
 collationSpecification
-	:	collate_key collateName
+	:	collateKeyword collateName
 	;
 
 collateName
@@ -114,8 +96,8 @@ collateName
 	;
 
 orderingSpecification
-	:	ascending_key
-	|	descending_key
+	:	ascendingKeyword
+	|	descendingKeyword
 	;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -130,7 +112,7 @@ querySpec
 // SELECT clause
 
 selectClause
-	:	select_key distinct_key? rootSelectExpression
+	:	selectKeyword distinctKeyword? rootSelectExpression
 	;
 
 rootSelectExpression
@@ -140,7 +122,7 @@ rootSelectExpression
 	;
 
 dynamicInstantiation
-	:	new_key dynamicInstantiationTarget LEFT_PAREN dynamicInstantiationArgs RIGHT_PAREN
+	:	newKeyword dynamicInstantiationTarget LEFT_PAREN dynamicInstantiationArgs RIGHT_PAREN
 	;
 
 dynamicInstantiationTarget
@@ -166,7 +148,7 @@ dynamicInstantiationArgs
 	;
 
 dynamicInstantiationArg
-	:	dynamicInstantiationArgExpression (as_key IDENTIFIER)?
+	:	dynamicInstantiationArgExpression (asKeyword IDENTIFIER)?
 	;
 
 dynamicInstantiationArgExpression
@@ -183,7 +165,7 @@ explicitSelectList
 	;
 
 explicitSelectItem
-	:	selectExpression (as_key IDENTIFIER)?
+	:	selectExpression (asKeyword IDENTIFIER)?
 	;
 
 selectExpression
@@ -199,7 +181,7 @@ aliasReference
 // FROM clause
 
 fromClause
-	: from_key persisterSpaces
+	: fromKeyword persisterSpaces
 	;
 
 persisterSpaces
@@ -220,11 +202,11 @@ persisterSpaceRoot
 
 mainEntityPersisterReference
 //	:	entityName ac=aliasClause[true] propertyFetch?
-	:	dotIdentifierPath as_key? IDENTIFIER
+	:	dotIdentifierPath asKeyword? IDENTIFIER
 	;
 
 propertyFetch
-	:	fetch_key all_key properties_key
+	:	fetchKeyword allKeyword propertiesKeyword
 	;
 
 //hibernateLegacySyntax returns [boolean isPropertyJoin]
@@ -245,7 +227,7 @@ propertyFetch
 // GROUP BY clause
 
 groupByClause
-	:	group_by_key groupingSpecification
+	:	groupByKeyword groupingSpecification
 	;
 
 groupingSpecification
@@ -260,7 +242,7 @@ groupingValue
 //HAVING clause
 
 havingClause
-	:	having_key logicalExpression
+	:	havingKeyword logicalExpression
 	;
 
 
@@ -268,23 +250,25 @@ havingClause
 // WHERE clause
 
 whereClause
-	:	where_key logicalExpression
+	:	whereKeyword logicalExpression
 	;
 
 logicalExpression
-	:	logicalExpression or_key logicalExpression
-	|	logicalExpression and_key logicalExpression
-	| 	not_key logicalExpression
-	|   relationalExpression
-	;
-
-relationalExpression
-	: expression is_key (not_key)? (NULL | empty_key)
-	| expression (EQUAL | NOT_EQUAL | GREATER | GREATER_EQUAL | LESS | LESS_EQUAL) expression
-	| expression IN inList
-	| expression between_key expression and_key expression
-	| expression like_key expression likeEscape
-	| member_of_key path
+	: logicalExpression orKeyword logicalExpression					# LogicalOrExpression
+	| logicalExpression andKeyword logicalExpression				# LogicalAndExpression
+	| notKeyword logicalExpression									# LogicalNegatedExpression
+	| expression isKeyword (notKeyword)? NULL						# LogicalIsNullExpression
+	| expression isKeyword (notKeyword)? emptyKeyword				# LogicalIsEmptyExpression
+	| expression EQUAL expression									# LogicalEqualityExpression
+	| expression NOT_EQUAL expression								# LogicalInequalityExpression
+	| expression GREATER expression									# LogicalGreaterThanExpression
+	| expression GREATER_EQUAL expression							# LogicalGreaterThanOrEqualExpression
+	| expression LESS expression									# LogicalLessThanExpression
+	| expression LESS_EQUAL expression								# LogicalLessThanOrEqualExpression
+	| expression IN inList											# LogicalInExpression
+	| expression between_key expression andKeyword expression		# LogicalBetweenExpression
+	| expression likeKeyword expression likeEscape					# LogicalLikeExpression
+	| memberOfKeyword path											# LogicalMemberOfExpression
 	;
 
 expression
@@ -302,12 +286,12 @@ expression
 	;
 
 inList
-	:	dotIdentifierPath
-	| 	expression (COMMA expression)*
+	:	elementsKeyword? dotIdentifierPath					# PersistentCollectionReferenceInList
+	| 	expression (COMMA expression)*						# ExplicitTupleInList
 	;
 
 likeEscape
-	: escape_key expression
+	: escapeKeyword expression
 	;
 
 literal
@@ -324,8 +308,9 @@ literal
 	;
 
 parameter
-	: COLON IDENTIFIER
-	| QUESTION_MARK (INTEGER_LITERAL)?
+	: COLON IDENTIFIER						# NamedParameter
+	| QUESTION_MARK (INTEGER_LITERAL)?		# JpaPositionalParameter
+	| QUESTION_MARK							# PositionalParameter
 	;
 
 
@@ -333,19 +318,19 @@ parameter
 // Key word rules
 
 
-all_key
+allKeyword
 	:	{isUpcomingTokenKeyword("all")}?  IDENTIFIER
 	;
 
-and_key
+andKeyword
 	:	{isUpcomingTokenKeyword("and")}?  IDENTIFIER
 	;
 
-as_key
+asKeyword
 	:	{isUpcomingTokenKeyword("as")}?  IDENTIFIER
 	;
 
-ascending_key
+ascendingKeyword
 	:	{(isUpcomingTokenKeyword("ascending") || isUpcomingTokenKeyword("asc"))}?  IDENTIFIER
 	;
 
@@ -353,102 +338,106 @@ between_key
 	:	{isUpcomingTokenKeyword("between")}?  IDENTIFIER
 	;
 
-collate_key
+collateKeyword
 	:	{isUpcomingTokenKeyword("collate")}?  IDENTIFIER
 	;
 
-class_key
+classKeyword
 	:	{isUpcomingTokenKeyword("class")}?  IDENTIFIER
 	;
 
-descending_key
+descendingKeyword
 	:	{(isUpcomingTokenKeyword("descending") || isUpcomingTokenKeyword("desc"))}?  IDENTIFIER
 	;
 
-distinct_key
+distinctKeyword
 	:	{isUpcomingTokenKeyword("distinct")}?  IDENTIFIER
 	;
 
-empty_key
+elementsKeyword
+	: {isUpcomingTokenKeyword("elements")}?  IDENTIFIER
+	;
+
+emptyKeyword
+	: {isUpcomingTokenKeyword("escape")}?  IDENTIFIER
+	;
+
+escapeKeyword
 	:	{isUpcomingTokenKeyword("escape")}?  IDENTIFIER
 	;
 
-escape_key
-	:	{isUpcomingTokenKeyword("escape")}?  IDENTIFIER
-	;
-
-except_key
+exceptKeyword
 	:	{isUpcomingTokenKeyword("except")}?  IDENTIFIER
 	;
 
-fetch_key
+fetchKeyword
 	:	{isUpcomingTokenKeyword("fetch")}?  IDENTIFIER
 	;
 
-from_key
+fromKeyword
 	:	{isUpcomingTokenKeyword("from")}?  IDENTIFIER
 	;
 
-group_by_key
+groupByKeyword
 	:	{isUpcomingTokenKeyword(1,"group") && isUpcomingTokenKeyword(2,"by")}?  IDENTIFIER IDENTIFIER
 	;
 
-having_key
+havingKeyword
 	:	{isUpcomingTokenKeyword("having")}?  IDENTIFIER
 	;
 
-in_key
+inKeyword
 	:	{isUpcomingTokenKeyword("in")}?  IDENTIFIER
 	;
 
-is_key
+isKeyword
 	:	{isUpcomingTokenKeyword("is")}?  IDENTIFIER
 	;
 
-intersect_key
+intersectKeyword
 	:	{isUpcomingTokenKeyword("intersect")}?  IDENTIFIER
 	;
 
-like_key
+likeKeyword
 	:	{isUpcomingTokenKeyword("like")}?  IDENTIFIER
 	;
 
-member_of_key
+memberOfKeyword
 	:	{isUpcomingTokenKeyword(1,"member") && isUpcomingTokenKeyword(2,"of")}?  IDENTIFIER IDENTIFIER
 	;
 
-new_key
+newKeyword
 	:	{isUpcomingTokenKeyword("new")}?  IDENTIFIER
 	;
 
-not_key
+notKeyword
 	:	{isUpcomingTokenKeyword("not")}?  IDENTIFIER
 	;
 
-object_key
+objectKeyword
 	:	{isUpcomingTokenKeyword("object")}?  IDENTIFIER
 	;
 
-or_key
+orKeyword
 	:	{isUpcomingTokenKeyword("or")}?  IDENTIFIER
 	;
 
-order_by_key
+orderByKeyword
 	:	{(isUpcomingTokenKeyword("order") && isUpcomingTokenKeyword(2, "by"))}?  IDENTIFIER IDENTIFIER
 	;
 
-properties_key
+propertiesKeyword
 	:	{isUpcomingTokenKeyword("properties")}?  IDENTIFIER
 	;
 
-select_key
+selectKeyword
 	:	{isUpcomingTokenKeyword("select")}?  IDENTIFIER
 	;
 
-union_key
+unionKeyword
 	:	{isUpcomingTokenKeyword("union")}?  IDENTIFIER
 	;
 
-where_key
+whereKeyword
 	:	{isUpcomingTokenKeyword("where")}?  IDENTIFIER
 	;
