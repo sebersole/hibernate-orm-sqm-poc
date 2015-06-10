@@ -59,12 +59,29 @@ package org.hibernate.hql.antlr;
 }
 
 statement
-//	: ( selectStatement | updateStatement | deleteStatement | insertStatement ) EOF
-	: ( selectStatement ) EOF
+	: ( selectStatement | updateStatement | deleteStatement | insertStatement ) EOF
 	;
 
 selectStatement
 	: queryExpression orderByClause?
+	;
+
+updateStatement
+// todo : add set-clause
+	: updateKeyword FROM? mainEntityPersisterReference whereClause
+	;
+
+deleteStatement
+	: deleteKeyword FROM? mainEntityPersisterReference whereClause
+	;
+
+insertStatement
+// todo : lots of things
+	: insertKeyword INTO insertTarget
+	;
+
+insertTarget
+	: dotIdentifierPath
 	;
 
 queryExpression
@@ -148,7 +165,7 @@ dynamicInstantiationArgs
 	;
 
 dynamicInstantiationArg
-	:	dynamicInstantiationArgExpression (asKeyword IDENTIFIER)?
+	:	dynamicInstantiationArgExpression (asKeyword? alias)?
 	;
 
 dynamicInstantiationArgExpression
@@ -165,7 +182,7 @@ explicitSelectList
 	;
 
 explicitSelectItem
-	:	selectExpression (asKeyword IDENTIFIER)?
+	:	selectExpression (asKeyword? alias)?
 	;
 
 selectExpression
@@ -202,7 +219,11 @@ persisterSpaceRoot
 
 mainEntityPersisterReference
 //	:	entityName ac=aliasClause[true] propertyFetch?
-	:	dotIdentifierPath asKeyword? IDENTIFIER
+	:	dotIdentifierPath (asKeyword? alias)?
+	;
+
+alias
+	: IDENTIFIER
 	;
 
 propertyFetch
@@ -346,6 +367,10 @@ classKeyword
 	:	{isUpcomingTokenKeyword("class")}?  IDENTIFIER
 	;
 
+deleteKeyword
+	: {isUpcomingTokenKeyword("delete")}? IDENTIFIER
+	;
+
 descendingKeyword
 	:	{(isUpcomingTokenKeyword("descending") || isUpcomingTokenKeyword("desc"))}?  IDENTIFIER
 	;
@@ -388,6 +413,10 @@ havingKeyword
 
 inKeyword
 	:	{isUpcomingTokenKeyword("in")}?  IDENTIFIER
+	;
+
+insertKeyword
+	:	{isUpcomingTokenKeyword("insert")}?  IDENTIFIER
 	;
 
 isKeyword
@@ -436,6 +465,10 @@ selectKeyword
 
 unionKeyword
 	:	{isUpcomingTokenKeyword("union")}?  IDENTIFIER
+	;
+
+updateKeyword
+	:	{isUpcomingTokenKeyword("update")}?  IDENTIFIER
 	;
 
 whereKeyword
