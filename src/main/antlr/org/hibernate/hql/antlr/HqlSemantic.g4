@@ -1,7 +1,13 @@
-parser grammar NormalizedHql;
+parser grammar HqlSemantic;
 
 options {
 	tokenVocab=HqlLexer;
+}
+
+tokens {
+	ALIAS_NAME,
+	ALIAS_REFERENCE,
+	ATTRIBUTE_REFERENCE
 }
 
 @header {
@@ -14,6 +20,7 @@ options {
 package org.hibernate.hql.antlr;
 }
 
+
 @members {
 /*
  * The intention of this grammar is only to generate walking artifacts (walker, listener, visitor).
@@ -23,9 +30,7 @@ package org.hibernate.hql.antlr;
 }
 
 statement
-	: selectStatement
-//	| updateStatement
-//	| deleteStatement
+	: ( selectStatement | updateStatement | deleteStatement | insertStatement )
 	;
 
 selectStatement
@@ -53,6 +58,10 @@ deleteStatement
 	: DELETE ENTITY_NAME ALIAS_NAME? whereClause
 	;
 
+insertStatement
+// todo : lots of things
+	: INSERT INTO ENTITY_NAME
+	;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ORDER BY clause
@@ -104,7 +113,7 @@ dynamicInstantiationArg
 	;
 
 dynamicInstantiationArgExpression
-	:	selectExpression
+	:	expression
 	|	dynamicInstantiation
 	;
 
@@ -113,11 +122,7 @@ explicitSelectList
 	;
 
 explicitSelectItem
-	:	selectExpression (ALIAS_NAME)?
-	;
-
-selectExpression
-	:	expression
+	:	expression (ALIAS_NAME)?
 	;
 
 
@@ -144,7 +149,7 @@ persisterSpaceRoot
 	;
 
 mainEntityPersisterReference
-	: ENTITY_NAME ALIAS_NAME? PROP_FETCH?
+	: ENTITY_NAME ALIAS_NAME PROP_FETCH?
 	;
 
 

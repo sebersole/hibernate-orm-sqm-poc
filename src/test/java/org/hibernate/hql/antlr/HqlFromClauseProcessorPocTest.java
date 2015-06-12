@@ -6,18 +6,21 @@
  */
 package org.hibernate.hql.antlr;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.hibernate.hql.ImplicitAliasGenerator;
+import org.hibernate.hql.antlr.normalization.ExplicitFromClauseIndexer;
+import org.hibernate.hql.antlr.normalization.FromClause;
+import org.hibernate.hql.antlr.normalization.FromElement;
+import org.hibernate.hql.antlr.normalization.FromElementSpace;
 
 import org.junit.Test;
 
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Initial work on a "from clause processor"
@@ -26,75 +29,87 @@ import static org.junit.Assert.assertEquals;
  */
 public class HqlFromClauseProcessorPocTest {
 	@Test
-	public void justTestIt() throws Exception {
-		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a where a.c = '1'" );
-
-		final FromClauseProcessor fromClauseProcessor = new FromClauseProcessor();
-
-		ParseTreeWalker.DEFAULT.walk( fromClauseProcessor, parser.statement() );
+	public void testSimpleFrom() throws Exception {
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a" );
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = processFromClause( parser );
+		final FromClause fromClause1 = explicitFromClauseIndexer.getRootFromClause();
+		assertNotNull( fromClause1 );
+		assertEquals( 0, fromClause1.getChildFromClauses().size() );
+		assertEquals( 1, fromClause1.getFromElementSpaces().size() );
+		FromElementSpace space1 = fromClause1.getFromElementSpaces().get( 0 );
+		assertNotNull( space1 );
+		assertNotNull( space1.getRoot() );
+		assertEquals( 0, space1.getJoins().size() );
+		FromElement fromElement = fromClause1.findFromElementByAlias( "a" );
+		assertNotNull( fromElement );
+		assertSame( fromElement, space1.getRoot() );
 	}
 
-	static interface FromElement {
-		FromElementContainer getContainer();
-
-		String getAlias();
+	@Test
+	public void testMultipleSpaces() throws Exception {
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a, SomethingElse b" );
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = processFromClause( parser );
+		final FromClause fromClause1 = explicitFromClauseIndexer.getRootFromClause();
+		assertNotNull( fromClause1 );
+		assertEquals( 0, fromClause1.getChildFromClauses().size() );
+		assertEquals( 2, fromClause1.getFromElementSpaces().size() );
+		FromElementSpace space1 = fromClause1.getFromElementSpaces().get( 0 );
+		FromElementSpace space2 = fromClause1.getFromElementSpaces().get( 1 );
+		assertNotNull( space1.getRoot() );
+		assertEquals( 0, space1.getJoins().size() );
+		assertNotNull( space2.getRoot() );
+		assertEquals( 0, space2.getJoins().size() );
+		FromElement fromElementA = fromClause1.findFromElementByAlias( "a" );
+		assertNotNull( fromElementA );
+		FromElement fromElementB = fromClause1.findFromElementByAlias( "b" );
+		assertNotNull( fromElementB );
+		assertNotEquals( fromElementA, fromElementB );
 	}
 
-	static interface FromElementContainer {
-		List<FromElement> getFromElements();
-		void addFromElement(FromElement fromElement);
+	@Test
+	public void testImplicitAlias() throws Exception {
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select b from Something" );
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = processFromClause( parser );
+		final FromClause fromClause1 = explicitFromClauseIndexer.getRootFromClause();
+		assertNotNull( fromClause1 );
+		assertEquals( 0, fromClause1.getChildFromClauses().size() );
+		assertEquals( 1, fromClause1.getFromElementSpaces().size() );
+		FromElementSpace space1 = fromClause1.getFromElementSpaces().get( 0 );
+		assertNotNull( space1 );
+		assertNotNull( space1.getRoot() );
+		assertEquals( 0, space1.getJoins().size() );
+		assertTrue( ImplicitAliasGenerator.isImplicitAlias( space1.getRoot().getAlias() ) );
+		FromElement fromElement = fromClause1.findFromElementByAlias( space1.getRoot().getAlias() );
+		assertSame( space1.getRoot(), fromElement );
 	}
 
-	static interface NestedFromElementContainer extends FromElementContainer {
-		FromElementContainer getParentFromElementContainer();
+	@Test
+	public void testCrossJoin() throws Exception {
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a cross join SomethingElse b" );
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = processFromClause( parser );
+		final FromClause fromClause1 = explicitFromClauseIndexer.getRootFromClause();
+		assertNotNull( fromClause1 );
+		assertEquals( 0, fromClause1.getChildFromClauses().size() );
+		assertEquals( 1, fromClause1.getFromElementSpaces().size() );
+		FromElementSpace space1 = fromClause1.getFromElementSpaces().get( 0 );
+		assertNotNull( space1 );
+		assertNotNull( space1.getRoot() );
+		assertEquals( 1, space1.getJoins().size() );
+
+		FromElement fromElementA = fromClause1.findFromElementByAlias( "a" );
+		assertNotNull( fromElementA );
+		assertSame( space1.getRoot(), fromElementA );
+
+		FromElement fromElementB = fromClause1.findFromElementByAlias( "b" );
+		assertNotNull( fromElementB );
+		assertSame( space1.getJoins().get( 0 ), fromElementB );
 	}
 
-	static interface JoinableFromElement extends FromElement, FromElementContainer {
+	private ExplicitFromClauseIndexer processFromClause(HqlParser parser) {
+		final ImplicitAliasGenerator aliasGenerator = new ImplicitAliasGenerator();
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( aliasGenerator );
+		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
+		return explicitFromClauseIndexer;
 	}
 
-	static interface Statement {
-		FromElementContainer getFromElementContainer();
-	}
-
-	static interface SelectStatement extends Statement {
-
-	}
-
-	static interface UpdateStatement extends Statement {
-
-	}
-
-	static interface DeleteStatement extends Statement {
-
-	}
-
-
-	private Statement statement;
-
-	class FromClauseProcessor extends HqlParserBaseListener {
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// enterFromClause and exitFromClause are used to manage hierarchical stack of FromClauses.
-		// todo : maybe its better to maintain that at the query level... a sort-of "from element context"
-
-		@Override
-		public void enterFromClause(HqlParser.FromClauseContext ctx) {
-//			if ( currentFromClause == null ) {
-//				currentFromClause = FromClause.root();
-//			}
-//			else {
-//				currentFromClause = currentFromClause.addChildFromClause();
-//			}
-			super.enterFromClause( ctx );
-		}
-
-		@Override
-		public void exitFromClause(HqlParser.FromClauseContext ctx) {
-			super.exitFromClause( ctx );
-//			if ( currentFromClause == null ) {
-//				throw new RuntimeException( "Mismatch currentFromClause handling" );
-//			}
-//
-//			currentFromClause = currentFromClause.parentFromClause;
-		}
-	}
 }

@@ -1,15 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'antlr'
-apply plugin: 'org.hibernate.build.gradle.animalSniffer'
-
-apply plugin: 'maven-publish'
-apply plugin: 'maven-publish-auth'
-
-apply plugin: 'idea'
-
-sourceCompatibility = 1.6
-version = '1.0'
-
 buildscript {
 	repositories {
 		mavenCentral()
@@ -29,12 +17,35 @@ buildscript {
 	}
 }
 
+apply plugin: 'java'
+apply plugin: 'antlr'
+apply plugin: 'org.hibernate.build.gradle.animalSniffer'
+
+apply plugin: 'maven-publish'
+apply plugin: 'maven-publish-auth'
+
+apply plugin: 'idea'
+
+sourceCompatibility = 1.6
+version = '1.0'
+
 repositories {
     mavenCentral()
 	jcenter()
 }
 
+configurations {
+	provided {
+		// todo : need to make sure these are non-exported
+		description = 'Non-exported compile-time dependencies.'
+	}
+}
+
 dependencies {
+	compile 'org.jboss.logging:jboss-logging:3.3.0.Final'
+
+	provided 'org.jboss.logging:jboss-logging-annotations:2.0.0.Final'
+
 	antlr 'org.antlr:antlr4:4.5'
 
 	animalSnifferSignature 'org.codehaus.mojo.signature:java16:1.0@signature'
