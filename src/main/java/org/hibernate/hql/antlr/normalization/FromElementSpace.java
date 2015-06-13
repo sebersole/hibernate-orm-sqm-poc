@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hibernate.hql.JoinType;
 import org.hibernate.hql.antlr.HqlParser;
 
 /**
@@ -75,6 +76,137 @@ public class FromElementSpace {
 		joins.add( fromElement );
 		registerAlias( fromElement );
 		return fromElement;
+	}
+
+	public FromElementJoined makeFromElement(final HqlParser.ImplicitInnerJoinContext ctx) {
+		return makeQualifiedJoin(
+				new QualifiedJoinInfo() {
+					@Override
+					public JoinType getJoinType() {
+						return JoinType.INNER;
+					}
+
+					@Override
+					public String getJoinTarget() {
+						return ctx.qualifiedJoinRhs().dotIdentifierPath().getText();
+					}
+
+					@Override
+					public String getAlias() {
+						return ctx.qualifiedJoinRhs().IDENTIFIER() == null
+								? null
+								: ctx.qualifiedJoinRhs().IDENTIFIER().getText();
+					}
+
+					@Override
+					public boolean isFetched() {
+						return ctx.fetchKeyword() != null;
+					}
+
+					@Override
+					public HqlParser.LogicalExpressionContext getRestrictions() {
+						return ctx.qualifiedJoinRhs().logicalExpression();
+					}
+				}
+		);
+	}
+
+	private static interface QualifiedJoinInfo {
+		JoinType getJoinType();
+		String getJoinTarget();
+		String getAlias();
+		boolean isFetched();
+		HqlParser.LogicalExpressionContext getRestrictions();
+	}
+
+	private FromElementJoined makeQualifiedJoin(QualifiedJoinInfo info) {
+		final String entityNameOrAttributePath = info.getJoinTarget();
+
+		String alias = info.getAlias();
+		if ( alias == null ) {
+			alias = fromClause.getNormalizationContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+		}
+
+		// todo : interpretation of entityNameOrAttributePath
+		// todo : interpretation of on/with clause
+
+		// for now, assume an "attribute join" with no restrictions
+		return addJoin(
+				new FromElementQualifiedAttributeJoinImpl(
+						this,
+						alias,
+						info.getJoinType(),
+						entityNameOrAttributePath,
+						info.isFetched()
+				)
+		);
+	}
+
+	public FromElementJoined makeFromElement(final HqlParser.ExplicitInnerJoinContext ctx) {
+		return makeQualifiedJoin(
+				new QualifiedJoinInfo() {
+					@Override
+					public JoinType getJoinType() {
+						return JoinType.INNER;
+					}
+
+					@Override
+					public String getJoinTarget() {
+						return ctx.qualifiedJoinRhs().dotIdentifierPath().getText();
+					}
+
+					@Override
+					public String getAlias() {
+						return ctx.qualifiedJoinRhs().IDENTIFIER() == null
+								? null
+								: ctx.qualifiedJoinRhs().IDENTIFIER().getText();
+					}
+
+					@Override
+					public boolean isFetched() {
+						return ctx.fetchKeyword() != null;
+					}
+
+					@Override
+					public HqlParser.LogicalExpressionContext getRestrictions() {
+						return ctx.qualifiedJoinRhs().logicalExpression();
+					}
+				}
+		);
+	}
+
+	public FromElementJoined makeFromElement(final HqlParser.ExplicitOuterJoinContext ctx) {
+		return makeQualifiedJoin(
+				new QualifiedJoinInfo() {
+					@Override
+					public JoinType getJoinType() {
+						// currently only left outer joins are supported
+						return JoinType.LEFT;
+					}
+
+					@Override
+					public String getJoinTarget() {
+						return ctx.qualifiedJoinRhs().dotIdentifierPath().getText();
+					}
+
+					@Override
+					public String getAlias() {
+						return ctx.qualifiedJoinRhs().IDENTIFIER() == null
+								? null
+								: ctx.qualifiedJoinRhs().IDENTIFIER().getText();
+					}
+
+					@Override
+					public boolean isFetched() {
+						return ctx.fetchKeyword() != null;
+					}
+
+					@Override
+					public HqlParser.LogicalExpressionContext getRestrictions() {
+						return ctx.qualifiedJoinRhs().logicalExpression();
+					}
+				}
+		);
 	}
 
 	public void complete() {

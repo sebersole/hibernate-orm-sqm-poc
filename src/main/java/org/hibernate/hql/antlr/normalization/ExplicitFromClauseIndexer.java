@@ -76,4 +76,18 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener implements 
 		currentFromElementSpace.makeFromElement( ctx );
 	}
 
+	@Override
+	public void enterImplicitInnerJoin(HqlParser.ImplicitInnerJoinContext ctx) {
+		currentFromElementSpace.makeFromElement( ctx );
+	}
+
+	@Override
+	public void enterExplicitInnerJoin(HqlParser.ExplicitInnerJoinContext ctx) {
+		currentFromElementSpace.makeFromElement( ctx );
+	}
+
+	@Override
+	public void enterExplicitOuterJoin(HqlParser.ExplicitOuterJoinContext ctx) {
+		currentFromElementSpace.makeFromElement( ctx );
+	}
 }

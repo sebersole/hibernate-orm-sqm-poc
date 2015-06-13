@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.hibernate.hql.antlr.HqlSemantic;
+
 import org.jboss.logging.Logger;
 
 /**

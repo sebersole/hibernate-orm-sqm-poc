@@ -17,32 +17,34 @@ package org.hibernate.hql.antlr;
 @members {
 	/**
 	 * Determine if the text of the new upcoming token LT(1), if one, matches
-	 * the passed argument.  Internally calls isUpcomingTokenKeyword( 1, tokenText )
+	 * the passed argument.  Internally calls doesUpcomingTokenMatchAny( 1, checks )
 	 */
-	protected boolean isUpcomingTokenKeyword(String tokenText) {
-		return isUpcomingTokenKeyword( 1, tokenText );
+	protected boolean doesUpcomingTokenMatchAny(String... checks) {
+		return doesUpcomingTokenMatchAny( 1, checks );
 	}
 
 	/**
 	 * Determine if the text of the new upcoming token LT(offset), if one, matches
 	 * the passed argument.
 	 */
-	protected boolean isUpcomingTokenKeyword(int offset, String keyword) {
+	protected boolean doesUpcomingTokenMatchAny(int offset, String... checks) {
 		final Token token = retrieveUpcomingToken( offset );
-		if ( token == null ) {
-			return false;
+		if ( token != null ) {
+			if ( token.getType() == IDENTIFIER ) {
+				// todo : is this really a check we want?
+
+				final String textToValidate = token.getText();
+				if ( textToValidate != null ) {
+					for ( String check : checks ) {
+						if ( textToValidate.equalsIgnoreCase( check ) ) {
+							return true;
+						}
+					}
+				}
+			}
 		}
 
-		if ( token.getType() != IDENTIFIER ) {
-			// todo : is this really a check we want?
-			return false;
-		}
-
-		final String textToValidate = token.getText();
-		if ( textToValidate == null ) {
-			return false;
-		}
-		return textToValidate.equalsIgnoreCase( keyword );
+		return false;
 	}
 
 	protected Token retrieveUpcomingToken(int offset) {
@@ -85,7 +87,8 @@ insertTarget
 	;
 
 queryExpression
-	:	querySpec ( ( unionKeyword | intersectKeyword | exceptKeyword ) allKeyword? querySpec )*
+	: querySpec
+//	:	querySpec ( ( unionKeyword | intersectKeyword | exceptKeyword ) allKeyword? querySpec )*
 	;
 
 
@@ -184,7 +187,7 @@ explicitSelectItem
 	// I have noticed thaty without this predicate, Antlr will sometimes
 	// interpret `select a.b from Something ...` as `from` being the
 	// select-expression alias
-	:	expression (asKeyword? {!isUpcomingTokenKeyword("from")}? IDENTIFIER)?
+	:	expression (asKeyword? {!doesUpcomingTokenMatchAny("from")}? IDENTIFIER)?
 	;
 
 
@@ -196,7 +199,7 @@ fromClause
 	;
 
 fromElementSpace
-	:	fromElementSpaceRoot ( qualifiedJoin | crossJoin )*
+	:	fromElementSpaceRoot ( crossJoin | qualifiedJoin )*
 	;
 
 fromElementSpaceRoot
@@ -206,7 +209,7 @@ fromElementSpaceRoot
 	;
 
 mainEntityPersisterReference
-	:	dotIdentifierPath (asKeyword? {!isUpcomingTokenKeyword("where")}? IDENTIFIER)?
+	:	dotIdentifierPath (asKeyword? {!doesUpcomingTokenMatchAny("where","join")}? IDENTIFIER)?
 	;
 
 crossJoin
@@ -214,13 +217,14 @@ crossJoin
 	;
 
 qualifiedJoin
-	: joinKeyword fetchKeyword? qualifiedJoinRhs								# ImplicitInnerJoinType
-	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs					# ExplicitInnerJoinType
-	| leftKeyword? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs		# ExplicitOuterJoinType
+//	: ( innerKeyword | (leftKeyword? outerKeyword) )? joinKeyword fetchKeyword? qualifiedJoinRhs
+	: joinKeyword fetchKeyword? qualifiedJoinRhs								# ImplicitInnerJoin
+	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs					# ExplicitInnerJoin
+	| leftKeyword? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs		# ExplicitOuterJoin
 	;
 
 qualifiedJoinRhs
-	: dotIdentifierPath (asKeyword? IDENTIFIER)? ( onKeyword | withKeyword) logicalExpression
+	: dotIdentifierPath (asKeyword? IDENTIFIER)? ( (onKeyword | withKeyword) logicalExpression )?
 	;
 
 //hibernateLegacySyntax returns [boolean isPropertyJoin]
@@ -333,165 +337,165 @@ parameter
 
 
 allKeyword
-	: {isUpcomingTokenKeyword("all")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("all")}? IDENTIFIER
 	;
 
 andKeyword
-	: {isUpcomingTokenKeyword("and")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("and")}? IDENTIFIER
 	;
 
 asKeyword
-	: {isUpcomingTokenKeyword("as")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("as")}? IDENTIFIER
 	;
 
 ascendingKeyword
-	: {(isUpcomingTokenKeyword("ascending") || isUpcomingTokenKeyword("asc"))}? IDENTIFIER
+	: {(doesUpcomingTokenMatchAny("ascending","asc"))}? IDENTIFIER
 	;
 
 between_key
-	: {isUpcomingTokenKeyword("between")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("between")}? IDENTIFIER
 	;
 
 classKeyword
-	: {isUpcomingTokenKeyword("class")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("class")}? IDENTIFIER
 	;
 
 collateKeyword
-	: {isUpcomingTokenKeyword("collate")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("collate")}? IDENTIFIER
 	;
 
 crossKeyword
-	: {isUpcomingTokenKeyword("cross")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("cross")}? IDENTIFIER
 	;
 
 deleteKeyword
-	: {isUpcomingTokenKeyword("delete")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("delete")}? IDENTIFIER
 	;
 
 descendingKeyword
-	: {(isUpcomingTokenKeyword("descending") || isUpcomingTokenKeyword("desc"))}? IDENTIFIER
+	: {(doesUpcomingTokenMatchAny("descending","desc"))}? IDENTIFIER
 	;
 
 distinctKeyword
-	: {isUpcomingTokenKeyword("distinct")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("distinct")}? IDENTIFIER
 	;
 
 elementsKeyword
-	: {isUpcomingTokenKeyword("elements")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("elements")}? IDENTIFIER
 	;
 
 emptyKeyword
-	: {isUpcomingTokenKeyword("escape")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("escape")}? IDENTIFIER
 	;
 
 escapeKeyword
-	: {isUpcomingTokenKeyword("escape")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("escape")}? IDENTIFIER
 	;
 
 exceptKeyword
-	: {isUpcomingTokenKeyword("except")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("except")}? IDENTIFIER
 	;
 
 fetchKeyword
-	: {isUpcomingTokenKeyword("fetch")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("fetch")}? IDENTIFIER
 	;
 
 fromKeyword
-	: {isUpcomingTokenKeyword("from")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("from")}? IDENTIFIER
 	;
 
 groupByKeyword
-	: {isUpcomingTokenKeyword(1,"group") && isUpcomingTokenKeyword(2,"by")}? IDENTIFIER IDENTIFIER
+	: {doesUpcomingTokenMatchAny(1,"group") && doesUpcomingTokenMatchAny(2,"by")}? IDENTIFIER IDENTIFIER
 	;
 
 havingKeyword
-	: {isUpcomingTokenKeyword("having")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("having")}? IDENTIFIER
 	;
 
 inKeyword
-	: {isUpcomingTokenKeyword("in")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("in")}? IDENTIFIER
 	;
 
 innerKeyword
-	: {isUpcomingTokenKeyword("inner")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("inner")}? IDENTIFIER
 	;
 
 insertKeyword
-	: {isUpcomingTokenKeyword("insert")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("insert")}? IDENTIFIER
 	;
 
 isKeyword
-	: {isUpcomingTokenKeyword("is")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("is")}? IDENTIFIER
 	;
 
 intersectKeyword
-	: {isUpcomingTokenKeyword("intersect")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("intersect")}? IDENTIFIER
 	;
 
 joinKeyword
-	: {isUpcomingTokenKeyword("join")}? IDENTIFIER
+	: {doesUpcomingTokenMatchAny("join")}? IDENTIFIER
 	;
 
 leftKeyword
-	: {isUpcomingTokenKeyword("left")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("left")}?  IDENTIFIER
 	;
 
 likeKeyword
-	: {isUpcomingTokenKeyword("like")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("like")}?  IDENTIFIER
 	;
 
 memberOfKeyword
-	: {isUpcomingTokenKeyword(1,"member") && isUpcomingTokenKeyword(2,"of")}?  IDENTIFIER IDENTIFIER
+	: {doesUpcomingTokenMatchAny(1,"member") && doesUpcomingTokenMatchAny(2,"of")}?  IDENTIFIER IDENTIFIER
 	;
 
 newKeyword
-	: {isUpcomingTokenKeyword("new")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("new")}?  IDENTIFIER
 	;
 
 notKeyword
-	: {isUpcomingTokenKeyword("not")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("not")}?  IDENTIFIER
 	;
 
 objectKeyword
-	: {isUpcomingTokenKeyword("object")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("object")}?  IDENTIFIER
 	;
 
 onKeyword
-	: {isUpcomingTokenKeyword("on")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("on")}?  IDENTIFIER
 	;
 
 orKeyword
-	: {isUpcomingTokenKeyword("or")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("or")}?  IDENTIFIER
 	;
 
 orderByKeyword
-	: {(isUpcomingTokenKeyword("order") && isUpcomingTokenKeyword(2, "by"))}?  IDENTIFIER IDENTIFIER
+	: {(doesUpcomingTokenMatchAny("order") && doesUpcomingTokenMatchAny(2, "by"))}?  IDENTIFIER IDENTIFIER
 	;
 
 outerKeyword
-	: {isUpcomingTokenKeyword("outer")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("outer")}?  IDENTIFIER
 	;
 
 propertiesKeyword
-	: {isUpcomingTokenKeyword("properties")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("properties")}?  IDENTIFIER
 	;
 
 selectKeyword
-	: {isUpcomingTokenKeyword("select")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("select")}?  IDENTIFIER
 	;
 
 unionKeyword
-	: {isUpcomingTokenKeyword("union")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("union")}?  IDENTIFIER
 	;
 
 updateKeyword
-	: {isUpcomingTokenKeyword("update")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("update")}?  IDENTIFIER
 	;
 
 whereKeyword
-	: {isUpcomingTokenKeyword("where")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("where")}?  IDENTIFIER
 	;
 
 withKeyword
-	: {isUpcomingTokenKeyword("with")}?  IDENTIFIER
+	: {doesUpcomingTokenMatchAny("with")}?  IDENTIFIER
 	;

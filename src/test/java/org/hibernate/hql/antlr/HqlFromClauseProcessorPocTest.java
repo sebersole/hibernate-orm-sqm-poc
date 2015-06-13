@@ -7,9 +7,11 @@
 package org.hibernate.hql.antlr;
 
 import org.hibernate.hql.ImplicitAliasGenerator;
+import org.hibernate.hql.JoinType;
 import org.hibernate.hql.antlr.normalization.ExplicitFromClauseIndexer;
 import org.hibernate.hql.antlr.normalization.FromClause;
 import org.hibernate.hql.antlr.normalization.FromElement;
+import org.hibernate.hql.antlr.normalization.FromElementQualifiedAttributeJoinImpl;
 import org.hibernate.hql.antlr.normalization.FromElementSpace;
 
 import org.junit.Test;
@@ -103,6 +105,62 @@ public class HqlFromClauseProcessorPocTest {
 		FromElement fromElementB = fromClause1.findFromElementByAlias( "b" );
 		assertNotNull( fromElementB );
 		assertSame( space1.getJoins().get( 0 ), fromElementB );
+	}
+
+	@Test
+	public void testSimpleImplicitInnerJoin() throws Exception {
+		simpleJoinAssertions(
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a join a.c c" ),
+				JoinType.INNER
+		);
+	}
+
+	private void simpleJoinAssertions(HqlParser parser, JoinType joinType) {
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = processFromClause( parser );
+		final FromClause fromClause1 = explicitFromClauseIndexer.getRootFromClause();
+		assertNotNull( fromClause1 );
+		assertEquals( 0, fromClause1.getChildFromClauses().size() );
+		assertEquals( 1, fromClause1.getFromElementSpaces().size() );
+		FromElementSpace space1 = fromClause1.getFromElementSpaces().get( 0 );
+		assertNotNull( space1 );
+		assertNotNull( space1.getRoot() );
+		assertEquals( 1, space1.getJoins().size() );
+
+		FromElement fromElementA = fromClause1.findFromElementByAlias( "a" );
+		assertNotNull( fromElementA );
+		assertSame( space1.getRoot(), fromElementA );
+
+		FromElement fromElementC = fromClause1.findFromElementByAlias( "c" );
+		assertNotNull( fromElementC );
+		assertSame( space1.getJoins().get( 0 ), fromElementC );
+		FromElementQualifiedAttributeJoinImpl join = (FromElementQualifiedAttributeJoinImpl) fromElementC;
+		assertEquals( joinType, join.getJoinType() );
+		assertEquals( "c", join.getAlias() );
+		assertEquals( "a.c", join.getJoinedAttribute() );
+	}
+
+	@Test
+	public void testSimpleExplicitInnerJoin() throws Exception {
+		simpleJoinAssertions(
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a inner join a.c c" ),
+				JoinType.INNER
+		);
+	}
+
+	@Test
+	public void testSimpleExplicitOuterJoin() throws Exception {
+		simpleJoinAssertions(
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a outer join a.c c" ),
+				JoinType.LEFT
+		);
+	}
+
+	@Test
+	public void testSimpleExplicitLeftOuterJoin() throws Exception {
+		simpleJoinAssertions(
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a left outer join a.c c" ),
+				JoinType.LEFT
+		);
 	}
 
 	private ExplicitFromClauseIndexer processFromClause(HqlParser parser) {
