@@ -8,6 +8,8 @@ package org.hibernate.hql.antlr;
 
 import org.hibernate.hql.ImplicitAliasGenerator;
 import org.hibernate.hql.JoinType;
+import org.hibernate.hql.model.ModelMetadata;
+import org.hibernate.hql.ParsingContext;
 import org.hibernate.hql.antlr.normalization.ExplicitFromClauseIndexer;
 import org.hibernate.hql.antlr.normalization.FromClause;
 import org.hibernate.hql.antlr.normalization.FromElement;
@@ -45,6 +47,12 @@ public class HqlFromClauseProcessorPocTest {
 		FromElement fromElement = fromClause1.findFromElementByAlias( "a" );
 		assertNotNull( fromElement );
 		assertSame( fromElement, space1.getRoot() );
+	}
+
+	private ExplicitFromClauseIndexer processFromClause(HqlParser parser) {
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextImpl() );
+		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
+		return explicitFromClauseIndexer;
 	}
 
 	@Test
@@ -163,11 +171,17 @@ public class HqlFromClauseProcessorPocTest {
 		);
 	}
 
-	private ExplicitFromClauseIndexer processFromClause(HqlParser parser) {
-		final ImplicitAliasGenerator aliasGenerator = new ImplicitAliasGenerator();
-		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( aliasGenerator );
-		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
-		return explicitFromClauseIndexer;
-	}
+	private static class ParsingContextImpl implements ParsingContext {
+		private final ImplicitAliasGenerator implicitAliasGenerator = new ImplicitAliasGenerator();
 
+		@Override
+		public ModelMetadata getModelMetadata() {
+			return null;
+		}
+
+		@Override
+		public ImplicitAliasGenerator getImplicitAliasGenerator() {
+			return implicitAliasGenerator;
+		}
+	}
 }

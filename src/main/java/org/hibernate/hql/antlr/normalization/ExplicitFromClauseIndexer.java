@@ -6,30 +6,26 @@
  */
 package org.hibernate.hql.antlr.normalization;
 
-import org.hibernate.hql.ImplicitAliasGenerator;
+import org.hibernate.hql.ParsingContext;
 import org.hibernate.hql.antlr.HqlParser;
 import org.hibernate.hql.antlr.HqlParserBaseListener;
 
 /**
  * @author Steve Ebersole
  */
-public class ExplicitFromClauseIndexer extends HqlParserBaseListener implements NormalizationContext {
-	private final ImplicitAliasGenerator aliasGenerator;
+public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
+	private final ParsingContext parsingContext;
+	private final FromClause rootFromClause;
 
-	public ExplicitFromClauseIndexer(ImplicitAliasGenerator aliasGenerator) {
-		this.aliasGenerator = aliasGenerator;
-	}
-
-	@Override
-	public ImplicitAliasGenerator getImplicitAliasGenerator() {
-		return aliasGenerator;
+	public ExplicitFromClauseIndexer(ParsingContext parsingContext) {
+		this.parsingContext = parsingContext;
+		this.rootFromClause = new FromClause( parsingContext );
 	}
 
 	public FromClause getRootFromClause() {
 		return rootFromClause;
 	}
 
-	private FromClause rootFromClause = new FromClause( this );
 	private FromClause currentFromClause;
 
 	@Override

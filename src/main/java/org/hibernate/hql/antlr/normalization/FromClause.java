@@ -7,13 +7,15 @@
 package org.hibernate.hql.antlr.normalization;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.hibernate.hql.antlr.HqlSemantic;
+import org.hibernate.hql.ParsingContext;
+import org.hibernate.hql.model.EntityTypeDescriptor;
 
 import org.jboss.logging.Logger;
 
@@ -27,20 +29,20 @@ import org.jboss.logging.Logger;
 public class FromClause {
 	private static final Logger log = Logger.getLogger( FromClause.class );
 
-	private final NormalizationContext normalizationContext;
+	private final ParsingContext parsingContext;
 	private final FromClause parentFromClause;
 	private List<FromClause> childFromClauses;
 
 	private List<FromElementSpace> fromElementSpaces = new ArrayList<FromElementSpace>();
 	private Map<String,FromElement> fromElementsByAlias = new HashMap<String, FromElement>();
 
-	public FromClause(NormalizationContext normalizationContext) {
-		this.normalizationContext = normalizationContext;
+	public FromClause(ParsingContext parsingContext) {
+		this.parsingContext = parsingContext;
 		this.parentFromClause = null;
 	}
 
 	public FromClause(FromClause parentFromClause) {
-		this.normalizationContext = parentFromClause.normalizationContext;
+		this.parsingContext = parentFromClause.parsingContext;
 		this.parentFromClause = parentFromClause;
 	}
 
@@ -67,6 +69,69 @@ public class FromClause {
 		return fromElement;
 	}
 
+	public FromElement findFromElementWithAttribute(String name) {
+		FromElement found = null;
+		for ( FromElementSpace space : fromElementSpaces ) {
+			final Collection<EntityTypeDescriptor> rootEntityTypes = parsingContext.getModelMetadata()
+					.resolveEntityReference( space.getRoot().getEntityName() );
+			if ( allHaveAttribute( rootEntityTypes, name ) ) {
+				if ( found != null ) {
+					throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
+				}
+				found = space.getRoot();
+			}
+
+			for ( FromElementJoined join : space.getJoins() ) {
+				if ( join instanceof FromElementCrossJoinedImpl ) {
+					final FromElementCrossJoinedImpl crossJoin = (FromElementCrossJoinedImpl) join;
+					final Collection<EntityTypeDescriptor> entityTypes = parsingContext.getModelMetadata().resolveEntityReference( crossJoin.getEntityName() );
+					if ( allHaveAttribute( entityTypes, name ) ) {
+						if ( found != null ) {
+							throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
+						}
+						found = space.getRoot();
+					}
+				}
+				else if ( join instanceof FromElementQualifiedEntityJoinImpl ) {
+					final FromElementQualifiedEntityJoinImpl entityJoin = (FromElementQualifiedEntityJoinImpl) join;
+					final Collection<EntityTypeDescriptor> entityTypes = parsingContext.getModelMetadata().resolveEntityReference( entityJoin.getEntityName() );
+					if ( allHaveAttribute( entityTypes, name ) ) {
+						if ( found != null ) {
+							throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
+						}
+						found = space.getRoot();
+					}
+				}
+				else if ( join instanceof FromElementQualifiedAttributeJoinImpl ) {
+					final FromElementQualifiedAttributeJoinImpl attributeJoin = (FromElementQualifiedAttributeJoinImpl) join;
+					// todo : we need to match join to lhs in order to answer this.
+				}
+				else {
+					throw new IllegalStateException( "Unexpected join type encountered: " + join );
+				}
+			}
+
+		}
+
+		if ( found == null ) {
+			if ( parentFromClause != null ) {
+				log.debugf( "Unable to resolve unqualified attribute [%s] in local FromClause; checking parent" );
+				found = parentFromClause.findFromElementByAlias( name );
+			}
+		}
+
+		return found;
+	}
+
+	private boolean allHaveAttribute(Collection<EntityTypeDescriptor> entityTypeDescriptors, String attributeName) {
+		for ( EntityTypeDescriptor entityTypeDescriptor : entityTypeDescriptors ) {
+			if ( entityTypeDescriptor.getAttributeType( attributeName ) == null ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	void registerAlias(FromElement fromElement) {
 		final FromElement old = fromElementsByAlias.put( fromElement.getAlias(), fromElement );
 		if ( old != null ) {
@@ -82,8 +147,8 @@ public class FromClause {
 		}
 	}
 
-	public NormalizationContext getNormalizationContext() {
-		return normalizationContext;
+	public ParsingContext getParsingContext() {
+		return parsingContext;
 	}
 
 	public FromClause makeChildFromClause() {

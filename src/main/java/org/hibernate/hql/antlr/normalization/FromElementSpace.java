@@ -7,10 +7,12 @@
 package org.hibernate.hql.antlr.normalization;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.hql.JoinType;
+import org.hibernate.hql.ParsingContext;
 import org.hibernate.hql.antlr.HqlParser;
 
 /**
@@ -43,7 +45,7 @@ public class FromElementSpace {
 			alias = ctx.mainEntityPersisterReference().IDENTIFIER().getText();
 		}
 		if ( alias == null ) {
-			alias = fromClause.getNormalizationContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
 
 		root = new FromElementRootEntity( this, alias, entityName );
@@ -63,7 +65,7 @@ public class FromElementSpace {
 			alias = ctx.mainEntityPersisterReference().IDENTIFIER().getText();
 		}
 		if ( alias == null ) {
-			alias = fromClause.getNormalizationContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
 
 		return addJoin( new FromElementCrossJoinedImpl( this, alias, entityName ) );
@@ -120,25 +122,105 @@ public class FromElementSpace {
 	}
 
 	private FromElementJoined makeQualifiedJoin(QualifiedJoinInfo info) {
-		final String entityNameOrAttributePath = info.getJoinTarget();
+		// todo : handling of on/with clause
 
-		String alias = info.getAlias();
-		if ( alias == null ) {
-			alias = fromClause.getNormalizationContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+		// interpret join target as either an attribute reference or as an entityName.
+		// some impl notes...
+		// 		1) generally speaking the precedence for resolution is:
+		//			1) qualified-attribute-path
+		//			2) entity-name
+		//			3) unqualified-attribute-path
+		//		2) if the target has no dots, the target cannot be a qualified-attribute-path
+
+		final String entityNameOrAttributePath = info.getJoinTarget();
+		final String[] parts = entityNameOrAttributePath.split( "\\." );
+		final String firstIdentifier = parts[0];
+
+		// 1st level precedence : qualified-attribute-path
+		if ( entityNameOrAttributePath.contains( "." ) ) {
+			final FromElement lhs = fromClause.findFromElementByAlias( firstIdentifier );
+			if ( lhs != null ) {
+				// we have qualified-attribute-path join
+				return addJoin(
+						buildAttributePathJoin(
+								lhs,
+								parts,
+								1,
+								info
+						)
+				);
+			}
 		}
 
-		// todo : interpretation of entityNameOrAttributePath
-		// todo : interpretation of on/with clause
+		// 2nd level precedence : entity-name
+		Collection entityTypes = fromClause.getParsingContext().getModelMetadata().resolveEntityReference(
+				entityNameOrAttributePath
+		);
+		if ( entityTypes != null ) {
+			String alias = info.getAlias();
+			if ( alias == null ) {
+				alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+			}
+			if ( info.isFetched() ) {
+				throw new IllegalStateException( "Entity join cannot be fetched : " + entityNameOrAttributePath );
+			}
+			return addJoin(
+					new FromElementQualifiedEntityJoinImpl(
+							this,
+							alias,
+							info.getJoinType(),
+							entityNameOrAttributePath
+					)
+			);
+		}
 
-		// for now, assume an "attribute join" with no restrictions
-		return addJoin(
-				new FromElementQualifiedAttributeJoinImpl(
-						this,
-						alias,
-						info.getJoinType(),
-						entityNameOrAttributePath,
-						info.isFetched()
-				)
+		// 3rd level precedence : unqualified-attribute-path
+		final FromElement lhs = fromClause.findFromElementWithAttribute( firstIdentifier );
+		if ( lhs != null ) {
+			return addJoin(
+					buildAttributePathJoin(
+							lhs,
+							parts,
+							0,
+							info
+					)
+			);
+		}
+
+		// if we get here we had a problem interpreting the dot-ident path
+		throw new IllegalStateException( "Could not interpret join target [" + entityNameOrAttributePath + "]" );
+	}
+
+	private FromElementJoined buildAttributePathJoin(
+			FromElement aliasedFromElement,
+			String[] parts,
+			int i,
+			QualifiedJoinInfo info) {
+		FromElement lhs = aliasedFromElement;
+
+		// build joins for any intermediate path parts
+		while ( i < parts.length-1 ) {
+			lhs = new FromElementQualifiedAttributeJoinImpl(
+					this,
+					fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias(),
+					info.getJoinType(),
+					lhs.getAlias() + '.'  + parts[i],
+					info.isFetched()
+			);
+			i++;
+		}
+
+		// and then build the "terminal" join
+		String alias = info.getAlias();
+		if ( alias == null ) {
+			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+		}
+		return new FromElementQualifiedAttributeJoinImpl(
+				this,
+				alias,
+				info.getJoinType(),
+				lhs.getAlias() + '.'  + parts[i],
+				info.isFetched()
 		);
 	}
 

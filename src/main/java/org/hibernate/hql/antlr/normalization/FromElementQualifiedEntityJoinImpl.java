@@ -12,10 +12,18 @@ import org.hibernate.hql.JoinType;
  * @author Steve Ebersole
  */
 public class FromElementQualifiedEntityJoinImpl extends AbstractFromElementJoinedImpl {
+	private final String entityName;
+
 	public FromElementQualifiedEntityJoinImpl(
 			FromElementSpace fromElementSpace,
 			String alias,
-			JoinType joinType) {
+			JoinType joinType,
+			String entityName) {
 		super( fromElementSpace, alias, joinType );
+		this.entityName = entityName;
+	}
+
+	public String getEntityName() {
+		return entityName;
 	}
 }
