@@ -7,6 +7,7 @@
 package org.hibernate.hql.antlr.normalization;
 
 import org.hibernate.hql.JoinType;
+import org.hibernate.hql.model.TypeDescriptor;
 
 /**
  * @author Steve Ebersole
@@ -17,8 +18,9 @@ public abstract class AbstractFromElementJoinedImpl extends AbstractFromElementI
 	public AbstractFromElementJoinedImpl(
 			FromElementSpace fromElementSpace,
 			String alias,
+			TypeDescriptor typeDescriptor,
 			JoinType joinType) {
-		super( fromElementSpace, alias );
+		super( fromElementSpace, alias, typeDescriptor );
 		this.joinType = joinType;
 	}
 

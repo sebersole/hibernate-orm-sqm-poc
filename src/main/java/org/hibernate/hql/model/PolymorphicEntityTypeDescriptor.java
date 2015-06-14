@@ -6,9 +6,11 @@
  */
 package org.hibernate.hql.model;
 
+import java.util.Collection;
+
 /**
  * @author Steve Ebersole
  */
-public interface EntityTypeDescriptor extends TypeDescriptor {
-	public String getEntityName();
+public interface PolymorphicEntityTypeDescriptor extends EntityTypeDescriptor {
+	public Collection<EntityTypeDescriptor> getImplementors();
 }

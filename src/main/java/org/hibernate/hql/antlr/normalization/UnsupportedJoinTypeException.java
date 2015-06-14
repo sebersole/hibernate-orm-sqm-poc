@@ -6,13 +6,17 @@
  */
 package org.hibernate.hql.antlr.normalization;
 
-import org.hibernate.hql.model.TypeDescriptor;
+import org.hibernate.hql.SemanticException;
 
 /**
  * @author Steve Ebersole
  */
-public interface FromElement {
-	FromElementSpace getContainingSpace();
-	String getAlias();
-	TypeDescriptor getTypeDescriptor();
+public class UnsupportedJoinTypeException extends SemanticException {
+	public UnsupportedJoinTypeException(String message) {
+		super( message );
+	}
+
+	public UnsupportedJoinTypeException(String message, Throwable cause) {
+		super( message, cause );
+	}
 }

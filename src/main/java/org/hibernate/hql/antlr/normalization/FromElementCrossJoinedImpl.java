@@ -7,6 +7,7 @@
 package org.hibernate.hql.antlr.normalization;
 
 import org.hibernate.hql.JoinType;
+import org.hibernate.hql.model.EntityTypeDescriptor;
 
 /**
  * @author Steve Ebersole
@@ -14,13 +15,21 @@ import org.hibernate.hql.JoinType;
 public class FromElementCrossJoinedImpl extends AbstractFromElementImpl implements FromElementJoined {
 	private final String entityName;
 
-	public FromElementCrossJoinedImpl(FromElementSpace fromElementSpace, String alias, String entityName) {
-		super( fromElementSpace, alias );
-		this.entityName = entityName;
+	public FromElementCrossJoinedImpl(
+			FromElementSpace fromElementSpace,
+			String alias,
+			EntityTypeDescriptor entityTypeDescriptor) {
+		super( fromElementSpace, alias, entityTypeDescriptor );
+		this.entityName = entityTypeDescriptor.getEntityName();
 	}
 
 	public String getEntityName() {
 		return entityName;
+	}
+
+	@Override
+	public EntityTypeDescriptor getTypeDescriptor() {
+		return (EntityTypeDescriptor) super.getTypeDescriptor();
 	}
 
 	@Override

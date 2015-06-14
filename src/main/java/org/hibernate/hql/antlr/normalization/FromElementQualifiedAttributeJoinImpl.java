@@ -7,6 +7,7 @@
 package org.hibernate.hql.antlr.normalization;
 
 import org.hibernate.hql.JoinType;
+import org.hibernate.hql.model.TypeDescriptor;
 
 /**
  * @author Steve Ebersole
@@ -18,10 +19,11 @@ public class FromElementQualifiedAttributeJoinImpl extends AbstractFromElementJo
 	public FromElementQualifiedAttributeJoinImpl(
 			FromElementSpace fromElementSpace,
 			String alias,
+			TypeDescriptor attributeTypeDescriptor,
 			JoinType joinType,
 			String joinedAttribute,
 			boolean fetched) {
-		super( fromElementSpace, alias, joinType );
+		super( fromElementSpace, alias, attributeTypeDescriptor, joinType );
 		this.joinedAttribute = joinedAttribute;
 		this.fetched = fetched;
 	}

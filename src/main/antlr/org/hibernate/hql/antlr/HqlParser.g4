@@ -218,9 +218,9 @@ crossJoin
 
 qualifiedJoin
 //	: ( innerKeyword | (leftKeyword? outerKeyword) )? joinKeyword fetchKeyword? qualifiedJoinRhs
-	: joinKeyword fetchKeyword? qualifiedJoinRhs								# ImplicitInnerJoin
-	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs					# ExplicitInnerJoin
-	| leftKeyword? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs		# ExplicitOuterJoin
+	: joinKeyword fetchKeyword? qualifiedJoinRhs															# ImplicitInnerJoin
+	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs												# ExplicitInnerJoin
+	| (leftKeyword|rightKeyword|fullKeyword)? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs		# ExplicitOuterJoin
 	;
 
 qualifiedJoinRhs
@@ -404,6 +404,10 @@ fromKeyword
 	: {doesUpcomingTokenMatchAny("from")}? IDENTIFIER
 	;
 
+fullKeyword
+	: {doesUpcomingTokenMatchAny("full")}? IDENTIFIER
+	;
+
 groupByKeyword
 	: {doesUpcomingTokenMatchAny(1,"group") && doesUpcomingTokenMatchAny(2,"by")}? IDENTIFIER IDENTIFIER
 	;
@@ -478,6 +482,10 @@ outerKeyword
 
 propertiesKeyword
 	: {doesUpcomingTokenMatchAny("properties")}?  IDENTIFIER
+	;
+
+rightKeyword
+	: {doesUpcomingTokenMatchAny("right")}?  IDENTIFIER
 	;
 
 selectKeyword

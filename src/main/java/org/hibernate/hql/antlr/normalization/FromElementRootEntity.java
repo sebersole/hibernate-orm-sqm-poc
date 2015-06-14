@@ -6,18 +6,28 @@
  */
 package org.hibernate.hql.antlr.normalization;
 
+import org.hibernate.hql.model.EntityTypeDescriptor;
+
 /**
  * @author Steve Ebersole
  */
 public class FromElementRootEntity extends AbstractFromElementImpl {
 	private final String entityName;
 
-	public FromElementRootEntity(FromElementSpace fromElementSpace, String alias, String entityName) {
-		super( fromElementSpace, alias );
-		this.entityName = entityName;
+	public FromElementRootEntity(
+			FromElementSpace fromElementSpace,
+			String alias,
+			EntityTypeDescriptor entityTypeDescriptor) {
+		super( fromElementSpace, alias, entityTypeDescriptor );
+		this.entityName = entityTypeDescriptor.getEntityName();
 	}
 
 	public String getEntityName() {
 		return entityName;
+	}
+
+	@Override
+	public EntityTypeDescriptor getTypeDescriptor() {
+		return (EntityTypeDescriptor) super.getTypeDescriptor();
 	}
 }

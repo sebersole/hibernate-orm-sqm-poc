@@ -7,6 +7,7 @@
 package org.hibernate.hql.antlr.normalization;
 
 import org.hibernate.hql.JoinType;
+import org.hibernate.hql.model.EntityTypeDescriptor;
 
 /**
  * @author Steve Ebersole
@@ -17,13 +18,18 @@ public class FromElementQualifiedEntityJoinImpl extends AbstractFromElementJoine
 	public FromElementQualifiedEntityJoinImpl(
 			FromElementSpace fromElementSpace,
 			String alias,
-			JoinType joinType,
-			String entityName) {
-		super( fromElementSpace, alias, joinType );
-		this.entityName = entityName;
+			EntityTypeDescriptor entityTypeDescriptor,
+			JoinType joinType) {
+		super( fromElementSpace, alias, entityTypeDescriptor, joinType );
+		this.entityName = entityTypeDescriptor.getEntityName();
 	}
 
 	public String getEntityName() {
 		return entityName;
+	}
+
+	@Override
+	public EntityTypeDescriptor getTypeDescriptor() {
+		return (EntityTypeDescriptor) super.getTypeDescriptor();
 	}
 }

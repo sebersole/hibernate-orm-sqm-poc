@@ -7,7 +7,6 @@
 package org.hibernate.hql.antlr.normalization;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.hibernate.hql.ParsingContext;
-import org.hibernate.hql.model.EntityTypeDescriptor;
 
 import org.jboss.logging.Logger;
 
@@ -72,9 +70,7 @@ public class FromClause {
 	public FromElement findFromElementWithAttribute(String name) {
 		FromElement found = null;
 		for ( FromElementSpace space : fromElementSpaces ) {
-			final Collection<EntityTypeDescriptor> rootEntityTypes = parsingContext.getModelMetadata()
-					.resolveEntityReference( space.getRoot().getEntityName() );
-			if ( allHaveAttribute( rootEntityTypes, name ) ) {
+			if ( space.getRoot().getTypeDescriptor().getAttributeType( name ) != null ) {
 				if ( found != null ) {
 					throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
 				}
@@ -82,35 +78,13 @@ public class FromClause {
 			}
 
 			for ( FromElementJoined join : space.getJoins() ) {
-				if ( join instanceof FromElementCrossJoinedImpl ) {
-					final FromElementCrossJoinedImpl crossJoin = (FromElementCrossJoinedImpl) join;
-					final Collection<EntityTypeDescriptor> entityTypes = parsingContext.getModelMetadata().resolveEntityReference( crossJoin.getEntityName() );
-					if ( allHaveAttribute( entityTypes, name ) ) {
-						if ( found != null ) {
-							throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
-						}
-						found = space.getRoot();
+				if ( join.getTypeDescriptor().getAttributeType( name ) != null ) {
+					if ( found != null ) {
+						throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
 					}
-				}
-				else if ( join instanceof FromElementQualifiedEntityJoinImpl ) {
-					final FromElementQualifiedEntityJoinImpl entityJoin = (FromElementQualifiedEntityJoinImpl) join;
-					final Collection<EntityTypeDescriptor> entityTypes = parsingContext.getModelMetadata().resolveEntityReference( entityJoin.getEntityName() );
-					if ( allHaveAttribute( entityTypes, name ) ) {
-						if ( found != null ) {
-							throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
-						}
-						found = space.getRoot();
-					}
-				}
-				else if ( join instanceof FromElementQualifiedAttributeJoinImpl ) {
-					final FromElementQualifiedAttributeJoinImpl attributeJoin = (FromElementQualifiedAttributeJoinImpl) join;
-					// todo : we need to match join to lhs in order to answer this.
-				}
-				else {
-					throw new IllegalStateException( "Unexpected join type encountered: " + join );
+					found = join;
 				}
 			}
-
 		}
 
 		if ( found == null ) {
@@ -121,15 +95,6 @@ public class FromClause {
 		}
 
 		return found;
-	}
-
-	private boolean allHaveAttribute(Collection<EntityTypeDescriptor> entityTypeDescriptors, String attributeName) {
-		for ( EntityTypeDescriptor entityTypeDescriptor : entityTypeDescriptors ) {
-			if ( entityTypeDescriptor.getAttributeType( attributeName ) == null ) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	void registerAlias(FromElement fromElement) {

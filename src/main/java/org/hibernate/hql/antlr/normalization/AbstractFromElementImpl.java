@@ -6,16 +6,23 @@
  */
 package org.hibernate.hql.antlr.normalization;
 
+import org.hibernate.hql.model.TypeDescriptor;
+
 /**
  * @author Steve Ebersole
  */
 public abstract class AbstractFromElementImpl implements FromElement {
 	private final FromElementSpace fromElementSpace;
 	private final String alias;
+	private final TypeDescriptor typeDescriptor;
 
-	protected AbstractFromElementImpl(FromElementSpace fromElementSpace, String alias) {
+	protected AbstractFromElementImpl(
+			FromElementSpace fromElementSpace,
+			String alias,
+			TypeDescriptor typeDescriptor) {
 		this.fromElementSpace = fromElementSpace;
 		this.alias = alias;
+		this.typeDescriptor = typeDescriptor;
 	}
 
 	@Override
@@ -26,5 +33,10 @@ public abstract class AbstractFromElementImpl implements FromElement {
 	@Override
 	public String getAlias() {
 		return alias;
+	}
+
+	@Override
+	public TypeDescriptor getTypeDescriptor() {
+		return typeDescriptor;
 	}
 }

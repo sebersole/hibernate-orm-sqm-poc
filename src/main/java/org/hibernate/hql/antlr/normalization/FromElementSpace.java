@@ -7,13 +7,16 @@
 package org.hibernate.hql.antlr.normalization;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import org.hibernate.hql.JoinType;
-import org.hibernate.hql.ParsingContext;
+import org.hibernate.hql.SemanticException;
 import org.hibernate.hql.antlr.HqlParser;
+import org.hibernate.hql.model.EntityTypeDescriptor;
+import org.hibernate.hql.model.ModelMetadata;
+import org.hibernate.hql.model.TypeDescriptor;
 
 /**
  * @author Steve Ebersole
@@ -39,6 +42,10 @@ public class FromElementSpace {
 
 	public FromElementRootEntity makeFromElement(HqlParser.RootEntityReferenceContext ctx) {
 		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierPath().getText();
+		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
+		if ( entityTypeDescriptor == null ) {
+			throw new SemanticException( "Unresolved entity name : " + entityName );
+		}
 
 		String alias = null;
 		if ( ctx.mainEntityPersisterReference().IDENTIFIER() != null ) {
@@ -48,9 +55,13 @@ public class FromElementSpace {
 			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
 
-		root = new FromElementRootEntity( this, alias, entityName );
+		root = new FromElementRootEntity( this, alias, entityTypeDescriptor );
 		registerAlias( root );
 		return root;
+	}
+
+	private ModelMetadata getModelMetadata() {
+		return fromClause.getParsingContext().getModelMetadata();
 	}
 
 	private void registerAlias(FromElement fromElement) {
@@ -59,6 +70,10 @@ public class FromElementSpace {
 
 	public FromElementJoined makeFromElement(HqlParser.CrossJoinContext ctx) {
 		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierPath().getText();
+		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
+		if ( entityTypeDescriptor == null ) {
+			throw new SemanticException( "Unresolved entity name : " + entityName );
+		}
 
 		String alias = null;
 		if ( ctx.mainEntityPersisterReference().IDENTIFIER() != null ) {
@@ -68,7 +83,7 @@ public class FromElementSpace {
 			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
 
-		return addJoin( new FromElementCrossJoinedImpl( this, alias, entityName ) );
+		return addJoin( new FromElementCrossJoinedImpl( this, alias, entityTypeDescriptor ) );
 	}
 
 	private FromElementJoined addJoin(FromElementJoined fromElement) {
@@ -153,23 +168,21 @@ public class FromElementSpace {
 		}
 
 		// 2nd level precedence : entity-name
-		Collection entityTypes = fromClause.getParsingContext().getModelMetadata().resolveEntityReference(
-				entityNameOrAttributePath
-		);
-		if ( entityTypes != null ) {
+		EntityTypeDescriptor entityType = getModelMetadata().resolveEntityReference( entityNameOrAttributePath );
+		if ( entityType != null ) {
 			String alias = info.getAlias();
 			if ( alias == null ) {
 				alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 			}
 			if ( info.isFetched() ) {
-				throw new IllegalStateException( "Entity join cannot be fetched : " + entityNameOrAttributePath );
+				throw new SemanticException( "Entity join cannot be fetched : " + entityNameOrAttributePath );
 			}
 			return addJoin(
 					new FromElementQualifiedEntityJoinImpl(
 							this,
 							alias,
-							info.getJoinType(),
-							entityNameOrAttributePath
+							entityType,
+							info.getJoinType()
 					)
 			);
 		}
@@ -188,7 +201,7 @@ public class FromElementSpace {
 		}
 
 		// if we get here we had a problem interpreting the dot-ident path
-		throw new IllegalStateException( "Could not interpret join target [" + entityNameOrAttributePath + "]" );
+		throw UnresolvedJoinTargetException.forJoinTarget( entityNameOrAttributePath );
 	}
 
 	private FromElementJoined buildAttributePathJoin(
@@ -200,11 +213,14 @@ public class FromElementSpace {
 
 		// build joins for any intermediate path parts
 		while ( i < parts.length-1 ) {
+			final String partName = parts[i];
+			final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( partName );
 			lhs = new FromElementQualifiedAttributeJoinImpl(
 					this,
 					fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias(),
+					attributeType,
 					info.getJoinType(),
-					lhs.getAlias() + '.'  + parts[i],
+					lhs.getAlias() + '.'  + partName,
 					info.isFetched()
 			);
 			i++;
@@ -215,11 +231,14 @@ public class FromElementSpace {
 		if ( alias == null ) {
 			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
+		final String terminalPartName = parts[i];
+		final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( terminalPartName );
 		return new FromElementQualifiedAttributeJoinImpl(
 				this,
 				alias,
+				attributeType,
 				info.getJoinType(),
-				lhs.getAlias() + '.'  + parts[i],
+				lhs.getAlias() + '.'  + terminalPartName,
 				info.isFetched()
 		);
 	}
@@ -258,6 +277,15 @@ public class FromElementSpace {
 	}
 
 	public FromElementJoined makeFromElement(final HqlParser.ExplicitOuterJoinContext ctx) {
+		if ( ctx.fullKeyword() != null || ctx.rightKeyword() != null ) {
+			throw new UnsupportedJoinTypeException(
+					String.format(
+							Locale.ENGLISH,
+							"Unsupported outer join type requested [%s], only LEFT outer joins are supported",
+							ctx.fullKeyword() != null ? "FULL" : "RIGHT"
+					)
+			);
+		}
 		return makeQualifiedJoin(
 				new QualifiedJoinInfo() {
 					@Override

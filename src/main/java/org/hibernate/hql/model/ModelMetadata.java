@@ -6,8 +6,6 @@
  */
 package org.hibernate.hql.model;
 
-import java.util.Collection;
-
 /**
  * Information about the domain model space for the query.  This needs to come from the
  * consumer.
@@ -15,5 +13,5 @@ import java.util.Collection;
  * @author Steve Ebersole
  */
 public interface ModelMetadata {
-	Collection<EntityTypeDescriptor> resolveEntityReference(String reference);
+	EntityTypeDescriptor resolveEntityReference(String reference);
 }

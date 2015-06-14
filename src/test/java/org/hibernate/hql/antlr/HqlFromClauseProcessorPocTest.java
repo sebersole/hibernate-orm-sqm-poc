@@ -172,11 +172,12 @@ public class HqlFromClauseProcessorPocTest {
 	}
 
 	private static class ParsingContextImpl implements ParsingContext {
+		private final ModelMetadataTestingImpl modelMetadata = new ModelMetadataTestingImpl();
 		private final ImplicitAliasGenerator implicitAliasGenerator = new ImplicitAliasGenerator();
 
 		@Override
 		public ModelMetadata getModelMetadata() {
-			return null;
+			return modelMetadata;
 		}
 
 		@Override
