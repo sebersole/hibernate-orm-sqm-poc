@@ -1,0 +1,39 @@
+/*
+ * Hibernate, Relational Persistence for Idiomatic Java
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ */
+package org.hibernate.hql.parser.semantic.select;
+
+import org.hibernate.hql.parser.ParsingContext;
+
+/**
+ * @author Steve Ebersole
+ */
+public class SelectClause {
+	private final ParsingContext parsingContext;
+	private final boolean distinct;
+	private final Selection selection;
+
+	public SelectClause(
+			ParsingContext parsingContext,
+			Selection selection,
+			boolean distinct) {
+		this.parsingContext = parsingContext;
+		this.selection = selection;
+		this.distinct = distinct;
+	}
+
+	public SelectClause(ParsingContext parsingContext, Selection selection) {
+		this( parsingContext, selection, false );
+	}
+
+	public boolean isDistinct() {
+		return distinct;
+	}
+
+	public Selection getSelection() {
+		return selection;
+	}
+}
