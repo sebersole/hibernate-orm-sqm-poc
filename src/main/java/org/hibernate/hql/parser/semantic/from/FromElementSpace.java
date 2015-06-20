@@ -43,7 +43,7 @@ public class FromElementSpace {
 	}
 
 	public FromElementRootEntity makeFromElement(HqlParser.RootEntityReferenceContext ctx) {
-		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierPath().getText();
+		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierSequence().getText();
 		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
 		if ( entityTypeDescriptor == null ) {
 			throw new SemanticException( "Unresolved entity name : " + entityName );
@@ -71,7 +71,7 @@ public class FromElementSpace {
 	}
 
 	public FromElementJoined makeFromElement(HqlParser.CrossJoinContext ctx) {
-		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierPath().getText();
+		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierSequence().getText();
 		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
 		if ( entityTypeDescriptor == null ) {
 			throw new SemanticException( "Unresolved entity name : " + entityName );
@@ -88,7 +88,7 @@ public class FromElementSpace {
 		return addJoin( new FromElementCrossJoinedImpl( this, alias, entityTypeDescriptor ) );
 	}
 
-	private FromElementJoined addJoin(FromElementJoined fromElement) {
+	public FromElementJoined addJoin(FromElementJoined fromElement) {
 		if ( joins == null ) {
 			joins = new ArrayList<FromElementJoined>();
 		}
@@ -107,7 +107,7 @@ public class FromElementSpace {
 
 					@Override
 					public String getJoinTarget() {
-						return ctx.qualifiedJoinRhs().dotIdentifierPath().getText();
+						return ctx.qualifiedJoinRhs().path().getText();
 					}
 
 					@Override
@@ -158,13 +158,11 @@ public class FromElementSpace {
 			final FromElement lhs = fromClause.findFromElementByAlias( firstIdentifier );
 			if ( lhs != null ) {
 				// we have qualified-attribute-path join
-				return addJoin(
-						buildAttributePathJoin(
-								lhs,
-								parts,
-								1,
-								info
-						)
+				return buildAttributePathJoin(
+						lhs,
+						parts,
+						1,
+						info
 				);
 			}
 		}
@@ -192,13 +190,11 @@ public class FromElementSpace {
 		// 3rd level precedence : unqualified-attribute-path
 		final FromElement lhs = fromClause.findFromElementWithAttribute( firstIdentifier );
 		if ( lhs != null ) {
-			return addJoin(
-					buildAttributePathJoin(
-							lhs,
-							parts,
-							0,
-							info
-					)
+			return buildAttributePathJoin(
+					lhs,
+					parts,
+					0,
+					info
 			);
 		}
 
@@ -215,16 +211,7 @@ public class FromElementSpace {
 
 		// build joins for any intermediate path parts
 		while ( i < parts.length-1 ) {
-			final String partName = parts[i];
-			final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( partName );
-			lhs = new FromElementQualifiedAttributeJoinImpl(
-					this,
-					fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias(),
-					attributeType,
-					info.getJoinType(),
-					lhs.getAlias() + '.'  + partName,
-					info.isFetched()
-			);
+			lhs = buildAttributeJoin( lhs, parts[i], null, info.getJoinType(), info.isFetched() );
 			i++;
 		}
 
@@ -233,16 +220,35 @@ public class FromElementSpace {
 		if ( alias == null ) {
 			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
-		final String terminalPartName = parts[i];
-		final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( terminalPartName );
-		return new FromElementQualifiedAttributeJoinImpl(
-				this,
+		return buildAttributeJoin(
+				lhs,
+				parts[i],
 				alias,
-				attributeType,
 				info.getJoinType(),
-				lhs.getAlias() + '.'  + terminalPartName,
 				info.isFetched()
 		);
+	}
+
+	public FromElementQualifiedAttributeJoinImpl buildAttributeJoin(
+			FromElement lhs,
+			String attributeName,
+			String alias,
+			JoinType joinType,
+			boolean fetched) {
+		final String aliasToUse = alias != null
+				? alias
+				: fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
+		final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( attributeName );
+		final FromElementQualifiedAttributeJoinImpl join = new FromElementQualifiedAttributeJoinImpl(
+				this,
+				aliasToUse,
+				attributeType,
+				joinType,
+				lhs.getAlias() + '.'  + attributeName,
+				fetched
+		);
+		addJoin( join );
+		return join;
 	}
 
 	public FromElementJoined makeFromElement(final HqlParser.ExplicitInnerJoinContext ctx) {
@@ -255,7 +261,7 @@ public class FromElementSpace {
 
 					@Override
 					public String getJoinTarget() {
-						return ctx.qualifiedJoinRhs().dotIdentifierPath().getText();
+						return ctx.qualifiedJoinRhs().path().getText();
 					}
 
 					@Override
@@ -298,7 +304,7 @@ public class FromElementSpace {
 
 					@Override
 					public String getJoinTarget() {
-						return ctx.qualifiedJoinRhs().dotIdentifierPath().getText();
+						return ctx.qualifiedJoinRhs().path().getText();
 					}
 
 					@Override

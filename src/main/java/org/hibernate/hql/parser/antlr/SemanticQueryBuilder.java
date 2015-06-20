@@ -16,13 +16,20 @@ import org.hibernate.hql.parser.NotYetImplementedException;
 import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.ParsingException;
 import org.hibernate.hql.parser.SemanticException;
+import org.hibernate.hql.parser.antlr.path.AttributePathResolverBasicImpl;
+import org.hibernate.hql.parser.antlr.path.AttributePathResolverStack;
+import org.hibernate.hql.parser.model.CollectionTypeDescriptor;
+import org.hibernate.hql.parser.semantic.expression.AttributeReferenceExpression;
 import org.hibernate.hql.parser.semantic.from.FromElement;
 import org.hibernate.hql.parser.semantic.select.AliasedDynamicInstantiationArgument;
 import org.hibernate.hql.parser.semantic.select.DynamicInstantiation;
 import org.hibernate.hql.parser.semantic.select.SelectClause;
 import org.hibernate.hql.parser.semantic.where.AndPredicate;
+import org.hibernate.hql.parser.semantic.where.BetweenPredicate;
 import org.hibernate.hql.parser.semantic.where.IsEmptyPredicate;
 import org.hibernate.hql.parser.semantic.where.IsNullPredicate;
+import org.hibernate.hql.parser.semantic.where.LikePredicate;
+import org.hibernate.hql.parser.semantic.where.MemberOfPredicate;
 import org.hibernate.hql.parser.semantic.where.NegatedPredicate;
 import org.hibernate.hql.parser.semantic.where.OrPredicate;
 import org.hibernate.hql.parser.semantic.where.Predicate;
@@ -67,6 +74,7 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 	private final ExplicitFromClauseIndexer fromClauseIndexer;
 
 	private FromClause currentFromClause;
+	private AttributePathResolverStack attributePathResolverStack = new AttributePathResolverStack();
 
 	public SemanticQueryBuilder(ParsingContext parsingContext, ExplicitFromClauseIndexer fromClauseIndexer) {
 		this.parsingContext = parsingContext;
@@ -111,7 +119,7 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 		final Expression sortExpression = (Expression) ctx.expression().accept( this );
 		final String collation;
 		if ( ctx.collationSpecification() != null && ctx.collationSpecification().collateName() != null ) {
-			collation = ctx.collationSpecification().collateName().dotIdentifierPath().getText();
+			collation = ctx.collationSpecification().collateName().dotIdentifierSequence().getText();
 		}
 		else {
 			collation = null;
@@ -134,6 +142,7 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 		}
 		FromClause originalCurrentFromClause = currentFromClause;
 		currentFromClause = fromClause;
+		attributePathResolverStack.push( new AttributePathResolverBasicImpl( currentFromClause ) );
 		try {
 			final SelectClause selectClause;
 			if ( ctx.selectClause() != null ) {
@@ -153,6 +162,7 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 			return new QuerySpec( parsingContext, fromClause, selectClause, whereClause );
 		}
 		finally {
+			attributePathResolverStack.pop();
 			currentFromClause = originalCurrentFromClause;
 		}
 	}
@@ -359,6 +369,60 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 				(Expression) ctx.expression().get( 0 ).accept( this ),
 				(Expression) ctx.expression().get( 1 ).accept( this )
 		);
+	}
+
+	@Override
+	public Object visitBetweenPredicate(HqlParser.BetweenPredicateContext ctx) {
+		return new BetweenPredicate(
+				(Expression) ctx.expression().get( 0 ).accept( this ),
+				(Expression) ctx.expression().get( 1 ).accept( this ),
+				(Expression) ctx.expression().get( 2 ).accept( this )
+		);
+	}
+
+	@Override
+	public Object visitLikePredicate(HqlParser.LikePredicateContext ctx) {
+		if ( ctx.likeEscape() != null ) {
+			return new LikePredicate(
+					(Expression) ctx.expression().get( 0 ).accept( this ),
+					(Expression) ctx.expression().get( 1 ).accept( this ),
+					(Expression) ctx.likeEscape().expression().accept( this )
+			);
+		}
+		else {
+			return new LikePredicate(
+					(Expression) ctx.expression().get( 0 ).accept( this ),
+					(Expression) ctx.expression().get( 1 ).accept( this )
+			);
+		}
+	}
+
+	@Override
+	public Object visitMemberOfPredicate(HqlParser.MemberOfPredicateContext ctx) {
+		final Object pathResolution = ctx.path().accept( this );
+		if ( !AttributeReferenceExpression.class.isInstance( pathResolution ) ) {
+			throw new SemanticException( "Could not resolve path [" + ctx.path().getText() + "] as an attribute reference" );
+		}
+		final AttributeReferenceExpression attributeReference = (AttributeReferenceExpression) pathResolution;
+		if ( !CollectionTypeDescriptor.class.isInstance( attributeReference.getTypeDescriptor() ) ) {
+			throw new SemanticException( "Path argument to MEMBER OF must be a collection" );
+		}
+		return new MemberOfPredicate( attributeReference );
+	}
+
+	@Override
+	public Object visitSimplePath(HqlParser.SimplePathContext ctx) {
+		return attributePathResolverStack.getCurrent().resolvePath( ctx );
+	}
+
+	@Override
+	public Object visitTreatedPath(HqlParser.TreatedPathContext ctx) {
+		return attributePathResolverStack.getCurrent().resolvePath( ctx );
+	}
+
+	@Override
+	public Object visitIndexedPath(HqlParser.IndexedPathContext ctx) {
+		return attributePathResolverStack.getCurrent().resolvePath( ctx );
 	}
 
 	@Override

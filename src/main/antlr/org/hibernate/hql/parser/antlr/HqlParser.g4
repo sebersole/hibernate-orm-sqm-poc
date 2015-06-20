@@ -88,7 +88,7 @@ insertStatement
 	;
 
 insertTarget
-	: dotIdentifierPath
+	: dotIdentifierSequence
 	;
 
 
@@ -108,7 +108,7 @@ collationSpecification
 	;
 
 collateName
-	:	dotIdentifierPath
+	:	dotIdentifierSequence
 	;
 
 orderingSpecification
@@ -142,20 +142,22 @@ dynamicInstantiation
 	;
 
 dynamicInstantiationTarget
-	:	dotIdentifierPath
+	:	dotIdentifierSequence
 	;
 
-dotIdentifierPath
+dotIdentifierSequence
 	:	IDENTIFIER (DOT IDENTIFIER)*
 	;
 
 path
-	:	IDENTIFIER
-		(
-				DOT IDENTIFIER
-			|	LEFT_BRACKET expression RIGHT_BRACKET
-			|	LEFT_BRACKET RIGHT_BRACKET
-		)*
+// todo : VALUE (and ELEMENTS) and KEY handling
+	: dotIdentifierSequence																			# SimplePath
+	| treatKeyword LEFT_PAREN dotIdentifierSequence asKeyword dotIdentifierSequence RIGHT_PAREN		# TreatedPath
+	| path LEFT_BRACKET expression RIGHT_BRACKET													# IndexedPath
+	;
+
+pathBase
+	: dotIdentifierSequence
 	;
 
 dynamicInstantiationArgs
@@ -205,7 +207,7 @@ fromElementSpaceRoot
 	;
 
 mainEntityPersisterReference
-	:	dotIdentifierPath (asKeyword? {!doesUpcomingTokenMatchAny("where","join")}? IDENTIFIER)?
+	:	dotIdentifierSequence (asKeyword? {!doesUpcomingTokenMatchAny("where","join")}? IDENTIFIER)?
 	;
 
 crossJoin
@@ -220,7 +222,7 @@ qualifiedJoin
 	;
 
 qualifiedJoinRhs
-	: dotIdentifierPath (asKeyword? IDENTIFIER)? ( (onKeyword | withKeyword) predicate )?
+	: path (asKeyword? IDENTIFIER)? ( (onKeyword | withKeyword) predicate )?
 	;
 
 //hibernateLegacySyntax returns [boolean isPropertyJoin]
@@ -286,7 +288,7 @@ predicate
 	;
 
 inList
-	: elementsKeyword? dotIdentifierPath		# PersistentCollectionReferenceInList
+	: elementsKeyword? dotIdentifierSequence		# PersistentCollectionReferenceInList
 	| expression (COMMA expression)*			# ExplicitTupleInList
 	;
 
@@ -306,7 +308,7 @@ expression
 	| literal								# LiteralExpression
 	| parameter								# ParameterExpression
 	| function								# FunctionExpression
-	| dotIdentifierPath						# DotIdentExpression
+	| path									# PathExpression
 	;
 
 literal
@@ -342,7 +344,7 @@ jpaNonStandardFunction
 	;
 
 nonStandardFunctionName
-	: dotIdentifierPath
+	: dotIdentifierSequence
 	;
 
 nonStandardFunctionArguments
@@ -814,6 +816,10 @@ timezoneMinuteKeyword
 
 trailingKeyword
 	: {doesUpcomingTokenMatchAny("trailing")}?  IDENTIFIER
+	;
+
+treatKeyword
+	: {doesUpcomingTokenMatchAny("treat")}?  IDENTIFIER
 	;
 
 trimKeyword
