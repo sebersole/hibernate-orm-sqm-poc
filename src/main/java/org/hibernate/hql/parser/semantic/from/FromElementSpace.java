@@ -26,23 +26,23 @@ import org.hibernate.hql.parser.model.TypeDescriptor;
 public class FromElementSpace {
 	private final FromClause fromClause;
 
-	private FromElementRootEntity root;
-	private List<FromElementJoined> joins;
+	private RootEntityFromElement root;
+	private List<JoinedFromElement> joins;
 
 
 	public FromElementSpace(FromClause fromClause) {
 		this.fromClause = fromClause;
 	}
 
-	public FromElementRootEntity getRoot() {
+	public RootEntityFromElement getRoot() {
 		return root;
 	}
 
-	public List<FromElementJoined> getJoins() {
-		return joins == null ? Collections.<FromElementJoined>emptyList() : joins;
+	public List<JoinedFromElement> getJoins() {
+		return joins == null ? Collections.<JoinedFromElement>emptyList() : joins;
 	}
 
-	public FromElementRootEntity makeFromElement(HqlParser.RootEntityReferenceContext ctx) {
+	public RootEntityFromElement makeFromElement(HqlParser.RootEntityReferenceContext ctx) {
 		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierSequence().getText();
 		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
 		if ( entityTypeDescriptor == null ) {
@@ -57,7 +57,7 @@ public class FromElementSpace {
 			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
 
-		root = new FromElementRootEntity( this, alias, entityTypeDescriptor );
+		root = new RootEntityFromElement( this, alias, entityTypeDescriptor );
 		registerAlias( root );
 		return root;
 	}
@@ -70,7 +70,7 @@ public class FromElementSpace {
 		fromClause.registerAlias( fromElement );
 	}
 
-	public FromElementJoined makeFromElement(HqlParser.CrossJoinContext ctx) {
+	public JoinedFromElement makeFromElement(HqlParser.CrossJoinContext ctx) {
 		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierSequence().getText();
 		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
 		if ( entityTypeDescriptor == null ) {
@@ -85,19 +85,19 @@ public class FromElementSpace {
 			alias = fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		}
 
-		return addJoin( new FromElementCrossJoinedImpl( this, alias, entityTypeDescriptor ) );
+		return addJoin( new CrossJoinedFromElement( this, alias, entityTypeDescriptor ) );
 	}
 
-	public FromElementJoined addJoin(FromElementJoined fromElement) {
+	public JoinedFromElement addJoin(JoinedFromElement fromElement) {
 		if ( joins == null ) {
-			joins = new ArrayList<FromElementJoined>();
+			joins = new ArrayList<JoinedFromElement>();
 		}
 		joins.add( fromElement );
 		registerAlias( fromElement );
 		return fromElement;
 	}
 
-	public FromElementJoined makeFromElement(final HqlParser.ImplicitInnerJoinContext ctx) {
+	public JoinedFromElement makeFromElement(final HqlParser.ImplicitInnerJoinContext ctx) {
 		return makeQualifiedJoin(
 				new QualifiedJoinInfo() {
 					@Override
@@ -138,7 +138,7 @@ public class FromElementSpace {
 		HqlParser.PredicateContext getPredicate();
 	}
 
-	private FromElementJoined makeQualifiedJoin(QualifiedJoinInfo info) {
+	private JoinedFromElement makeQualifiedJoin(QualifiedJoinInfo info) {
 		// todo : handling of on/with clause
 
 		// interpret join target as either an attribute reference or as an entityName.
@@ -178,7 +178,7 @@ public class FromElementSpace {
 				throw new SemanticException( "Entity join cannot be fetched : " + entityNameOrAttributePath );
 			}
 			return addJoin(
-					new FromElementQualifiedEntityJoinImpl(
+					new QualifiedEntityJoinFromElement(
 							this,
 							alias,
 							entityType,
@@ -202,7 +202,7 @@ public class FromElementSpace {
 		throw UnresolvedJoinTargetException.forJoinTarget( entityNameOrAttributePath );
 	}
 
-	private FromElementJoined buildAttributePathJoin(
+	private JoinedFromElement buildAttributePathJoin(
 			FromElement aliasedFromElement,
 			String[] parts,
 			int i,
@@ -229,7 +229,7 @@ public class FromElementSpace {
 		);
 	}
 
-	public FromElementQualifiedAttributeJoinImpl buildAttributeJoin(
+	public QualifiedAttributeJoinFromElement buildAttributeJoin(
 			FromElement lhs,
 			String attributeName,
 			String alias,
@@ -239,7 +239,7 @@ public class FromElementSpace {
 				? alias
 				: fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
 		final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( attributeName );
-		final FromElementQualifiedAttributeJoinImpl join = new FromElementQualifiedAttributeJoinImpl(
+		final QualifiedAttributeJoinFromElement join = new QualifiedAttributeJoinFromElement(
 				this,
 				aliasToUse,
 				attributeType,
@@ -251,7 +251,7 @@ public class FromElementSpace {
 		return join;
 	}
 
-	public FromElementJoined makeFromElement(final HqlParser.ExplicitInnerJoinContext ctx) {
+	public JoinedFromElement makeFromElement(final HqlParser.ExplicitInnerJoinContext ctx) {
 		return makeQualifiedJoin(
 				new QualifiedJoinInfo() {
 					@Override
@@ -284,7 +284,7 @@ public class FromElementSpace {
 		);
 	}
 
-	public FromElementJoined makeFromElement(final HqlParser.ExplicitOuterJoinContext ctx) {
+	public JoinedFromElement makeFromElement(final HqlParser.ExplicitOuterJoinContext ctx) {
 		if ( ctx.fullKeyword() != null || ctx.rightKeyword() != null ) {
 			throw new UnsupportedJoinTypeException(
 					String.format(

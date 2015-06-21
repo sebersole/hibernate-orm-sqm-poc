@@ -21,7 +21,7 @@ import org.hibernate.hql.parser.semantic.expression.ConstantEnumExpression;
 import org.hibernate.hql.parser.semantic.expression.ConstantExpression;
 import org.hibernate.hql.parser.semantic.expression.ConstantFieldExpression;
 import org.hibernate.hql.parser.semantic.from.FromElement;
-import org.hibernate.hql.parser.semantic.from.FromElementJoined;
+import org.hibernate.hql.parser.semantic.from.JoinedFromElement;
 
 /**
  * @author Steve Ebersole
@@ -50,7 +50,7 @@ public abstract class AbstractAttributePathResolverImpl<T> implements AttributeP
 
 	protected abstract T resolveTreatedPathContext(TreatedPathContext pathContext);
 
-	protected FromElement buildIntermediateAttributePathJoins(
+	protected FromElement resolveAnyIntermediateAttributePathJoins(
 			FromElement lhs,
 			String[] pathParts,
 			int start,
@@ -67,7 +67,7 @@ public abstract class AbstractAttributePathResolverImpl<T> implements AttributeP
 		return lhs;
 	}
 
-	protected FromElementJoined buildAttributeJoin(
+	protected JoinedFromElement buildAttributeJoin(
 			FromElement lhs,
 			String attributeName,
 			JoinType joinType,

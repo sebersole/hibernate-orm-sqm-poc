@@ -12,11 +12,11 @@ import org.hibernate.hql.parser.model.TypeDescriptor;
 /**
  * @author Steve Ebersole
  */
-public class FromElementQualifiedAttributeJoinImpl extends AbstractFromElementJoinedImpl {
+public class QualifiedAttributeJoinFromElement extends AbstractFromElementJoinedImpl {
 	private final String joinedAttribute;
 	private final boolean fetched;
 
-	public FromElementQualifiedAttributeJoinImpl(
+	public QualifiedAttributeJoinFromElement(
 			FromElementSpace fromElementSpace,
 			String alias,
 			TypeDescriptor attributeTypeDescriptor,

@@ -79,7 +79,7 @@ public class FromClause {
 				found = space.getRoot();
 			}
 
-			for ( FromElementJoined join : space.getJoins() ) {
+			for ( JoinedFromElement join : space.getJoins() ) {
 				if ( join.getTypeDescriptor().getAttributeType( name ) != null ) {
 					if ( found != null ) {
 						throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
@@ -134,7 +134,7 @@ public class FromClause {
 		return space;
 	}
 
-	public void registerPath(String path, FromElementQualifiedAttributeJoinImpl join) {
+	public void registerPath(String path, QualifiedAttributeJoinFromElement join) {
 
 	}
 }

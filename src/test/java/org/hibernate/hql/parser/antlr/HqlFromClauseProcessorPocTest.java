@@ -10,7 +10,7 @@ import org.hibernate.hql.parser.ImplicitAliasGenerator;
 import org.hibernate.hql.parser.JoinType;
 import org.hibernate.hql.parser.semantic.from.FromClause;
 import org.hibernate.hql.parser.semantic.from.FromElement;
-import org.hibernate.hql.parser.semantic.from.FromElementQualifiedAttributeJoinImpl;
+import org.hibernate.hql.parser.semantic.from.QualifiedAttributeJoinFromElement;
 import org.hibernate.hql.parser.semantic.from.FromElementSpace;
 
 import org.junit.Test;
@@ -138,7 +138,7 @@ public class HqlFromClauseProcessorPocTest {
 		FromElement fromElementC = fromClause1.findFromElementByAlias( "c" );
 		assertNotNull( fromElementC );
 		assertSame( space1.getJoins().get( 0 ), fromElementC );
-		FromElementQualifiedAttributeJoinImpl join = (FromElementQualifiedAttributeJoinImpl) fromElementC;
+		QualifiedAttributeJoinFromElement join = (QualifiedAttributeJoinFromElement) fromElementC;
 		assertEquals( joinType, join.getJoinType() );
 		assertEquals( "c", join.getAlias() );
 		assertEquals( "a.c", join.getJoinedAttribute() );

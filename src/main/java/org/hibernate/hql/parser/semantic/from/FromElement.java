@@ -15,4 +15,6 @@ public interface FromElement {
 	FromElementSpace getContainingSpace();
 	String getAlias();
 	TypeDescriptor getTypeDescriptor();
+
+	void addTreatedAs(TypeDescriptor typeDescriptor);
 }

@@ -12,10 +12,10 @@ import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 /**
  * @author Steve Ebersole
  */
-public class FromElementCrossJoinedImpl extends AbstractFromElementImpl implements FromElementJoined {
+public class CrossJoinedFromElement extends AbstractFromElementImpl implements JoinedFromElement {
 	private final String entityName;
 
-	public FromElementCrossJoinedImpl(
+	public CrossJoinedFromElement(
 			FromElementSpace fromElementSpace,
 			String alias,
 			EntityTypeDescriptor entityTypeDescriptor) {

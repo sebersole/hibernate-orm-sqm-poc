@@ -6,19 +6,21 @@
  */
 package org.hibernate.hql.parser.semantic.from;
 
+import org.hibernate.hql.parser.JoinType;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 
 /**
  * @author Steve Ebersole
  */
-public class FromElementRootEntity extends AbstractFromElementImpl {
+public class QualifiedEntityJoinFromElement extends AbstractFromElementJoinedImpl {
 	private final String entityName;
 
-	public FromElementRootEntity(
+	public QualifiedEntityJoinFromElement(
 			FromElementSpace fromElementSpace,
 			String alias,
-			EntityTypeDescriptor entityTypeDescriptor) {
-		super( fromElementSpace, alias, entityTypeDescriptor );
+			EntityTypeDescriptor entityTypeDescriptor,
+			JoinType joinType) {
+		super( fromElementSpace, alias, entityTypeDescriptor, joinType );
 		this.entityName = entityTypeDescriptor.getEntityName();
 	}
 

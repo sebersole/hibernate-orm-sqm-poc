@@ -11,6 +11,6 @@ import org.hibernate.hql.parser.JoinType;
 /**
  * @author Steve Ebersole
  */
-public interface FromElementJoined extends FromElement {
+public interface JoinedFromElement extends FromElement {
 	JoinType getJoinType();
 }

@@ -6,6 +6,9 @@
  */
 package org.hibernate.hql.parser.semantic.from;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.hibernate.hql.parser.model.TypeDescriptor;
 
 /**
@@ -15,6 +18,8 @@ public abstract class AbstractFromElementImpl implements FromElement {
 	private final FromElementSpace fromElementSpace;
 	private final String alias;
 	private final TypeDescriptor typeDescriptor;
+
+	private Set<TypeDescriptor> treatedAsTypeDescriptors;
 
 	protected AbstractFromElementImpl(
 			FromElementSpace fromElementSpace,
@@ -38,5 +43,13 @@ public abstract class AbstractFromElementImpl implements FromElement {
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
 		return typeDescriptor;
+	}
+
+	@Override
+	public void addTreatedAs(TypeDescriptor typeDescriptor) {
+		if ( treatedAsTypeDescriptors == null ) {
+			treatedAsTypeDescriptors = new HashSet<TypeDescriptor>();
+		}
+		treatedAsTypeDescriptors.add( typeDescriptor );
 	}
 }

@@ -7,15 +7,20 @@
 package org.hibernate.hql.parser.antlr.path;
 
 import org.hibernate.hql.parser.JoinType;
+import org.hibernate.hql.parser.NotYetImplementedException;
 import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.SemanticException;
 import org.hibernate.hql.parser.antlr.HqlParser;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
+import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.expression.AttributeReferenceExpression;
 import org.hibernate.hql.parser.semantic.expression.EntityTypeExpression;
 import org.hibernate.hql.parser.semantic.expression.FromElementReferenceExpression;
 import org.hibernate.hql.parser.semantic.from.FromClause;
 import org.hibernate.hql.parser.semantic.from.FromElement;
+import org.hibernate.hql.parser.semantic.from.JoinedFromElement;
+import org.hibernate.hql.parser.semantic.from.TreatedFromElement;
+import org.hibernate.hql.parser.semantic.from.TreatedJoinedFromElement;
 
 import org.jboss.logging.Logger;
 
@@ -47,7 +52,7 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 		if ( pathText.contains( "." ) ) {
 			final FromElement aliasedFromElement = fromClause.findFromElementByAlias( rootPart );
 			if ( aliasedFromElement != null ) {
-				final FromElement lhs = buildIntermediateAttributePathJoins(
+				final FromElement lhs = resolveAnyIntermediateAttributePathJoins(
 						aliasedFromElement,
 						parts,
 						1,
@@ -69,7 +74,7 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 		// 3rd level precedence : unqualified-attribute-path
 		final FromElement root = fromClause.findFromElementWithAttribute( rootPart );
 		if ( root != null ) {
-			final FromElement lhs = buildIntermediateAttributePathJoins(
+			final FromElement lhs = resolveAnyIntermediateAttributePathJoins(
 					root,
 					parts,
 					0,
@@ -99,11 +104,102 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 
 	@Override
 	protected Object resolveIndexedPathContext(HqlParser.IndexedPathContext pathContext) {
-		return null;
+		throw new NotYetImplementedException();
 	}
 
 	@Override
 	protected Object resolveTreatedPathContext(HqlParser.TreatedPathContext pathContext) {
-		return null;
+		final FromElement fromElement = resolveTreatedBase( pathContext.dotIdentifierSequence().get( 0 ).getText() );
+		final String treatAsName = pathContext.dotIdentifierSequence().get( 1 ).getText();
+
+		final TypeDescriptor treatAsTypeDescriptor = parsingContext().getModelMetadata().resolveEntityReference( treatAsName );
+		if ( treatAsTypeDescriptor == null ) {
+			throw new SemanticException( "TREAT-AS target type [" + treatAsName + "] did not reference an entity" );
+		}
+
+		fromElement.addTreatedAs( treatAsTypeDescriptor );
+
+		if ( fromElement instanceof JoinedFromElement ) {
+			return new TreatedJoinedFromElement( (JoinedFromElement) fromElement, treatAsTypeDescriptor );
+		}
+		else {
+			return new TreatedFromElement( fromElement, treatAsTypeDescriptor );
+		}
+	}
+
+	private FromElement resolveTreatedBase(String pathText) {
+		final String[] parts = pathText.split( "\\." );
+
+		final String rootPart = parts[0];
+
+		// 1st level precedence : qualified-attribute-path
+		if ( pathText.contains( "." ) ) {
+			final FromElement aliasedFromElement = fromClause.findFromElementByAlias( rootPart );
+			if ( aliasedFromElement != null ) {
+				final FromElement lhs = resolveAnyIntermediateAttributePathJoins(
+						aliasedFromElement,
+						parts,
+						1,
+						JoinType.LEFT,
+						false
+				);
+
+				final String terminalName = parts[parts.length-1];
+				final TypeDescriptor terminalTypeDescriptor = lhs.getTypeDescriptor().getAttributeType( terminalName );
+				if ( terminalTypeDescriptor == null ) {
+					throw new SemanticException( "Could not resolve path [" + pathText + "] for TREAT-AS" );
+				}
+				if ( !EntityTypeDescriptor.class.isInstance( terminalTypeDescriptor ) ) {
+					throw new SemanticException( "Path [" + pathText + "] for TREAT-AS did not resolve to entity" );
+				}
+				// todo : this does not always have to resolve to a Join, but modeling this requires a 'Path' contract
+				return buildAttributeJoin(
+						lhs,
+						terminalName,
+						JoinType.LEFT,
+						null,
+						false
+				);
+			}
+		}
+
+		// 2nd level precedence : from-element alias
+		if ( !pathText.contains( "." ) ) {
+			final FromElement aliasedFromElement = fromClause.findFromElementByAlias( rootPart );
+			if ( aliasedFromElement != null ) {
+				return aliasedFromElement;
+			}
+		}
+
+		// 3rd level precedence : unqualified-attribute-path
+		final FromElement root = fromClause.findFromElementWithAttribute( rootPart );
+		if ( root != null ) {
+			final FromElement lhs = resolveAnyIntermediateAttributePathJoins(
+					root,
+					parts,
+					0,
+					JoinType.LEFT,
+					false
+			);
+
+			final String terminalName = parts[parts.length-1];
+			final TypeDescriptor terminalTypeDescriptor = lhs.getTypeDescriptor().getAttributeType( terminalName );
+			if ( terminalTypeDescriptor == null ) {
+				throw new SemanticException( "Could not resolve path [" + pathText + "] for TREAT-AS" );
+			}
+			if ( !EntityTypeDescriptor.class.isInstance( terminalTypeDescriptor ) ) {
+				throw new SemanticException( "Path [" + pathText + "] for TREAT-AS did not resolve to entity" );
+			}
+			// todo : this does not always have to resolve to a Join, but modeling this requires a 'Path' contract
+			return buildAttributeJoin(
+					lhs,
+					terminalName,
+					JoinType.LEFT,
+					null,
+					false
+			);
+		}
+
+		throw new SemanticException( "Could not interpret TREAT-AS path token : " + pathText );
 	}
 }

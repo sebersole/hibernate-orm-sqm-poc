@@ -12,20 +12,18 @@ import org.hibernate.hql.parser.model.TypeDescriptor;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractFromElementJoinedImpl extends AbstractFromElementImpl implements JoinedFromElement {
-	private final JoinType joinType;
+public class TreatedJoinedFromElement extends TreatedFromElement implements JoinedFromElement {
+	public TreatedJoinedFromElement(JoinedFromElement wrapped, TypeDescriptor treatedAs) {
+		super( wrapped, treatedAs );
+	}
 
-	public AbstractFromElementJoinedImpl(
-			FromElementSpace fromElementSpace,
-			String alias,
-			TypeDescriptor typeDescriptor,
-			JoinType joinType) {
-		super( fromElementSpace, alias, typeDescriptor );
-		this.joinType = joinType;
+	@Override
+	protected JoinedFromElement getWrapped() {
+		return (JoinedFromElement) super.getWrapped();
 	}
 
 	@Override
 	public JoinType getJoinType() {
-		return joinType;
+		return getWrapped().getJoinType();
 	}
 }
