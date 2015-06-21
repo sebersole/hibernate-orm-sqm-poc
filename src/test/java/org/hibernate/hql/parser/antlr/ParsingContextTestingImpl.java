@@ -6,19 +6,19 @@
  */
 package org.hibernate.hql.parser.antlr;
 
+import org.hibernate.hql.parser.ConsumerContext;
 import org.hibernate.hql.parser.ImplicitAliasGenerator;
 import org.hibernate.hql.parser.ParsingContext;
-import org.hibernate.hql.parser.model.ModelMetadata;
 
 /**
  * @author Steve Ebersole
  */
 class ParsingContextTestingImpl implements ParsingContext {
-	private final ModelMetadataTestingImpl modelMetadata = new ModelMetadataTestingImpl();
+	private final ConsumerContextTestingImpl modelMetadata = new ConsumerContextTestingImpl();
 	private final ImplicitAliasGenerator implicitAliasGenerator = new ImplicitAliasGenerator();
 
 	@Override
-	public ModelMetadata getModelMetadata() {
+	public ConsumerContext getConsumerContext() {
 		return modelMetadata;
 	}
 

@@ -10,5 +10,4 @@ package org.hibernate.hql.parser.model;
  * @author Steve Ebersole
  */
 public interface EntityTypeDescriptor extends TypeDescriptor {
-	public String getEntityName();
 }

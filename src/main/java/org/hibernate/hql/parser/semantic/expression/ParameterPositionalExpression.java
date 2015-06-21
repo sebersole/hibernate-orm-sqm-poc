@@ -7,13 +7,13 @@
 package org.hibernate.hql.parser.semantic.expression;
 
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
  */
 public class ParameterPositionalExpression implements ParameterExpression {
 	private final int position;
+	private TypeDescriptor typeDescriptor;
 
 	public ParameterPositionalExpression(int position) {
 		this.position = position;
@@ -21,7 +21,7 @@ public class ParameterPositionalExpression implements ParameterExpression {
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return typeDescriptor;
 	}
 
 	@Override

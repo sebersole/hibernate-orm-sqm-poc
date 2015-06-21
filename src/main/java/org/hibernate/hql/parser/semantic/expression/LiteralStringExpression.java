@@ -6,8 +6,8 @@
  */
 package org.hibernate.hql.parser.semantic.expression;
 
+import org.hibernate.hql.parser.model.StandardBasicTypeDescriptors;
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
@@ -19,6 +19,6 @@ public class LiteralStringExpression extends AbstractLiteralExpressionImpl<Strin
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return StandardBasicTypeDescriptors.INSTANCE.STRING;
 	}
 }

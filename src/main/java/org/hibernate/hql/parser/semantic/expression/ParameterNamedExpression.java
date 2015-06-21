@@ -7,13 +7,13 @@
 package org.hibernate.hql.parser.semantic.expression;
 
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
  */
 public class ParameterNamedExpression implements ParameterExpression {
 	private final String name;
+	private TypeDescriptor typeDescriptor;
 
 	public ParameterNamedExpression(String name) {
 		this.name = name;
@@ -21,7 +21,7 @@ public class ParameterNamedExpression implements ParameterExpression {
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return typeDescriptor;
 	}
 
 	@Override

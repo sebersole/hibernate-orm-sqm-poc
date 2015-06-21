@@ -6,6 +6,7 @@
  */
 package org.hibernate.hql.parser.semantic.expression;
 
+import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.from.FromElement;
 
@@ -14,15 +15,11 @@ import org.hibernate.hql.parser.semantic.from.FromElement;
  */
 public class AttributeReferenceExpression implements Expression {
 	private final FromElement source;
-	private final String attributeName;
-
-	private final TypeDescriptor typeDescriptor;
+	private final AttributeDescriptor attributeDescriptor;
 
 	public AttributeReferenceExpression(FromElement source, String attributeName) {
 		this.source = source;
-		this.attributeName = attributeName;
-
-		this.typeDescriptor = source.getTypeDescriptor().getAttributeType( attributeName );
+		this.attributeDescriptor = source.getTypeDescriptor().getAttributeDescriptor( attributeName );
 	}
 
 	public FromElement getSource() {
@@ -30,11 +27,11 @@ public class AttributeReferenceExpression implements Expression {
 	}
 
 	public String getAttributeName() {
-		return attributeName;
+		return attributeDescriptor.getName();
 	}
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return typeDescriptor;
+		return attributeDescriptor.getType();
 	}
 }

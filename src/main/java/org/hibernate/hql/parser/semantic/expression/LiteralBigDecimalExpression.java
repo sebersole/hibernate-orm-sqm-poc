@@ -8,8 +8,8 @@ package org.hibernate.hql.parser.semantic.expression;
 
 import java.math.BigDecimal;
 
+import org.hibernate.hql.parser.model.StandardBasicTypeDescriptors;
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
@@ -21,6 +21,6 @@ public class LiteralBigDecimalExpression extends AbstractLiteralExpressionImpl<B
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return StandardBasicTypeDescriptors.INSTANCE.BIG_DECIMAL;
 	}
 }

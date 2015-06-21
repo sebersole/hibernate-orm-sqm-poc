@@ -11,9 +11,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.hibernate.hql.parser.ParsingContext;
+import org.hibernate.hql.parser.model.AttributeDescriptor;
+import org.hibernate.hql.parser.model.BasicTypeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.expression.Expression;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
@@ -21,21 +22,48 @@ import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 public class DynamicInstantiation implements Selection, Expression {
 	private final ParsingContext parsingContext;
 	private final String instantiationTarget;
+	private final BasicTypeDescriptor typeDescriptor;
 
 	private List<AliasedDynamicInstantiationArgument> aliasedArguments;
 
-	public DynamicInstantiation(ParsingContext parsingContext, String instantiationTarget) {
+	public DynamicInstantiation(ParsingContext parsingContext, final String instantiationTarget) {
 		this.parsingContext = parsingContext;
 		this.instantiationTarget = instantiationTarget;
+
+		this.typeDescriptor = new BasicTypeDescriptor() {
+
+			@Override
+			public String getTypeName() {
+				return instantiationTarget;
+			}
+
+			@Override
+			public AttributeDescriptor getAttributeDescriptor(String attributeName) {
+				return null;
+			}
+		};
 	}
 
 	public DynamicInstantiation(
 			ParsingContext parsingContext,
-			String instantiationTarget,
+			final String instantiationTarget,
 			List<AliasedDynamicInstantiationArgument> aliasedArguments) {
 		this.parsingContext = parsingContext;
 		this.instantiationTarget = instantiationTarget;
 		this.aliasedArguments = aliasedArguments;
+
+		this.typeDescriptor = new BasicTypeDescriptor() {
+
+			@Override
+			public String getTypeName() {
+				return instantiationTarget;
+			}
+
+			@Override
+			public AttributeDescriptor getAttributeDescriptor(String attributeName) {
+				return null;
+			}
+		};
 	}
 
 	public DynamicInstantiation(
@@ -51,7 +79,7 @@ public class DynamicInstantiation implements Selection, Expression {
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return typeDescriptor;
 	}
 
 	public String getInstantiationTarget() {

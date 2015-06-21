@@ -11,13 +11,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import org.hibernate.hql.parser.ConsumerContext;
 import org.hibernate.hql.parser.JoinType;
 import org.hibernate.hql.parser.SemanticException;
 import org.hibernate.hql.parser.antlr.HqlParser;
 import org.hibernate.hql.parser.antlr.UnresolvedJoinTargetException;
 import org.hibernate.hql.parser.antlr.UnsupportedJoinTypeException;
+import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
-import org.hibernate.hql.parser.model.ModelMetadata;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 
 /**
@@ -44,7 +45,7 @@ public class FromElementSpace {
 
 	public RootEntityFromElement makeFromElement(HqlParser.RootEntityReferenceContext ctx) {
 		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierSequence().getText();
-		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
+		final EntityTypeDescriptor entityTypeDescriptor = getConsumerContext().resolveEntityReference( entityName );
 		if ( entityTypeDescriptor == null ) {
 			throw new SemanticException( "Unresolved entity name : " + entityName );
 		}
@@ -62,8 +63,8 @@ public class FromElementSpace {
 		return root;
 	}
 
-	private ModelMetadata getModelMetadata() {
-		return fromClause.getParsingContext().getModelMetadata();
+	private ConsumerContext getConsumerContext() {
+		return fromClause.getParsingContext().getConsumerContext();
 	}
 
 	private void registerAlias(FromElement fromElement) {
@@ -72,7 +73,7 @@ public class FromElementSpace {
 
 	public JoinedFromElement makeFromElement(HqlParser.CrossJoinContext ctx) {
 		final String entityName = ctx.mainEntityPersisterReference().dotIdentifierSequence().getText();
-		final EntityTypeDescriptor entityTypeDescriptor = getModelMetadata().resolveEntityReference( entityName );
+		final EntityTypeDescriptor entityTypeDescriptor = getConsumerContext().resolveEntityReference( entityName );
 		if ( entityTypeDescriptor == null ) {
 			throw new SemanticException( "Unresolved entity name : " + entityName );
 		}
@@ -168,7 +169,7 @@ public class FromElementSpace {
 		}
 
 		// 2nd level precedence : entity-name
-		EntityTypeDescriptor entityType = getModelMetadata().resolveEntityReference( entityNameOrAttributePath );
+		EntityTypeDescriptor entityType = getConsumerContext().resolveEntityReference( entityNameOrAttributePath );
 		if ( entityType != null ) {
 			String alias = info.getAlias();
 			if ( alias == null ) {
@@ -238,7 +239,14 @@ public class FromElementSpace {
 		final String aliasToUse = alias != null
 				? alias
 				: fromClause.getParsingContext().getImplicitAliasGenerator().buildUniqueImplicitAlias();
-		final TypeDescriptor attributeType = lhs.getTypeDescriptor().getAttributeType( attributeName );
+		final AttributeDescriptor attributeDescriptor = lhs.getTypeDescriptor().getAttributeDescriptor( attributeName );
+		if ( attributeDescriptor == null ) {
+			throw new SemanticException(
+					"Name [" + attributeName + "] is not a valid attribute on from-element [" +
+							lhs.getTypeDescriptor().getTypeName() + "]"
+			);
+		}
+		final TypeDescriptor attributeType = attributeDescriptor.getType();
 		final QualifiedAttributeJoinFromElement join = new QualifiedAttributeJoinFromElement(
 				this,
 				aliasToUse,

@@ -72,7 +72,7 @@ public class FromClause {
 	public FromElement findFromElementWithAttribute(String name) {
 		FromElement found = null;
 		for ( FromElementSpace space : fromElementSpaces ) {
-			if ( space.getRoot().getTypeDescriptor().getAttributeType( name ) != null ) {
+			if ( space.getRoot().getTypeDescriptor().getAttributeDescriptor( name ) != null ) {
 				if ( found != null ) {
 					throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
 				}
@@ -80,7 +80,7 @@ public class FromClause {
 			}
 
 			for ( JoinedFromElement join : space.getJoins() ) {
-				if ( join.getTypeDescriptor().getAttributeType( name ) != null ) {
+				if ( join.getTypeDescriptor().getAttributeDescriptor( name ) != null ) {
 					if ( found != null ) {
 						throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
 					}

@@ -7,13 +7,13 @@
 package org.hibernate.hql.parser.semantic.expression;
 
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
  */
 public class ConstantEnumExpression<T extends Enum> implements ConstantExpression<T> {
 	private final T value;
+	private TypeDescriptor typeDescriptor;
 
 	public ConstantEnumExpression(T value) {
 		this.value = value;
@@ -26,6 +26,6 @@ public class ConstantEnumExpression<T extends Enum> implements ConstantExpressio
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return typeDescriptor;
 	}
 }

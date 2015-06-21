@@ -11,6 +11,7 @@ import org.hibernate.hql.parser.NotYetImplementedException;
 import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.SemanticException;
 import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.expression.AttributeReferenceExpression;
@@ -85,7 +86,7 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 		}
 
 		// 4th level precedence : entity-name
-		EntityTypeDescriptor entityType = parsingContext().getModelMetadata().resolveEntityReference( pathText );
+		EntityTypeDescriptor entityType = parsingContext().getConsumerContext().resolveEntityReference( pathText );
 		if ( entityType != null ) {
 			return new EntityTypeExpression( entityType );
 		}
@@ -112,7 +113,7 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 		final FromElement fromElement = resolveTreatedBase( pathContext.dotIdentifierSequence().get( 0 ).getText() );
 		final String treatAsName = pathContext.dotIdentifierSequence().get( 1 ).getText();
 
-		final TypeDescriptor treatAsTypeDescriptor = parsingContext().getModelMetadata().resolveEntityReference( treatAsName );
+		final TypeDescriptor treatAsTypeDescriptor = parsingContext().getConsumerContext().resolveEntityReference( treatAsName );
 		if ( treatAsTypeDescriptor == null ) {
 			throw new SemanticException( "TREAT-AS target type [" + treatAsName + "] did not reference an entity" );
 		}
@@ -145,7 +146,8 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 				);
 
 				final String terminalName = parts[parts.length-1];
-				final TypeDescriptor terminalTypeDescriptor = lhs.getTypeDescriptor().getAttributeType( terminalName );
+				final AttributeDescriptor attributeDescriptor = lhs.getTypeDescriptor().getAttributeDescriptor( terminalName );
+				final TypeDescriptor terminalTypeDescriptor = attributeDescriptor.getType();
 				if ( terminalTypeDescriptor == null ) {
 					throw new SemanticException( "Could not resolve path [" + pathText + "] for TREAT-AS" );
 				}
@@ -183,7 +185,8 @@ public class AttributePathResolverBasicImpl extends AbstractAttributePathResolve
 			);
 
 			final String terminalName = parts[parts.length-1];
-			final TypeDescriptor terminalTypeDescriptor = lhs.getTypeDescriptor().getAttributeType( terminalName );
+			final AttributeDescriptor attributeDescriptor = lhs.getTypeDescriptor().getAttributeDescriptor( terminalName );
+			final TypeDescriptor terminalTypeDescriptor = attributeDescriptor.getType();
 			if ( terminalTypeDescriptor == null ) {
 				throw new SemanticException( "Could not resolve path [" + pathText + "] for TREAT-AS" );
 			}

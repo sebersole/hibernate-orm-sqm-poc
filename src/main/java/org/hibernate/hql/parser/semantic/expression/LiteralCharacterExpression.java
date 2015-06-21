@@ -7,18 +7,19 @@
 package org.hibernate.hql.parser.semantic.expression;
 
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
  */
 public class LiteralCharacterExpression extends AbstractLiteralExpressionImpl<Character> {
+	private TypeDescriptor typeDescriptor;
+
 	public LiteralCharacterExpression(Character value) {
 		super( value );
 	}
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return typeDescriptor;
 	}
 }

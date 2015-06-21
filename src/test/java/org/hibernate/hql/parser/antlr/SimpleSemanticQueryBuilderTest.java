@@ -30,7 +30,7 @@ public class SimpleSemanticQueryBuilderTest {
 	public void simpleIntegerLiteralsTest() {
 		final ParsingContextTestingImpl parsingContext = new ParsingContextTestingImpl();
 
-		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a where 1=2" );
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.basic from Something a where 1=2" );
 
 		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextTestingImpl() );
 		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );

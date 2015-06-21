@@ -21,7 +21,7 @@ public class QualifiedEntityJoinFromElement extends AbstractFromElementJoinedImp
 			EntityTypeDescriptor entityTypeDescriptor,
 			JoinType joinType) {
 		super( fromElementSpace, alias, entityTypeDescriptor, joinType );
-		this.entityName = entityTypeDescriptor.getEntityName();
+		this.entityName = entityTypeDescriptor.getTypeName();
 	}
 
 	public String getEntityName() {

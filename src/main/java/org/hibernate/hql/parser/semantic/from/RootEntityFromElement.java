@@ -19,7 +19,7 @@ public class RootEntityFromElement extends AbstractFromElementImpl {
 			String alias,
 			EntityTypeDescriptor entityTypeDescriptor) {
 		super( fromElementSpace, alias, entityTypeDescriptor );
-		this.entityName = entityTypeDescriptor.getEntityName();
+		this.entityName = entityTypeDescriptor.getTypeName();
 	}
 
 	public String getEntityName() {

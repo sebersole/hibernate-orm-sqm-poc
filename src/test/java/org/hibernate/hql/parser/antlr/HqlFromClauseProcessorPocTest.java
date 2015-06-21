@@ -115,7 +115,7 @@ public class HqlFromClauseProcessorPocTest {
 	@Test
 	public void testSimpleImplicitInnerJoin() throws Exception {
 		simpleJoinAssertions(
-				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a join a.c c" ),
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.basic from Something a join a.entity c" ),
 				JoinType.INNER
 		);
 	}
@@ -141,13 +141,13 @@ public class HqlFromClauseProcessorPocTest {
 		QualifiedAttributeJoinFromElement join = (QualifiedAttributeJoinFromElement) fromElementC;
 		assertEquals( joinType, join.getJoinType() );
 		assertEquals( "c", join.getAlias() );
-		assertEquals( "a.c", join.getJoinedAttribute() );
+		assertEquals( "a.entity", join.getJoinedAttribute() );
 	}
 
 	@Test
 	public void testSimpleExplicitInnerJoin() throws Exception {
 		simpleJoinAssertions(
-				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a inner join a.c c" ),
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.basic from Something a inner join a.entity c" ),
 				JoinType.INNER
 		);
 	}
@@ -155,7 +155,7 @@ public class HqlFromClauseProcessorPocTest {
 	@Test
 	public void testSimpleExplicitOuterJoin() throws Exception {
 		simpleJoinAssertions(
-				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a outer join a.c c" ),
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.basic from Something a outer join a.entity c" ),
 				JoinType.LEFT
 		);
 	}
@@ -163,7 +163,7 @@ public class HqlFromClauseProcessorPocTest {
 	@Test
 	public void testSimpleExplicitLeftOuterJoin() throws Exception {
 		simpleJoinAssertions(
-				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a left outer join a.c c" ),
+				HqlParseTreeBuilder.INSTANCE.parseHql( "select a.basic from Something a left outer join a.entity c" ),
 				JoinType.LEFT
 		);
 	}

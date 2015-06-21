@@ -6,12 +6,11 @@
  */
 package org.hibernate.hql.parser;
 
+import org.hibernate.hql.parser.model.EntityTypeDescriptor;
+
 /**
- * Represents contextual information for each parse
- *
  * @author Steve Ebersole
  */
-public interface ParsingContext {
-	ConsumerContext getConsumerContext();
-	ImplicitAliasGenerator getImplicitAliasGenerator();
+public interface ConsumerContext {
+	EntityTypeDescriptor resolveEntityReference(String reference);
 }

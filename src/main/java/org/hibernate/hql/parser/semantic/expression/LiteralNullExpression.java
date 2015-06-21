@@ -7,12 +7,13 @@
 package org.hibernate.hql.parser.semantic.expression;
 
 import org.hibernate.hql.parser.model.TypeDescriptor;
-import org.hibernate.hql.parser.util.BasicTypeDescriptorSingleton;
 
 /**
  * @author Steve Ebersole
  */
 public class LiteralNullExpression implements LiteralExpression<Void> {
+	private TypeDescriptor typeDescriptor;
+
 	@Override
 	public Void getLiteralValue() {
 		return null;
@@ -20,6 +21,6 @@ public class LiteralNullExpression implements LiteralExpression<Void> {
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return BasicTypeDescriptorSingleton.INSTANCE;
+		return typeDescriptor;
 	}
 }

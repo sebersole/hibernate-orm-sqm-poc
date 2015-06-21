@@ -10,5 +10,7 @@ package org.hibernate.hql.parser.model;
  * @author Steve Ebersole
  */
 public interface TypeDescriptor {
-	TypeDescriptor getAttributeType(String attributeName);
+	String getTypeName();
+	AttributeDescriptor getAttributeDescriptor(String attributeName);
+	// todo : getCorrespondingJavaType() ?
 }
