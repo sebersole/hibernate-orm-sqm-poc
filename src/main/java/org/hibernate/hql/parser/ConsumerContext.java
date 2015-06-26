@@ -13,4 +13,6 @@ import org.hibernate.hql.parser.model.EntityTypeDescriptor;
  */
 public interface ConsumerContext {
 	EntityTypeDescriptor resolveEntityReference(String reference);
+
+	Class classByName(String name) throws ClassNotFoundException;
 }

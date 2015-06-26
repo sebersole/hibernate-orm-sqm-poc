@@ -4,18 +4,16 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.hql.parser.semantic.from;
+package org.hibernate.hql.parser.semantic.select;
+
+import org.hibernate.hql.parser.semantic.expression.Expression;
 
 /**
- * Unified contract for things that can contain a FromClause.
+ * Essentially represents an aliased select expression
  *
  * @author Steve Ebersole
  */
-public interface FromClauseContainer {
-	/**
-	 * Obtains this container's FromClause.
-	 *
-	 * @return This container's FromClause.
-	 */
-	FromClause getFromClause();
+public interface SelectItemExpression {
+	Expression getSelectedExpression();
+	String getSelectedAlias();
 }

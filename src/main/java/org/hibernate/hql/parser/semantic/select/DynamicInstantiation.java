@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.BasicTypeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
@@ -20,61 +19,27 @@ import org.hibernate.hql.parser.semantic.expression.Expression;
  * @author Steve Ebersole
  */
 public class DynamicInstantiation implements Selection, Expression {
-	private final ParsingContext parsingContext;
-	private final String instantiationTarget;
+	private final Class instantiationTarget;
 	private final BasicTypeDescriptor typeDescriptor;
 
 	private List<AliasedDynamicInstantiationArgument> aliasedArguments;
 
-	public DynamicInstantiation(ParsingContext parsingContext, final String instantiationTarget) {
-		this.parsingContext = parsingContext;
+	public DynamicInstantiation(Class instantiationTarget) {
 		this.instantiationTarget = instantiationTarget;
-
-		this.typeDescriptor = new BasicTypeDescriptor() {
-
-			@Override
-			public String getTypeName() {
-				return instantiationTarget;
-			}
-
-			@Override
-			public AttributeDescriptor getAttributeDescriptor(String attributeName) {
-				return null;
-			}
-		};
+		this.typeDescriptor = new InstantiationTypeDescriptor( instantiationTarget );
 	}
 
 	public DynamicInstantiation(
-			ParsingContext parsingContext,
-			final String instantiationTarget,
+			final Class instantiationTarget,
 			List<AliasedDynamicInstantiationArgument> aliasedArguments) {
-		this.parsingContext = parsingContext;
-		this.instantiationTarget = instantiationTarget;
+		this( instantiationTarget );
 		this.aliasedArguments = aliasedArguments;
-
-		this.typeDescriptor = new BasicTypeDescriptor() {
-
-			@Override
-			public String getTypeName() {
-				return instantiationTarget;
-			}
-
-			@Override
-			public AttributeDescriptor getAttributeDescriptor(String attributeName) {
-				return null;
-			}
-		};
 	}
 
 	public DynamicInstantiation(
-			ParsingContext parsingContext,
-			String instantiationTarget,
+			Class instantiationTarget,
 			AliasedDynamicInstantiationArgument... aliasedArguments) {
-		this(
-				parsingContext,
-				instantiationTarget,
-				Arrays.asList( aliasedArguments )
-		);
+		this( instantiationTarget, Arrays.asList( aliasedArguments ) );
 	}
 
 	@Override
@@ -82,7 +47,7 @@ public class DynamicInstantiation implements Selection, Expression {
 		return typeDescriptor;
 	}
 
-	public String getInstantiationTarget() {
+	public Class getInstantiationTarget() {
 		return instantiationTarget;
 	}
 
@@ -103,5 +68,28 @@ public class DynamicInstantiation implements Selection, Expression {
 
 	public void addArgument(Expression argument) {
 		addArgument( argument, null );
+	}
+
+	private static class InstantiationTypeDescriptor implements BasicTypeDescriptor {
+		private final Class instantiationTarget;
+
+		public InstantiationTypeDescriptor(Class instantiationTarget) {
+			this.instantiationTarget = instantiationTarget;
+		}
+
+		@Override
+		public Class getCorrespondingJavaType() {
+			return instantiationTarget;
+		}
+
+		@Override
+		public String getTypeName() {
+			return instantiationTarget.getName();
+		}
+
+		@Override
+		public AttributeDescriptor getAttributeDescriptor(String attributeName) {
+			return null;
+		}
 	}
 }

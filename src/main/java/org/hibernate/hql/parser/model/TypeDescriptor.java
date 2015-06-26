@@ -7,10 +7,25 @@
 package org.hibernate.hql.parser.model;
 
 /**
+ * Basic descriptor for a type in the user's domain model.
+ *
  * @author Steve Ebersole
  */
 public interface TypeDescriptor {
+	/**
+	 * The unique name for this type.
+	 *
+	 * @return The type name.
+	 */
 	String getTypeName();
+
+	/**
+	 * Look for a descriptor of the named attribute within this type.
+	 *
+	 * @param attributeName The name of the attribute for which to get the descriptor.
+	 *
+	 * @return The attribute's descriptor, or {@code null} if this type does not contain any
+	 * such named attribute.
+	 */
 	AttributeDescriptor getAttributeDescriptor(String attributeName);
-	// todo : getCorrespondingJavaType() ?
 }

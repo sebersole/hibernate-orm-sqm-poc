@@ -11,20 +11,20 @@ import org.hibernate.hql.parser.semantic.expression.Expression;
 /**
  * @author Steve Ebersole
  */
-public class AliasedDynamicInstantiationArgument {
-	private final Expression argument;
+public class AliasedDynamicInstantiationArgument implements SelectItemExpression {
+	private final Expression selectExpression;
 	private final String alias;
 
-	public AliasedDynamicInstantiationArgument(Expression argument, String alias) {
-		this.argument = argument;
+	public AliasedDynamicInstantiationArgument(Expression selectExpression, String alias) {
+		this.selectExpression = selectExpression;
 		this.alias = alias;
 	}
 
-	public Expression getArgument() {
-		return argument;
+	public Expression getSelectedExpression() {
+		return selectExpression;
 	}
 
-	public String getAlias() {
+	public String getSelectedAlias() {
 		return alias;
 	}
 }

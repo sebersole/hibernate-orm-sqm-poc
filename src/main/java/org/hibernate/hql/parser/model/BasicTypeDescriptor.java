@@ -10,4 +10,5 @@ package org.hibernate.hql.parser.model;
  * @author Steve Ebersole
  */
 public interface BasicTypeDescriptor extends TypeDescriptor {
+	Class getCorrespondingJavaType();
 }

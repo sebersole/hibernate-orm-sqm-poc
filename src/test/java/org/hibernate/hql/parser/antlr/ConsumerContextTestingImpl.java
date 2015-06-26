@@ -12,11 +12,11 @@ import java.util.Map;
 
 import org.hibernate.hql.parser.ConsumerContext;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
-import org.hibernate.hql.parser.model.BasicTypeDescriptor;
 import org.hibernate.hql.parser.model.CollectionTypeDescriptor;
 import org.hibernate.hql.parser.model.CompositeTypeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 import org.hibernate.hql.parser.model.PolymorphicEntityTypeDescriptor;
+import org.hibernate.hql.parser.model.StandardBasicTypeDescriptors;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 
 /**
@@ -41,6 +41,11 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 		else {
 			return new EntityTypeDescriptorImpl( reference );
 		}
+	}
+
+	@Override
+	public Class classByName(String name) throws ClassNotFoundException {
+		return Class.forName( name );
 	}
 
 	public static abstract class AbstractTypeDescriptorImpl implements TypeDescriptor {
@@ -86,7 +91,7 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 			return new AttributeDescriptorImpl(
 					this,
 					attributeName,
-					new BasicTypeDescriptorImpl( "attribute: " + attributeName )
+					StandardBasicTypeDescriptors.INSTANCE.LONG
 			);
 		}
 
@@ -120,9 +125,7 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 			return new AttributeDescriptorImpl(
 					this,
 					attributeName,
-					new CollectionTypeDescriptorImpl(
-							new BasicTypeDescriptorImpl( "basic-collection-value:" + attributeName )
-					)
+					new CollectionTypeDescriptorImpl( StandardBasicTypeDescriptors.INSTANCE.LONG )
 			);
 		}
 
@@ -131,7 +134,7 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 					this,
 					attributeName,
 					new CollectionTypeDescriptorImpl(
-							new BasicTypeDescriptorImpl( "map-key:" + attributeName ),
+							StandardBasicTypeDescriptors.INSTANCE.LONG,
 							new EntityTypeDescriptorImpl( "map-element:" + attributeName )
 					)
 			);
@@ -142,8 +145,8 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 					this,
 					attributeName,
 					new CollectionTypeDescriptorImpl(
-							new BasicTypeDescriptorImpl( "map-key:" + attributeName ),
-							new BasicTypeDescriptorImpl( "map-element:" + attributeName )
+							StandardBasicTypeDescriptors.INSTANCE.LONG,
+							StandardBasicTypeDescriptors.INSTANCE.LONG
 					)
 			);
 		}
@@ -214,14 +217,6 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 				}
 			}
 			return attributeDescriptor;
-		}
-	}
-
-	public static class BasicTypeDescriptorImpl
-			extends AbstractTypeDescriptorImpl
-			implements BasicTypeDescriptor {
-		public BasicTypeDescriptorImpl(String typeName) {
-			super( typeName );
 		}
 	}
 

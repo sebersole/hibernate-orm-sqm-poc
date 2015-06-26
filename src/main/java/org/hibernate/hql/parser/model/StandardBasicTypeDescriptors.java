@@ -8,7 +8,6 @@ package org.hibernate.hql.parser.model;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.URL;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
@@ -81,6 +80,11 @@ public class StandardBasicTypeDescriptors {
 		@Override
 		public AttributeDescriptor getAttributeDescriptor(String attributeName) {
 			return null;
+		}
+
+		@Override
+		public Class getCorrespondingJavaType() {
+			return javaType;
 		}
 	}
 

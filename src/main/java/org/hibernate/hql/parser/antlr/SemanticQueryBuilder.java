@@ -172,11 +172,8 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 		// the root and each non-fetched-join was selected.  For now, here, we simply
 		// select the root
 		return new SelectClause(
-				parsingContext,
 				new SelectList(
-						parsingContext,
 						new SelectListItem(
-								parsingContext,
 								new FromElementReferenceExpression(
 										fromClause.getFromElementSpaces().get( 0 ).getRoot()
 								)
@@ -193,7 +190,6 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 	@Override
 	public SelectClause visitSelectClause(HqlParser.SelectClauseContext ctx) {
 		return new SelectClause(
-				parsingContext,
 				visitSelection( ctx.selection() ),
 				ctx.distinctKeyword() != null
 		);
@@ -216,10 +212,17 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 
 	@Override
 	public DynamicInstantiation visitDynamicInstantiation(HqlParser.DynamicInstantiationContext ctx) {
-		final DynamicInstantiation dynamicInstantiation = new DynamicInstantiation(
-				parsingContext,
-				ctx.dynamicInstantiationTarget().getText()
-		);
+		final String className = ctx.dynamicInstantiationTarget().getText();
+		final DynamicInstantiation dynamicInstantiation;
+		try {
+			dynamicInstantiation = new DynamicInstantiation(
+					parsingContext.getConsumerContext().classByName( className )
+			);
+		}
+		catch (ClassNotFoundException e) {
+			throw new SemanticException( "Unable to resolve class named for dynamic instantiation : " + className );
+		}
+
 		for ( HqlParser.DynamicInstantiationArgContext arg : ctx.dynamicInstantiationArgs().dynamicInstantiationArg() ) {
 			dynamicInstantiation.addArgument( visitDynamicInstantiationArg( arg ) );
 		}
@@ -255,9 +258,7 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 			throw new SemanticException( "Unable to resolve alias [" +  alias + "] in selection [" + ctx.getText() + "]" );
 		}
 		return new SelectList(
-				parsingContext,
 				new SelectListItem(
-						parsingContext,
 						new FromElementReferenceExpression( fromElement )
 				)
 		);
@@ -265,7 +266,7 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 
 	@Override
 	public SelectList visitSelectItemList(HqlParser.SelectItemListContext ctx) {
-		final SelectList selectList = new SelectList( parsingContext );
+		final SelectList selectList = new SelectList();
 		for ( HqlParser.SelectItemContext selectItemContext : ctx.selectItem() ) {
 			selectList.addSelectListItem( visitSelectItem( selectItemContext ) );
 		}
@@ -275,7 +276,6 @@ public class SemanticQueryBuilder extends HqlParserBaseVisitor {
 	@Override
 	public SelectListItem visitSelectItem(HqlParser.SelectItemContext ctx) {
 		return new SelectListItem(
-				parsingContext,
 				(Expression) ctx.expression().accept( this ),
 				ctx.IDENTIFIER() == null ? null : ctx.IDENTIFIER().getText()
 		);

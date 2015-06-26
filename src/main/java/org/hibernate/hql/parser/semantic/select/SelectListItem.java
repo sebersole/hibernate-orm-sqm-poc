@@ -6,32 +6,29 @@
  */
 package org.hibernate.hql.parser.semantic.select;
 
-import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.semantic.expression.Expression;
 
 /**
  * @author Steve Ebersole
  */
-public class SelectListItem {
-	private final ParsingContext parsingContext;
+public class SelectListItem implements SelectItemExpression {
 	private final Expression selectExpression;
 	private final String alias;
 
-	public SelectListItem(ParsingContext parsingContext, Expression selectExpression, String alias) {
-		this.parsingContext = parsingContext;
+	public SelectListItem(Expression selectExpression, String alias) {
 		this.selectExpression = selectExpression;
 		this.alias = alias;
 	}
 
-	public SelectListItem(ParsingContext parsingContext, Expression selectExpression) {
-		this( parsingContext, selectExpression, null );
+	public SelectListItem(Expression selectExpression) {
+		this( selectExpression, null );
 	}
 
-	public Expression getSelectExpression() {
+	public Expression getSelectedExpression() {
 		return selectExpression;
 	}
 
-	public String getAlias() {
+	public String getSelectedAlias() {
 		return alias;
 	}
 }

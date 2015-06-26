@@ -7,7 +7,12 @@
 package org.hibernate.hql.parser.semantic.select;
 
 /**
+ * Represents the "object level view" of the query selection.  For a given query there
+ * is just one Selection although that Selection might contain multiple "selection items".
+ *
  * @author Steve Ebersole
+ *
+ * @see
  */
 public interface Selection {
 }

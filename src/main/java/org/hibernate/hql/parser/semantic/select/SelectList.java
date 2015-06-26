@@ -9,22 +9,13 @@ package org.hibernate.hql.parser.semantic.select;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.hql.parser.ParsingContext;
-
 /**
  * @author Steve Ebersole
  */
 public class SelectList implements Selection {
-	private final ParsingContext parsingContext;
-
 	private List<SelectListItem> selectListItems;
 
-	public SelectList(ParsingContext parsingContext) {
-		this.parsingContext = parsingContext;
-	}
-
-	public SelectList(ParsingContext parsingContext, SelectListItem... items) {
-		this( parsingContext );
+	public SelectList(SelectListItem... items) {
 		if ( items != null ) {
 			for ( SelectListItem item : items ) {
 				addSelectListItem( item );

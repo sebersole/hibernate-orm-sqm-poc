@@ -6,27 +6,24 @@
  */
 package org.hibernate.hql.parser.semantic.select;
 
-import org.hibernate.hql.parser.ParsingContext;
+import java.util.Map;
 
 /**
  * @author Steve Ebersole
  */
 public class SelectClause {
-	private final ParsingContext parsingContext;
 	private final boolean distinct;
 	private final Selection selection;
 
-	public SelectClause(
-			ParsingContext parsingContext,
-			Selection selection,
-			boolean distinct) {
-		this.parsingContext = parsingContext;
+	private Map<String, SelectItemExpression> stringSelectItemExpressionsByAlias;
+
+	public SelectClause(Selection selection, boolean distinct) {
 		this.selection = selection;
 		this.distinct = distinct;
 	}
 
-	public SelectClause(ParsingContext parsingContext, Selection selection) {
-		this( parsingContext, selection, false );
+	public SelectClause(Selection selection) {
+		this( selection, false );
 	}
 
 	public boolean isDistinct() {
