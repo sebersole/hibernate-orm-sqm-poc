@@ -6,13 +6,14 @@
  */
 package org.hibernate.hql.parser.semantic.expression;
 
+import org.hibernate.hql.parser.antlr.path.AttributePathPart;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.from.FromElement;
 
 /**
  * @author Steve Ebersole
  */
-public class FromElementReferenceExpression implements Expression {
+public class FromElementReferenceExpression implements AttributePathPart {
 	private final FromElement fromElement;
 
 	public FromElementReferenceExpression(FromElement fromElement) {

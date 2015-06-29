@@ -6,16 +6,11 @@
  */
 package org.hibernate.hql.parser.semantic.from;
 
-import org.hibernate.hql.parser.antlr.path.AttributePathPart;
-import org.hibernate.hql.parser.model.TypeDescriptor;
+import org.hibernate.hql.parser.semantic.predicate.Predicate;
 
 /**
  * @author Steve Ebersole
  */
-public interface FromElement extends AttributePathPart {
-	FromElementSpace getContainingSpace();
-	String getAlias();
-	TypeDescriptor getTypeDescriptor();
-
-	void addTreatedAs(TypeDescriptor typeDescriptor);
+public interface QualifiedJoinedFromElement extends JoinedFromElement {
+	Predicate getOnClausePredicate();
 }

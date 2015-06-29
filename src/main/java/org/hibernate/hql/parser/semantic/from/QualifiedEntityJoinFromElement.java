@@ -8,12 +8,17 @@ package org.hibernate.hql.parser.semantic.from;
 
 import org.hibernate.hql.parser.JoinType;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
+import org.hibernate.hql.parser.semantic.predicate.Predicate;
 
 /**
  * @author Steve Ebersole
  */
-public class QualifiedEntityJoinFromElement extends AbstractFromElementJoinedImpl {
+public class QualifiedEntityJoinFromElement
+		extends AbstractFromElementJoinedImpl
+		implements QualifiedJoinedFromElement {
 	private final String entityName;
+
+	private Predicate onClausePredicate;
 
 	public QualifiedEntityJoinFromElement(
 			FromElementSpace fromElementSpace,
@@ -31,5 +36,16 @@ public class QualifiedEntityJoinFromElement extends AbstractFromElementJoinedImp
 	@Override
 	public EntityTypeDescriptor getTypeDescriptor() {
 		return (EntityTypeDescriptor) super.getTypeDescriptor();
+	}
+
+	@Override
+	public Predicate getOnClausePredicate() {
+		return onClausePredicate;
+	}
+
+	public Predicate setOnClausePredicate(Predicate predicate) {
+		Predicate original = this.onClausePredicate;
+		this.onClausePredicate = predicate;
+		return original;
 	}
 }

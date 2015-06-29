@@ -7,32 +7,47 @@
 package org.hibernate.hql.parser.semantic.from;
 
 import org.hibernate.hql.parser.JoinType;
-import org.hibernate.hql.parser.model.TypeDescriptor;
+import org.hibernate.hql.parser.model.AttributeDescriptor;
+import org.hibernate.hql.parser.semantic.predicate.Predicate;
 
 /**
  * @author Steve Ebersole
  */
-public class QualifiedAttributeJoinFromElement extends AbstractFromElementJoinedImpl {
-	private final String joinedAttribute;
+public class QualifiedAttributeJoinFromElement
+		extends AbstractFromElementJoinedImpl
+		implements QualifiedJoinedFromElement {
+	private final AttributeDescriptor joinedAttributeDescriptor;
 	private final boolean fetched;
+
+	private Predicate onClausePredicate;
 
 	public QualifiedAttributeJoinFromElement(
 			FromElementSpace fromElementSpace,
 			String alias,
-			TypeDescriptor attributeTypeDescriptor,
+			AttributeDescriptor joinedAttributeDescriptor,
 			JoinType joinType,
-			String joinedAttribute,
 			boolean fetched) {
-		super( fromElementSpace, alias, attributeTypeDescriptor, joinType );
-		this.joinedAttribute = joinedAttribute;
+		super( fromElementSpace, alias, joinedAttributeDescriptor.getType(), joinType );
+		this.joinedAttributeDescriptor = joinedAttributeDescriptor;
 		this.fetched = fetched;
 	}
 
-	public String getJoinedAttribute() {
-		return joinedAttribute;
+	public AttributeDescriptor getJoinedAttributeDescriptor() {
+		return joinedAttributeDescriptor;
 	}
 
 	public boolean isFetched() {
 		return fetched;
+	}
+
+	@Override
+	public Predicate getOnClausePredicate() {
+		return onClausePredicate;
+	}
+
+	public Predicate setOnClausePredicate(Predicate predicate) {
+		Predicate original = this.onClausePredicate;
+		this.onClausePredicate = predicate;
+		return original;
 	}
 }

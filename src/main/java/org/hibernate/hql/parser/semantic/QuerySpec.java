@@ -10,8 +10,8 @@ import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.semantic.from.FromClause;
 import org.hibernate.hql.parser.semantic.from.FromClauseContainer;
 import org.hibernate.hql.parser.semantic.select.SelectClause;
-import org.hibernate.hql.parser.semantic.where.WhereClause;
-import org.hibernate.hql.parser.semantic.where.WhereClauseContainer;
+import org.hibernate.hql.parser.semantic.predicate.WhereClause;
+import org.hibernate.hql.parser.semantic.predicate.WhereClauseContainer;
 
 /**
  * Defines the commonality between a root query and a subquery.

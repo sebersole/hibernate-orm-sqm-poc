@@ -8,6 +8,7 @@ package org.hibernate.hql.parser.antlr;
 
 import java.util.Collection;
 
+import org.hibernate.hql.parser.semantic.QuerySpec;
 import org.hibernate.hql.parser.semantic.SelectStatement;
 import org.hibernate.hql.parser.semantic.expression.LiteralIntegerExpression;
 import org.hibernate.hql.parser.semantic.expression.LiteralLongExpression;
@@ -89,5 +90,23 @@ public class SimpleSemanticQueryBuilderTest {
 		assertTrue( rhs instanceof LiteralLongExpression );
 		assertEquals( 2L, ( (LiteralLongExpression) rhs ).getLiteralValue().longValue() );
 
+	}
+
+
+	@Test
+	public void testAttributeJoinWithOnClause() throws Exception {
+		final ParsingContextTestingImpl parsingContext = new ParsingContextTestingImpl();
+
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a from Something a left outer join a.entity c on c.basic1 > 5 and c.basic2 < 20 " );
+
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextTestingImpl() );
+		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
+
+		parser.reset();
+
+		SemanticQueryBuilder semanticQueryBuilder = new SemanticQueryBuilder( parsingContext, explicitFromClauseIndexer );
+		SelectStatement selectStatement = semanticQueryBuilder.visitSelectStatement( parser.selectStatement() );
+		QuerySpec querySpec = selectStatement.getQuerySpec();
+		assertNotNull( querySpec );
 	}
 }

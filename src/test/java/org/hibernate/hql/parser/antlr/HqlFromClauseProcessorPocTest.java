@@ -141,7 +141,7 @@ public class HqlFromClauseProcessorPocTest {
 		QualifiedAttributeJoinFromElement join = (QualifiedAttributeJoinFromElement) fromElementC;
 		assertEquals( joinType, join.getJoinType() );
 		assertEquals( "c", join.getAlias() );
-		assertEquals( "a.entity", join.getJoinedAttribute() );
+		assertEquals( "entity", join.getJoinedAttributeDescriptor().getName() );
 	}
 
 	@Test
@@ -168,4 +168,20 @@ public class HqlFromClauseProcessorPocTest {
 		);
 	}
 
+	@Test
+	public void testAttributeJoinWithOnClause() throws Exception {
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a from Something a left outer join a.entity c on c.basic1 > 5 and c.basic2 < 20 " );
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = processFromClause( parser );
+		final FromClause fromClause1 = explicitFromClauseIndexer.getRootFromClause();
+		assertNotNull( fromClause1 );
+		assertEquals( 0, fromClause1.getChildFromClauses().size() );
+		assertEquals( 1, fromClause1.getFromElementSpaces().size() );
+		FromElementSpace space1 = fromClause1.getFromElementSpaces().get( 0 );
+		assertNotNull( space1 );
+		assertNotNull( space1.getRoot() );
+		assertEquals( 1, space1.getJoins().size() );
+		FromElement fromElementC = fromClause1.findFromElementByAlias( "c" );
+		assertNotNull( fromElementC );
+		assertSame( space1.getJoins().get( 0 ), fromElementC );
+	}
 }

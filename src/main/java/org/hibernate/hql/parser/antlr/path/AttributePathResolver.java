@@ -9,8 +9,18 @@ package org.hibernate.hql.parser.antlr.path;
 import org.hibernate.hql.parser.antlr.HqlParser;
 
 /**
+ * Strategy for resolving attribute path expressions in a contextually pluggable manner.
+ *
  * @author Steve Ebersole
  */
-public interface AttributePathResolver<T> {
-	T resolvePath(HqlParser.PathContext path);
+public interface AttributePathResolver {
+	/**
+	 * Resolve the given path, returning {@code null} if the initial parts do not indicate the
+	 * path is an attribute path.
+	 *
+	 * @param path The path tree to resolve
+	 *
+	 * @return The resolve path, or {@code null}.
+	 */
+	AttributePathPart resolvePath(HqlParser.DotIdentifierSequenceContext path);
 }

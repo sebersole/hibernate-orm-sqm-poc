@@ -6,6 +6,7 @@
  */
 package org.hibernate.hql.parser.semantic.expression;
 
+import org.hibernate.hql.parser.antlr.path.AttributePathPart;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.from.FromElement;
@@ -13,7 +14,7 @@ import org.hibernate.hql.parser.semantic.from.FromElement;
 /**
  * @author Steve Ebersole
  */
-public class AttributeReferenceExpression implements Expression {
+public class AttributeReferenceExpression implements AttributePathPart {
 	private final FromElement source;
 	private final AttributeDescriptor attributeDescriptor;
 

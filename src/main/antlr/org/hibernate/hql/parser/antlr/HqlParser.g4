@@ -156,10 +156,6 @@ path
 	| path LEFT_BRACKET expression RIGHT_BRACKET													# IndexedPath
 	;
 
-pathBase
-	: dotIdentifierSequence
-	;
-
 dynamicInstantiationArgs
 	:	dynamicInstantiationArg ( COMMA dynamicInstantiationArg )*
 	;
@@ -216,13 +212,17 @@ crossJoin
 
 qualifiedJoin
 //	: ( innerKeyword | (leftKeyword? outerKeyword) )? joinKeyword fetchKeyword? qualifiedJoinRhs
-	: joinKeyword fetchKeyword? qualifiedJoinRhs															# ImplicitInnerJoin
-	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs												# ExplicitInnerJoin
-	| (leftKeyword|rightKeyword|fullKeyword)? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs		# ExplicitOuterJoin
+	: joinKeyword fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?															# ImplicitInnerJoin
+	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?											# ExplicitInnerJoin
+	| (leftKeyword|rightKeyword|fullKeyword)? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?	# ExplicitOuterJoin
 	;
 
 qualifiedJoinRhs
-	: path (asKeyword? IDENTIFIER)? ( (onKeyword | withKeyword) predicate )?
+	: path (asKeyword? IDENTIFIER)?
+	;
+
+qualifiedJoinPredicate
+	: (onKeyword | withKeyword) predicate
 	;
 
 //hibernateLegacySyntax returns [boolean isPropertyJoin]
@@ -270,7 +270,8 @@ whereClause
 	;
 
 predicate
-	: predicate orKeyword predicate									# OrPredicate
+	: LEFT_PAREN predicate RIGHT_PAREN								# GroupedPredicate
+	| predicate orKeyword predicate									# OrPredicate
 	| predicate andKeyword predicate								# AndPredicate
 	| notKeyword predicate											# NegatedPredicate
 	| expression isKeyword (notKeyword)? NULL						# IsNullPredicate
@@ -288,8 +289,8 @@ predicate
 	;
 
 inList
-	: elementsKeyword? dotIdentifierSequence		# PersistentCollectionReferenceInList
-	| expression (COMMA expression)*			# ExplicitTupleInList
+	: elementsKeyword? LEFT_PAREN dotIdentifierSequence	RIGHT_PAREN	# PersistentCollectionReferenceInList
+	| LEFT_PAREN expression (COMMA expression)*	RIGHT_PAREN			# ExplicitTupleInList
 	;
 
 likeEscape
