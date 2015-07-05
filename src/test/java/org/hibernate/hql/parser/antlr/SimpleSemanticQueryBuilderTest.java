@@ -66,7 +66,7 @@ public class SimpleSemanticQueryBuilderTest {
 	public void simpleLongLiteralsTest() {
 		final ParsingContextTestingImpl parsingContext = new ParsingContextTestingImpl();
 
-		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.b from Something a where 1L=2L" );
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a.basic from Something a where 1L=2L" );
 
 		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextTestingImpl() );
 		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
@@ -108,5 +108,26 @@ public class SimpleSemanticQueryBuilderTest {
 		SelectStatement selectStatement = semanticQueryBuilder.visitSelectStatement( parser.selectStatement() );
 		QuerySpec querySpec = selectStatement.getQuerySpec();
 		assertNotNull( querySpec );
+	}
+
+
+	@Test
+	public void testSimpleDynamicInstantiation() throws Exception {
+		final ParsingContextTestingImpl parsingContext = new ParsingContextTestingImpl();
+
+		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select new org.hibernate.hql.parser.antlr.SimpleSemanticQueryBuilderTest$DTO(a.basic1 as id, a.basic2 as name) from Something a" );
+
+		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextTestingImpl() );
+		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
+
+		parser.reset();
+
+		SemanticQueryBuilder semanticQueryBuilder = new SemanticQueryBuilder( parsingContext, explicitFromClauseIndexer );
+		SelectStatement selectStatement = semanticQueryBuilder.visitSelectStatement( parser.selectStatement() );
+		QuerySpec querySpec = selectStatement.getQuerySpec();
+		assertNotNull( querySpec );
+	}
+
+	private static class DTO {
 	}
 }

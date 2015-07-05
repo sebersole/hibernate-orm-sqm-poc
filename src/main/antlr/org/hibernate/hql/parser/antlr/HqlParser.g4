@@ -211,10 +211,10 @@ crossJoin
 	;
 
 qualifiedJoin
-//	: ( innerKeyword | (leftKeyword? outerKeyword) )? joinKeyword fetchKeyword? qualifiedJoinRhs
-	: joinKeyword fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?															# ImplicitInnerJoin
-	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?											# ExplicitInnerJoin
-	| (leftKeyword|rightKeyword|fullKeyword)? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?	# ExplicitOuterJoin
+	: ( innerKeyword | ((leftKeyword|rightKeyword|fullKeyword)? outerKeyword) )? joinKeyword fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?
+//	: joinKeyword fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?															# ImplicitInnerJoin
+//	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?											# ExplicitInnerJoin
+//	| (leftKeyword|rightKeyword|fullKeyword)? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?	# ExplicitOuterJoin
 	;
 
 qualifiedJoinRhs

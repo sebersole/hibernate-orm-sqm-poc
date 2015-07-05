@@ -8,6 +8,7 @@ package org.hibernate.hql.parser.antlr.path;
 
 import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.semantic.expression.AttributeReferenceExpression;
 import org.hibernate.hql.parser.semantic.expression.FromElementReferenceExpression;
 import org.hibernate.hql.parser.semantic.from.FromClause;
@@ -77,10 +78,14 @@ public class BasicAttributePathResolverImpl extends AbstractAttributePathResolve
 	}
 
 	protected AttributePathPart resolveTerminalPathPart(FromElement lhs, String terminalName) {
-		return new AttributeReferenceExpression( lhs, terminalName );
+		final AttributeDescriptor attributeDescriptor = lhs.getTypeDescriptor().getAttributeDescriptor( terminalName );
+		final AttributeReferenceExpression expr = new AttributeReferenceExpression( lhs, attributeDescriptor );
+		log.debugf( "Resolved terminal path-part [%s] : %s", terminalName, expr );
+		return expr;
 	}
 
 	protected AttributePathPart resolveFromElementAliasAsTerminal(FromElement aliasedFromElement) {
+		log.debugf( "Resolved from-element alias as terminal : %s", aliasedFromElement.getAlias() );
 		return new FromElementReferenceExpression( aliasedFromElement );
 	}
 }

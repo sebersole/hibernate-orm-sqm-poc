@@ -13,4 +13,5 @@ import org.hibernate.hql.parser.semantic.predicate.Predicate;
  */
 public interface QualifiedJoinedFromElement extends JoinedFromElement {
 	Predicate getOnClausePredicate();
+	void setOnClausePredicate(Predicate predicate);
 }

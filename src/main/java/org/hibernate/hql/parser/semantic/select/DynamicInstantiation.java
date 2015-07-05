@@ -6,10 +6,12 @@
  */
 package org.hibernate.hql.parser.semantic.select;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hibernate.hql.parser.SemanticException;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.BasicTypeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;

@@ -45,9 +45,7 @@ public class QualifiedAttributeJoinFromElement
 		return onClausePredicate;
 	}
 
-	public Predicate setOnClausePredicate(Predicate predicate) {
-		Predicate original = this.onClausePredicate;
+	public void setOnClausePredicate(Predicate predicate) {
 		this.onClausePredicate = predicate;
-		return original;
 	}
 }

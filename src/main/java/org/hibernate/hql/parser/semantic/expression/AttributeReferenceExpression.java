@@ -6,6 +6,8 @@
  */
 package org.hibernate.hql.parser.semantic.expression;
 
+import java.util.Locale;
+
 import org.hibernate.hql.parser.antlr.path.AttributePathPart;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
@@ -19,20 +21,41 @@ public class AttributeReferenceExpression implements AttributePathPart {
 	private final AttributeDescriptor attributeDescriptor;
 
 	public AttributeReferenceExpression(FromElement source, String attributeName) {
+		this( source, source.getTypeDescriptor().getAttributeDescriptor( attributeName ) );
+	}
+
+	public AttributeReferenceExpression(
+			FromElement source,
+			AttributeDescriptor attributeDescriptor) {
 		this.source = source;
-		this.attributeDescriptor = source.getTypeDescriptor().getAttributeDescriptor( attributeName );
+		this.attributeDescriptor = attributeDescriptor;
 	}
 
 	public FromElement getSource() {
 		return source;
 	}
 
-	public String getAttributeName() {
-		return attributeDescriptor.getName();
+	public AttributeDescriptor getAttributeDescriptor() {
+		return attributeDescriptor;
 	}
 
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
-		return attributeDescriptor.getType();
+		return getAttributeDescriptor().getType();
+	}
+
+	@Override
+	public String toString() {
+		return String.format(
+				Locale.ENGLISH,
+				"AttributeReferenceExpression{" +
+						"source=%s" +
+						", attribute-name=%s" +
+						", attribute-type=%s" +
+						'}',
+				getSource().getAlias(),
+				getAttributeDescriptor().getName(),
+				getAttributeDescriptor().getType().getTypeName()
+		);
 	}
 }
