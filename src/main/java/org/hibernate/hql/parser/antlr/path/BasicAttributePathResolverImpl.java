@@ -46,6 +46,7 @@ public class BasicAttributePathResolverImpl extends AbstractAttributePathResolve
 		if ( pathText.contains( "." ) ) {
 			final FromElement aliasedFromElement = findFromElementByAlias( rootPart );
 			if ( aliasedFromElement != null ) {
+				validatePathRoot( aliasedFromElement );
 				final FromElement lhs = resolveAnyIntermediateAttributePathJoins( aliasedFromElement, parts, 1 );
 				return resolveTerminalPathPart( lhs, parts[parts.length-1] );
 			}
@@ -62,11 +63,15 @@ public class BasicAttributePathResolverImpl extends AbstractAttributePathResolve
 		// 3rd level precedence : unqualified-attribute-path
 		final FromElement root = findFromElementWithAttribute( rootPart );
 		if ( root != null ) {
+			validatePathRoot( root );
 			final FromElement lhs = resolveAnyIntermediateAttributePathJoins( root, parts, 0 );
 			return resolveTerminalPathPart( lhs, parts[parts.length-1] );
 		}
 
 		return null;
+	}
+
+	protected void validatePathRoot(FromElement root) {
 	}
 
 	protected FromElement findFromElementByAlias(String alias) {

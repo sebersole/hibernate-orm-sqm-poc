@@ -15,8 +15,8 @@ import org.hibernate.hql.parser.ParsingException;
 import org.hibernate.hql.parser.SemanticException;
 import org.hibernate.hql.parser.antlr.path.AttributePathPart;
 import org.hibernate.hql.parser.antlr.path.AttributePathResolver;
-import org.hibernate.hql.parser.antlr.path.BasicAttributePathResolverImpl;
 import org.hibernate.hql.parser.antlr.path.AttributePathResolverStack;
+import org.hibernate.hql.parser.antlr.path.BasicAttributePathResolverImpl;
 import org.hibernate.hql.parser.antlr.path.JoinPredicatePathResolverImpl;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
@@ -24,7 +24,6 @@ import org.hibernate.hql.parser.semantic.Statement;
 import org.hibernate.hql.parser.semantic.from.FromClause;
 import org.hibernate.hql.parser.semantic.from.FromElement;
 import org.hibernate.hql.parser.semantic.from.FromElementSpace;
-import org.hibernate.hql.parser.semantic.from.JoinedFromElement;
 import org.hibernate.hql.parser.semantic.from.QualifiedJoinedFromElement;
 import org.hibernate.hql.parser.semantic.predicate.Predicate;
 
@@ -42,6 +41,8 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 	// Using HqlParser.QuerySpecContext direct did not work in my experience, each walk
 	// seems to build new instances.  So use the context text as key :(
 	private final Map<String, FromClause> fromClauseMap = new HashMap<String, FromClause>();
+
+	private final Map<String, FromElement> fromElementMap = new HashMap<String, FromElement>();
 
 	public ExplicitFromClauseIndexer(ParsingContext parsingContext) {
 		this.parsingContext = parsingContext;
@@ -104,13 +105,6 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 		currentFromClause = currentFromClause.getParentFromClause();
 	}
 
-//	@Override
-//	public void exitFromClause(HqlParser.FromClauseContext ctx) {
-//		if ( currentFromClause == null ) {
-//			throw new IllegalStateException( "Mismatch currentFromClause handling" );
-//		}
-//		currentFromClause = currentFromClause.getParentFromClause();
-//	}
 
 	private FromElementSpace currentFromElementSpace;
 
@@ -126,11 +120,13 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 	}
 
 	@Override
-	public void enterRootEntityReference(HqlParser.RootEntityReferenceContext ctx) {
-		currentFromElementSpace.makeRootEntityFromElement(
+	public void enterFromElementSpaceRoot(HqlParser.FromElementSpaceRootContext ctx) {
+		final FromElement fromElement = currentFromElementSpace.makeRootEntityFromElement(
 				resolveEntityReference( ctx.mainEntityPersisterReference().dotIdentifierSequence() ),
 				interpretAlias( ctx.mainEntityPersisterReference().IDENTIFIER() )
 		);
+
+		fromElementMap.put( ctx.getText(), fromElement );
 	}
 
 	private EntityTypeDescriptor resolveEntityReference(HqlParser.DotIdentifierSequenceContext dotIdentifierSequenceContext) {
@@ -152,10 +148,33 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 
 	@Override
 	public void enterCrossJoin(HqlParser.CrossJoinContext ctx) {
-		currentFromElementSpace.makeCrossJoinedFromElement(
+		final FromElement fromElement = currentFromElementSpace.makeCrossJoinedFromElement(
 				resolveEntityReference( ctx.mainEntityPersisterReference().dotIdentifierSequence() ),
 				interpretAlias( ctx.mainEntityPersisterReference().IDENTIFIER() )
 		);
+
+		fromElementMap.put( ctx.getText(), fromElement );
+	}
+
+	@Override
+	public void enterJpaCollectionJoin(HqlParser.JpaCollectionJoinContext ctx) {
+		final QualifiedJoinTreeVisitor visitor = new QualifiedJoinTreeVisitor(
+				parsingContext,
+				currentFromElementSpace,
+				JoinType.INNER,
+				interpretAlias( ctx.IDENTIFIER() ),
+				false
+		);
+
+		QualifiedJoinedFromElement joinedPath = (QualifiedJoinedFromElement) ctx.path().accept(
+				visitor
+		);
+
+		if ( joinedPath == null ) {
+			throw new ParsingException( "Could not resolve JPA collection join path : " + ctx.getText() );
+		}
+
+		fromElementMap.put( ctx.getText(), joinedPath );
 	}
 
 	@Override
@@ -177,79 +196,27 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 				ctx.fetchKeyword() != null
 		);
 
-		QualifiedJoinedFromElement joinedPath = (QualifiedJoinedFromElement) ctx.qualifiedJoinRhs().path().accept( visitor );
+		QualifiedJoinedFromElement joinedPath = (QualifiedJoinedFromElement) ctx.qualifiedJoinRhs().path().accept(
+				visitor
+		);
 
 		if ( joinedPath == null ) {
 			throw new ParsingException( "Could not resolve join path : " + ctx.qualifiedJoinRhs().getText() );
 		}
 
 		if ( ctx.qualifiedJoinPredicate() != null ) {
+			visitor.setCurrentJoinRhs( joinedPath );
 			joinedPath.setOnClausePredicate( (Predicate) ctx.qualifiedJoinPredicate().accept( visitor ) );
 		}
-	}
 
-//	@Override
-//	public void enterImplicitInnerJoin(final HqlParser.ImplicitInnerJoinContext ctx) {
-//		final QualifiedJoinTreeVisitor visitor = new QualifiedJoinTreeVisitor(
-//				parsingContext,
-//				currentFromElementSpace,
-//				JoinType.INNER,
-//				interpretAlias( ctx.qualifiedJoinRhs().IDENTIFIER() ),
-//				ctx.fetchKeyword() != null
-//		);
-//
-//		JoinedFromElement joinedPath = (JoinedFromElement) ctx.qualifiedJoinRhs().path().accept( visitor );
-//
-//		if ( joinedPath == null ) {
-//			throw new ParsingException( "Could not resolve join path : " + ctx.qualifiedJoinRhs().getText() );
-//		}
-//
-//		// we'll handle on-clause predicates in a later pass
-//	}
-//
-//	@Override
-//	public void enterExplicitInnerJoin(HqlParser.ExplicitInnerJoinContext ctx) {
-//		final QualifiedJoinTreeVisitor visitor = new QualifiedJoinTreeVisitor(
-//				parsingContext,
-//				currentFromElementSpace,
-//				JoinType.INNER,
-//				interpretAlias( ctx.qualifiedJoinRhs().IDENTIFIER() ),
-//				ctx.fetchKeyword() != null
-//		);
-//
-//		JoinedFromElement joinedPath = (JoinedFromElement) ctx.qualifiedJoinRhs().path().accept( visitor );
-//
-//		if ( joinedPath == null ) {
-//			throw new ParsingException( "Could not resolve join path : " + ctx.qualifiedJoinRhs().getText() );
-//		}
-//
-//		// we'll handle on-clause predicates in a later pass
-//	}
-//
-//	@Override
-//	public void enterExplicitOuterJoin(HqlParser.ExplicitOuterJoinContext ctx) {
-//		final QualifiedJoinTreeVisitor visitor = new QualifiedJoinTreeVisitor(
-//				parsingContext,
-//				currentFromElementSpace,
-//				// currently only left outer joins are supported
-//				JoinType.LEFT,
-//				interpretAlias( ctx.qualifiedJoinRhs().IDENTIFIER() ),
-//				ctx.fetchKeyword() != null
-//		);
-//
-//		JoinedFromElement joinedPath = (JoinedFromElement) ctx.qualifiedJoinRhs().path().accept( visitor );
-//
-//		if ( joinedPath == null ) {
-//			throw new ParsingException( "Could not resolve join path : " + ctx.qualifiedJoinRhs().getText() );
-//		}
-//
-//		// we'll handle on-clause predicates in a later pass
-//	}
+		fromElementMap.put( ctx.getText(), joinedPath );
+	}
 
 	private static class QualifiedJoinTreeVisitor extends AbstractHqlParseTreeVisitor {
 		private final FromElementSpace fromElementSpace;
 
 		private final AttributePathResolverStack attributePathResolverStack = new AttributePathResolverStack();
+		private QualifiedJoinedFromElement currentJoinRhs;
 
 		public QualifiedJoinTreeVisitor(
 				ParsingContext parsingContext,
@@ -274,13 +241,18 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 			return attributePathResolverStack.getCurrent();
 		}
 
+		public void setCurrentJoinRhs(QualifiedJoinedFromElement currentJoinRhs) {
+			this.currentJoinRhs = currentJoinRhs;
+		}
+
 		@Override
 		public Predicate visitQualifiedJoinPredicate(HqlParser.QualifiedJoinPredicateContext ctx) {
-			attributePathResolverStack.push( new JoinPredicatePathResolverImpl( getCurrentFromClause() ) );
+			if ( currentJoinRhs == null ) {
+				throw new ParsingException( "Expecting join RHS to be set" );
+			}
+
+			attributePathResolverStack.push( new JoinPredicatePathResolverImpl( getCurrentFromClause(), currentJoinRhs ) );
 			try {
-				// todo : need a way to identify left and right hand sides of this join to be able to:
-				//		1) validate predicate
-				//		2) link predicate with right hand side
 				return super.visitQualifiedJoinPredicate( ctx );
 			}
 			finally {

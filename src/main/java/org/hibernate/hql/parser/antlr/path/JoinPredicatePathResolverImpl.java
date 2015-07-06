@@ -12,13 +12,35 @@ import org.hibernate.hql.parser.model.CollectionTypeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 import org.hibernate.hql.parser.semantic.from.FromClause;
 import org.hibernate.hql.parser.semantic.from.FromElement;
+import org.hibernate.hql.parser.semantic.from.QualifiedJoinedFromElement;
 
 /**
  * @author Steve Ebersole
  */
 public class JoinPredicatePathResolverImpl extends BasicAttributePathResolverImpl {
-	public JoinPredicatePathResolverImpl(FromClause fromClause) {
+	private final QualifiedJoinedFromElement joinRhs;
+	private FromElement joinLhs;
+
+	public JoinPredicatePathResolverImpl(FromClause fromClause, QualifiedJoinedFromElement joinRhs) {
 		super( fromClause );
+		this.joinRhs = joinRhs;
+	}
+
+	@Override
+	@SuppressWarnings("StatementWithEmptyBody")
+	protected void validatePathRoot(FromElement root) {
+		if ( root == joinRhs ) {
+			// nothing to do
+		}
+		else if ( joinLhs == null ) {
+			// assume root is LHS
+			joinLhs = root;
+		}
+		else {
+			if ( joinLhs != root ) {
+				throw new SemanticException( "Qualified join predicate referred to more than 2 FromElements" );
+			}
+		}
 	}
 
 	@Override
@@ -37,8 +59,6 @@ public class JoinPredicatePathResolverImpl extends BasicAttributePathResolverImp
 							joinedAttributeDescriptor.getName()
 			);
 		}
-
-		// todo : we'd really want to validate that all predicate expressions refer to just the lhs and rhs from-elements
 
 		super.validateIntermediateAttributeJoin( lhs, joinedAttributeDescriptor );
 	}

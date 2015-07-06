@@ -193,28 +193,27 @@ fromClause
 	;
 
 fromElementSpace
-	:	fromElementSpaceRoot ( crossJoin | qualifiedJoin )*
+	:	fromElementSpaceRoot ( crossJoin | jpaCollectionJoin | qualifiedJoin )*
 	;
 
 fromElementSpaceRoot
-	:	mainEntityPersisterReference	# RootEntityReference
-//	|	hibernateLegacySyntax
-//	|	jpaCollectionReference
+	: mainEntityPersisterReference
 	;
 
 mainEntityPersisterReference
-	:	dotIdentifierSequence (asKeyword? {!doesUpcomingTokenMatchAny("where","join")}? IDENTIFIER)?
+	: dotIdentifierSequence (asKeyword? {!doesUpcomingTokenMatchAny("where","join")}? IDENTIFIER)?
 	;
 
 crossJoin
 	: crossKeyword joinKeyword mainEntityPersisterReference
 	;
 
+jpaCollectionJoin
+	:	inKeyword LEFT_PAREN path RIGHT_PAREN (asKeyword? IDENTIFIER)?
+	;
+
 qualifiedJoin
 	: ( innerKeyword | ((leftKeyword|rightKeyword|fullKeyword)? outerKeyword) )? joinKeyword fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?
-//	: joinKeyword fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?															# ImplicitInnerJoin
-//	| innerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?											# ExplicitInnerJoin
-//	| (leftKeyword|rightKeyword|fullKeyword)? outerKeyword joinKeyword	fetchKeyword? qualifiedJoinRhs (qualifiedJoinPredicate)?	# ExplicitOuterJoin
 	;
 
 qualifiedJoinRhs
@@ -225,18 +224,6 @@ qualifiedJoinPredicate
 	: (onKeyword | withKeyword) predicate
 	;
 
-//hibernateLegacySyntax returns [boolean isPropertyJoin]
-//@init {$isPropertyJoin = false;}
-//	:	ad=aliasDeclaration in_key
-//	(
-//			class_key entityName
-//		|	collectionExpression {$isPropertyJoin = true;}
-//	)
-//	;
-//
-//jpaCollectionReference
-//	:	in_key LEFT_PAREN propertyReference RIGHT_PAREN ac=aliasClause[true]
-//	;
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

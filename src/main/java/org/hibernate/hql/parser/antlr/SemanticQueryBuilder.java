@@ -10,13 +10,11 @@ import org.hibernate.hql.parser.NotYetImplementedException;
 import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.ParsingException;
 import org.hibernate.hql.parser.antlr.path.AttributePathResolver;
-import org.hibernate.hql.parser.antlr.path.BasicAttributePathResolverImpl;
 import org.hibernate.hql.parser.antlr.path.AttributePathResolverStack;
-import org.hibernate.hql.parser.antlr.path.JoinPredicatePathResolverImpl;
+import org.hibernate.hql.parser.antlr.path.BasicAttributePathResolverImpl;
 import org.hibernate.hql.parser.semantic.QuerySpec;
 import org.hibernate.hql.parser.semantic.Statement;
 import org.hibernate.hql.parser.semantic.from.FromClause;
-import org.hibernate.hql.parser.semantic.predicate.Predicate;
 
 /**
  * @author Steve Ebersole
@@ -70,20 +68,6 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 		finally {
 			attributePathResolverStack.pop();
 			currentFromClause = originalCurrentFromClause;
-		}
-	}
-
-	@Override
-	public Predicate visitQualifiedJoinPredicate(HqlParser.QualifiedJoinPredicateContext ctx) {
-		attributePathResolverStack.push( new JoinPredicatePathResolverImpl( currentFromClause ) );
-		try {
-			// todo : need a way to identify left and right hand sides of this join to be able to:
-			//		1) validate predicate
-			//		2) link predicate with right hand side
-			return super.visitQualifiedJoinPredicate( ctx );
-		}
-		finally {
-			attributePathResolverStack.pop();
 		}
 	}
 }
