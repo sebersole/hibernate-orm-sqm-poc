@@ -153,7 +153,7 @@ path
 // todo : VALUE (and ELEMENTS) and KEY handling
 	: dotIdentifierSequence																			# SimplePath
 	| treatKeyword LEFT_PAREN dotIdentifierSequence asKeyword dotIdentifierSequence RIGHT_PAREN		# TreatedPath
-	| path LEFT_BRACKET expression RIGHT_BRACKET													# IndexedPath
+	| path LEFT_BRACKET expression RIGHT_BRACKET (DOT path)?										# IndexedPath
 	;
 
 dynamicInstantiationArgs

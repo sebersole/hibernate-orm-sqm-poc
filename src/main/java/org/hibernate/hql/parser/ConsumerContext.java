@@ -9,6 +9,8 @@ package org.hibernate.hql.parser;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 
 /**
+ * Contextual information related to the consumer/caller of the parser - a callback API.
+ *
  * @author Steve Ebersole
  */
 public interface ConsumerContext {

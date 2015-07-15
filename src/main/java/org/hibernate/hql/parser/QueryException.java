@@ -7,6 +7,8 @@
 package org.hibernate.hql.parser;
 
 /**
+ * Base for all HQL parser specific exceptions.
+ *
  * @author Steve Ebersole
  */
 public class QueryException extends RuntimeException {

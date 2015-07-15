@@ -8,7 +8,7 @@ package org.hibernate.hql.parser.semantic.expression;
 
 import java.util.Locale;
 
-import org.hibernate.hql.parser.antlr.path.AttributePathPart;
+import org.hibernate.hql.parser.process.path.AttributePathPart;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.from.FromElement;
@@ -57,5 +57,11 @@ public class AttributeReferenceExpression implements AttributePathPart {
 				getAttributeDescriptor().getName(),
 				getAttributeDescriptor().getType().getTypeName()
 		);
+	}
+
+	@Override
+	public FromElement getUnderlyingFromElement() {
+		// todo : not sure this is correct in all cases..
+		return source;
 	}
 }

@@ -46,6 +46,11 @@ public abstract class AbstractFromElementImpl implements FromElement {
 	}
 
 	@Override
+	public FromElement getUnderlyingFromElement() {
+		return this;
+	}
+
+	@Override
 	public void addTreatedAs(TypeDescriptor typeDescriptor) {
 		if ( treatedAsTypeDescriptors == null ) {
 			treatedAsTypeDescriptors = new HashSet<TypeDescriptor>();

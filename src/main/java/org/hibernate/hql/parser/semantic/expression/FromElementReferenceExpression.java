@@ -6,7 +6,7 @@
  */
 package org.hibernate.hql.parser.semantic.expression;
 
-import org.hibernate.hql.parser.antlr.path.AttributePathPart;
+import org.hibernate.hql.parser.process.path.AttributePathPart;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 import org.hibernate.hql.parser.semantic.from.FromElement;
 
@@ -27,5 +27,10 @@ public class FromElementReferenceExpression implements AttributePathPart {
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
 		return fromElement.getTypeDescriptor();
+	}
+
+	@Override
+	public FromElement getUnderlyingFromElement() {
+		return fromElement;
 	}
 }

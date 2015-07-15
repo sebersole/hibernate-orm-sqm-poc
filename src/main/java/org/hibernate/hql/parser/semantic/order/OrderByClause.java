@@ -9,7 +9,7 @@ package org.hibernate.hql.parser.semantic.order;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.hql.parser.ParsingContext;
+import org.hibernate.hql.parser.process.ParsingContext;
 import org.hibernate.hql.parser.semantic.expression.Expression;
 
 /**

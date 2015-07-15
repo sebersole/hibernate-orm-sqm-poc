@@ -6,7 +6,7 @@
  */
 package org.hibernate.hql.parser.semantic.from;
 
-import org.hibernate.hql.parser.antlr.path.AttributePathPart;
+import org.hibernate.hql.parser.process.path.AttributePathPart;
 import org.hibernate.hql.parser.model.TypeDescriptor;
 
 /**

@@ -4,14 +4,13 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.hql.parser.antlr;
+package org.hibernate.hql.parser.process;
 
 import org.hibernate.hql.parser.NotYetImplementedException;
-import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.ParsingException;
-import org.hibernate.hql.parser.antlr.path.AttributePathResolver;
-import org.hibernate.hql.parser.antlr.path.AttributePathResolverStack;
-import org.hibernate.hql.parser.antlr.path.BasicAttributePathResolverImpl;
+import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.hql.parser.process.path.AttributePathPart;
+import org.hibernate.hql.parser.process.path.BasicAttributePathResolverImpl;
 import org.hibernate.hql.parser.semantic.QuerySpec;
 import org.hibernate.hql.parser.semantic.Statement;
 import org.hibernate.hql.parser.semantic.from.FromClause;
@@ -23,7 +22,6 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 	private final ExplicitFromClauseIndexer fromClauseIndexer;
 
 	private FromClause currentFromClause;
-	private AttributePathResolverStack attributePathResolverStack = new AttributePathResolverStack();
 
 	public SemanticQueryBuilder(ParsingContext parsingContext, ExplicitFromClauseIndexer fromClauseIndexer) {
 		super( parsingContext );
@@ -49,8 +47,9 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 	}
 
 	@Override
-	public AttributePathResolver getCurrentAttributePathResolver() {
-		return attributePathResolverStack.getCurrent();
+	public Statement visitStatement(HqlParser.StatementContext ctx) {
+		// for the moment, only selectStatements are valid...
+		return visitSelectStatement( ctx.selectStatement() );
 	}
 
 	@Override
@@ -69,5 +68,10 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 			attributePathResolverStack.pop();
 			currentFromClause = originalCurrentFromClause;
 		}
+	}
+
+	@Override
+	public AttributePathPart visitIndexedPath(HqlParser.IndexedPathContext ctx) {
+		return super.visitIndexedPath( ctx );
 	}
 }

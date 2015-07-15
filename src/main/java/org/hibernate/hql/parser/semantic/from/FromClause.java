@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.hibernate.hql.parser.ParsingContext;
+import org.hibernate.hql.parser.process.ParsingContext;
 
 import org.jboss.logging.Logger;
 

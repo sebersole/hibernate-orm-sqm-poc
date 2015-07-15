@@ -6,7 +6,7 @@
  */
 package org.hibernate.hql.parser.semantic.from;
 
-import org.hibernate.hql.parser.JoinType;
+import org.hibernate.hql.parser.semantic.JoinType;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 
 /**

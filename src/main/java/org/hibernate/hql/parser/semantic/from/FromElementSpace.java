@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hibernate.hql.parser.JoinType;
+import org.hibernate.hql.parser.semantic.JoinType;
 import org.hibernate.hql.parser.ParsingException;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;

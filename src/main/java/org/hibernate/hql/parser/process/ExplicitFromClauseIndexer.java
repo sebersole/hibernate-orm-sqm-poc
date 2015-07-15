@@ -4,20 +4,20 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.hql.parser.antlr;
+package org.hibernate.hql.parser.process;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hibernate.hql.parser.JoinType;
-import org.hibernate.hql.parser.ParsingContext;
+import org.hibernate.hql.parser.semantic.JoinType;
 import org.hibernate.hql.parser.ParsingException;
 import org.hibernate.hql.parser.SemanticException;
-import org.hibernate.hql.parser.antlr.path.AttributePathPart;
-import org.hibernate.hql.parser.antlr.path.AttributePathResolver;
-import org.hibernate.hql.parser.antlr.path.AttributePathResolverStack;
-import org.hibernate.hql.parser.antlr.path.BasicAttributePathResolverImpl;
-import org.hibernate.hql.parser.antlr.path.JoinPredicatePathResolverImpl;
+import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.hql.parser.antlr.HqlParserBaseListener;
+import org.hibernate.hql.parser.process.path.AttributePathPart;
+import org.hibernate.hql.parser.process.path.AttributePathResolver;
+import org.hibernate.hql.parser.process.path.BasicAttributePathResolverImpl;
+import org.hibernate.hql.parser.process.path.JoinPredicatePathResolverImpl;
 import org.hibernate.hql.parser.model.AttributeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 import org.hibernate.hql.parser.semantic.Statement;
@@ -215,7 +215,6 @@ public class ExplicitFromClauseIndexer extends HqlParserBaseListener {
 	private static class QualifiedJoinTreeVisitor extends AbstractHqlParseTreeVisitor {
 		private final FromElementSpace fromElementSpace;
 
-		private final AttributePathResolverStack attributePathResolverStack = new AttributePathResolverStack();
 		private QualifiedJoinedFromElement currentJoinRhs;
 
 		public QualifiedJoinTreeVisitor(

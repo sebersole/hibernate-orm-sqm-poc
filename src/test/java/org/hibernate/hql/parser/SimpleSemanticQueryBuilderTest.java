@@ -4,10 +4,14 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.hql.parser.antlr;
+package org.hibernate.hql.parser;
 
 import java.util.Collection;
 
+import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.hql.parser.process.ExplicitFromClauseIndexer;
+import org.hibernate.hql.parser.process.HqlParseTreeBuilder;
+import org.hibernate.hql.parser.process.SemanticQueryBuilder;
 import org.hibernate.hql.parser.semantic.QuerySpec;
 import org.hibernate.hql.parser.semantic.SelectStatement;
 import org.hibernate.hql.parser.semantic.expression.LiteralIntegerExpression;
@@ -22,6 +26,7 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Steve Ebersole
@@ -94,36 +99,35 @@ public class SimpleSemanticQueryBuilderTest {
 
 
 	@Test
-	public void testAttributeJoinWithOnClause() throws Exception {
-		final ParsingContextTestingImpl parsingContext = new ParsingContextTestingImpl();
-
-		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select a from Something a left outer join a.entity c on c.basic1 > 5 and c.basic2 < 20 " );
-
-		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextTestingImpl() );
-		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
-
-		parser.reset();
-
-		SemanticQueryBuilder semanticQueryBuilder = new SemanticQueryBuilder( parsingContext, explicitFromClauseIndexer );
-		SelectStatement selectStatement = semanticQueryBuilder.visitSelectStatement( parser.selectStatement() );
+	public void testAttributeJoinWithOnPredicate() throws Exception {
+		final String query = "select a from Something a left outer join a.entity c on c.basic1 > 5 and c.basic2 < 20";
+		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpretQuery(
+				query,
+				new ConsumerContextTestingImpl()
+		);
 		QuerySpec querySpec = selectStatement.getQuerySpec();
 		assertNotNull( querySpec );
+	}
+
+	@Test
+	public void testInvalidOnPredicateWithImplicitJoin() throws Exception {
+		final String query = "select a from Something a left outer join a.entity c on c.entity.basic1 > 5 and c.basic2 < 20";
+		try {
+			SemanticQueryInterpreter.interpretQuery( query, new ConsumerContextTestingImpl() );
+			fail();
+		}
+		catch (SemanticException expected) {
+		}
 	}
 
 
 	@Test
 	public void testSimpleDynamicInstantiation() throws Exception {
-		final ParsingContextTestingImpl parsingContext = new ParsingContextTestingImpl();
-
-		final HqlParser parser = HqlParseTreeBuilder.INSTANCE.parseHql( "select new org.hibernate.hql.parser.antlr.SimpleSemanticQueryBuilderTest$DTO(a.basic1 as id, a.basic2 as name) from Something a" );
-
-		final ExplicitFromClauseIndexer explicitFromClauseIndexer = new ExplicitFromClauseIndexer( new ParsingContextTestingImpl() );
-		ParseTreeWalker.DEFAULT.walk( explicitFromClauseIndexer, parser.statement() );
-
-		parser.reset();
-
-		SemanticQueryBuilder semanticQueryBuilder = new SemanticQueryBuilder( parsingContext, explicitFromClauseIndexer );
-		SelectStatement selectStatement = semanticQueryBuilder.visitSelectStatement( parser.selectStatement() );
+		final String query = "select new org.hibernate.hql.parser.SimpleSemanticQueryBuilderTest$DTO(a.basic1 as id, a.basic2 as name) from Something a";
+		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpretQuery(
+				query,
+				new ConsumerContextTestingImpl()
+		);
 		QuerySpec querySpec = selectStatement.getQuerySpec();
 		assertNotNull( querySpec );
 	}

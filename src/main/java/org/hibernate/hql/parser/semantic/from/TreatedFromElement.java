@@ -47,4 +47,9 @@ public class TreatedFromElement implements FromElement {
 	public TypeDescriptor getBaseTypeDescriptor() {
 		return wrapped.getTypeDescriptor();
 	}
+
+	@Override
+	public FromElement getUnderlyingFromElement() {
+		return getWrapped();
+	}
 }

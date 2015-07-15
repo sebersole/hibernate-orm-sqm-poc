@@ -7,6 +7,8 @@
 package org.hibernate.hql.parser;
 
 /**
+ * Represents an error in the semantics (meaning) of the passed query.
+ *
  * @author Steve Ebersole
  */
 public class SemanticException extends QueryException {

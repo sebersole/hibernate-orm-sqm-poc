@@ -6,7 +6,7 @@
  */
 package org.hibernate.hql.parser.semantic.predicate;
 
-import org.hibernate.hql.parser.ParsingContext;
+import org.hibernate.hql.parser.process.ParsingContext;
 
 /**
  * @author Steve Ebersole

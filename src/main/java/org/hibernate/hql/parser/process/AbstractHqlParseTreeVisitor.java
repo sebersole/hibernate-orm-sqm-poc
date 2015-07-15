@@ -4,7 +4,7 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.hql.parser.antlr;
+package org.hibernate.hql.parser.process;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -14,12 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.hql.parser.LiteralNumberFormatException;
-import org.hibernate.hql.parser.NotYetImplementedException;
-import org.hibernate.hql.parser.ParsingContext;
 import org.hibernate.hql.parser.ParsingException;
 import org.hibernate.hql.parser.SemanticException;
-import org.hibernate.hql.parser.antlr.path.AttributePathPart;
-import org.hibernate.hql.parser.antlr.path.AttributePathResolver;
+import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.hql.parser.antlr.HqlParserBaseVisitor;
+import org.hibernate.hql.parser.process.path.AttributePathPart;
+import org.hibernate.hql.parser.process.path.AttributePathResolver;
+import org.hibernate.hql.parser.process.path.AttributePathResolverStack;
+import org.hibernate.hql.parser.process.path.IndexedAttributeRootPathResolver;
 import org.hibernate.hql.parser.model.CollectionTypeDescriptor;
 import org.hibernate.hql.parser.model.EntityTypeDescriptor;
 import org.hibernate.hql.parser.model.TypeDescriptor;
@@ -61,6 +63,7 @@ import org.hibernate.hql.parser.semantic.order.SortSpecification;
 import org.hibernate.hql.parser.semantic.predicate.AndPredicate;
 import org.hibernate.hql.parser.semantic.predicate.BetweenPredicate;
 import org.hibernate.hql.parser.semantic.predicate.GroupedPredicate;
+import org.hibernate.hql.parser.semantic.predicate.IndexedAttributePathPart;
 import org.hibernate.hql.parser.semantic.predicate.IsEmptyPredicate;
 import org.hibernate.hql.parser.semantic.predicate.IsNullPredicate;
 import org.hibernate.hql.parser.semantic.predicate.LikePredicate;
@@ -86,6 +89,7 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 	private static final Logger log = Logger.getLogger( AbstractHqlParseTreeVisitor.class );
 
 	private final ParsingContext parsingContext;
+	protected final AttributePathResolverStack attributePathResolverStack = new AttributePathResolverStack();
 
 	public AbstractHqlParseTreeVisitor(ParsingContext parsingContext) {
 		this.parsingContext = parsingContext;
@@ -93,8 +97,9 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 
 	public abstract FromClause getCurrentFromClause();
 
-	public abstract AttributePathResolver getCurrentAttributePathResolver();
-
+	public AttributePathResolver getCurrentAttributePathResolver() {
+		return attributePathResolverStack.getCurrent();
+	}
 
 	@Override
 	public SelectStatement visitSelectStatement(HqlParser.SelectStatementContext ctx) {
@@ -503,10 +508,31 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 
 	@Override
 	public AttributePathPart visitIndexedPath(HqlParser.IndexedPathContext ctx) {
-		final AttributePathPart source = (AttributePathPart) ctx.path().accept( this );
-		// todo : how to resolve "expression" that defines the index value?
+		if ( ctx.path().size() > 2 ) {
+			throw new ParsingException( "Encountered unexpected number of path expressions in indexed path reference : " + ctx.getText() );
+		}
 
-		throw new NotYetImplementedException();
+		final IndexedAttributePathPart indexedReference = new IndexedAttributePathPart(
+				(AttributePathPart) ctx.path( 0 ).accept( this ),
+				(Expression) ctx.expression().accept( this )
+		);
+
+		if ( ctx.path( 1 ) == null ) {
+			return indexedReference;
+		}
+
+
+		// we have a de-reference of the indexed reference.  push a new path resolver
+		// that handles the indexed reference as the root to the path
+		attributePathResolverStack.push(
+				new IndexedAttributeRootPathResolver( getCurrentFromClause(), indexedReference )
+		);
+		try {
+			return (AttributePathPart) ctx.path( 1 ).accept( this );
+		}
+		finally {
+			attributePathResolverStack.pop();
+		}
 	}
 
 	@Override
