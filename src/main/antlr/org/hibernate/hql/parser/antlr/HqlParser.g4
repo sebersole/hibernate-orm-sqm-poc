@@ -301,19 +301,38 @@ expression
 
 literal
 // todo : date/time literals (following JDBC escape syntax)
-	:	STRING_LITERAL
-	|	CHARACTER_LITERAL
-	|	INTEGER_LITERAL
-	|	LONG_LITERAL
-	|	BIG_INTEGER_LITERAL
-	|	FLOAT_LITERAL
-	|	DOUBLE_LITERAL
-	|	BIG_DECIMAL_LITERAL
-	|	HEX_LITERAL
-	|	OCTAL_LITERAL
-	| 	NULL
-	| 	TRUE
-	| 	FALSE
+	: STRING_LITERAL
+	| CHARACTER_LITERAL
+	| INTEGER_LITERAL
+	| LONG_LITERAL
+	| BIG_INTEGER_LITERAL
+	| FLOAT_LITERAL
+	| DOUBLE_LITERAL
+	| BIG_DECIMAL_LITERAL
+	| HEX_LITERAL
+	| OCTAL_LITERAL
+	| NULL
+	| TRUE
+	| FALSE
+	| timestampLiteral
+	| dateLiteral
+	| timeLiteral
+	;
+
+timestampLiteral
+	: TIMESTAMP_ESCAPE_START dateTimeLiteralText RIGHT_BRACE
+	;
+
+dateLiteral
+	: DATE_ESCAPE_START dateTimeLiteralText RIGHT_BRACE
+	;
+
+timeLiteral
+	: TIME_ESCAPE_START dateTimeLiteralText RIGHT_BRACE
+	;
+
+dateTimeLiteralText
+	: STRING_LITERAL | CHARACTER_LITERAL
 	;
 
 parameter

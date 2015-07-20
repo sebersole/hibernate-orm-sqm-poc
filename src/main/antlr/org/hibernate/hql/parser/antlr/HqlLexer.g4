@@ -231,6 +231,11 @@ UNICODE_ESCAPE
 	:	'\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
 	;
 
+// ESCAPE start tokens
+TIMESTAMP_ESCAPE_START : '{ts';
+DATE_ESCAPE_START : '{d';
+TIME_ESCAPE_START : '{t';
+
 TRUE : 'true';
 FALSE :	'false';
 NULL : 'null';
