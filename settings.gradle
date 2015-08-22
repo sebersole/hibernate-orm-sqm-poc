@@ -1,2 +1,15 @@
 rootProject.name = 'hibernate-antlr4-poc'
 
+include 'hibernate-sqm-antlr4poc'
+include 'hibernate-hql-parser-antlr4poc'
+
+// the code in this project would naturally reside in hibernate-orm
+include 'hibernate-orm-sqlgen-antlr4poc'
+
+
+rootProject.children.each { project ->
+	project.buildFileName = "${project.name}.gradle"
+	assert project.projectDir.isDirectory()
+	assert project.buildFile.exists()
+	assert project.buildFile.isFile()
+}

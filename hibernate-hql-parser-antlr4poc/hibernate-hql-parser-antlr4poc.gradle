@@ -1,0 +1,25 @@
+
+/*
+ * Hibernate, Relational Persistence for Idiomatic Java
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ */
+apply plugin: 'antlr'
+
+dependencies {
+	compile project( ':hibernate-sqm-antlr4poc' )
+	antlr 'org.antlr:antlr4:4.5'
+	runtime 'org.antlr:antlr4-runtime:4.5'
+}
+
+tasks.generateGrammarSource {
+	outputDirectory = file( "${outputDirectory}/org/hibernate/hql/parser/antlr" )
+	// ugh!  https://discuss.gradle.org/t/antlr-v4-visitor-generation/10017/1
+	if ( arguments == null ) {
+		arguments = ['-visitor']
+	}
+	else {
+		arguments += ['-visitor']
+	}
+}

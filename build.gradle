@@ -17,84 +17,81 @@ buildscript {
 	}
 }
 
-apply plugin: 'java'
-apply plugin: 'antlr'
-apply plugin: 'org.hibernate.build.gradle.animalSniffer'
-
-apply plugin: 'maven-publish'
-apply plugin: 'maven-publish-auth'
-
 apply plugin: 'idea'
 
-sourceCompatibility = 1.6
-version = '1.0'
+idea {
+	project {
+		jdkName = '1.6'
+		languageLevel = '1.6'
 
-repositories {
-    mavenCentral()
-	jcenter()
-}
-
-configurations {
-	provided {
-		// todo : need to make sure these are non-exported
-		description = 'Non-exported compile-time dependencies.'
+		vcs = 'Git'
 	}
 }
 
-dependencies {
-	compile 'org.jboss.logging:jboss-logging:3.3.0.Final'
-
-	provided 'org.jboss.logging:jboss-logging-annotations:2.0.0.Final'
-
-	antlr 'org.antlr:antlr4:4.5'
-
-	animalSnifferSignature 'org.codehaus.mojo.signature:java16:1.0@signature'
-
-	runtime 'org.antlr:antlr4-runtime:4.5'
-
-    testCompile group: 'junit', name: 'junit', version: '4.11'
-
-	testRuntime 'log4j:log4j:1.2.17'
-}
-
-tasks.generateGrammarSource {
-	outputDirectory = file( "${outputDirectory}/org/hibernate/hql/parser/antlr" )
-	// ugh!  https://discuss.gradle.org/t/antlr-v4-visitor-generation/10017/1
-	if ( arguments == null ) {
-		arguments = ['-visitor']
+subprojects { subproject ->
+	repositories {
+		mavenCentral()
+		jcenter()
 	}
-	else {
-		arguments += ['-visitor']
-	}
-}
 
-task compile
-tasks.withType( JavaCompile ).each {
-	tasks.compile.dependsOn it
-	it.options.compilerArgs += [
-			"-nowarn",
-			"-encoding", "UTF-8"
-	]
+	apply plugin: 'java'
+
+	apply plugin: 'maven-publish'
+	apply plugin: 'maven-publish-auth'
+
+	apply plugin: 'org.hibernate.build.gradle.animalSniffer'
+	apply plugin: 'idea'
+
+	sourceCompatibility = 1.6
+
+	version = '1.0.0-SNAPSHOT'
+
+	configurations {
+		provided {
+			// todo : need to make sure these are non-exported
+			description = 'Non-exported compile-time dependencies.'
+		}
+	}
+
+	dependencies {
+		compile 'org.jboss.logging:jboss-logging:3.3.0.Final'
+		provided 'org.jboss.logging:jboss-logging-annotations:2.0.0.Final'
+
+		animalSnifferSignature 'org.codehaus.mojo.signature:java16:1.0@signature'
+
+		testCompile group: 'junit', name: 'junit', version: '4.11'
+
+		testRuntime 'log4j:log4j:1.2.17'
+	}
+
+	task compile
+	tasks.withType( JavaCompile ).each {
+		tasks.compile.dependsOn it
+		it.options.compilerArgs += [
+				"-nowarn",
+				"-encoding", "UTF-8"
+		]
+	}
+
+	idea {
+		module {
+			jdkName = sourceCompatibility
+
+			excludeDirs = [file( ".gradle" )]
+			excludeDirs += file( "$buildDir/classes" )
+			excludeDirs += file( "$buildDir/packages" )
+			excludeDirs += file( "$buildDir/dependency-cache" )
+			excludeDirs += file( "$buildDir/libs" )
+			excludeDirs += file( "$buildDir/reports" )
+			excludeDirs += file( "$buildDir/resources" )
+			excludeDirs += file( "$buildDir/test-results" )
+			excludeDirs += file( "$buildDir/tmp" )
+
+			downloadSources = true
+		}
+	}
 }
 
 task wrapper(type: Wrapper) {
 	gradleVersion = 2.4
-}
-
-idea {
-	module {
-		jdkName = sourceCompatibility
-
-		excludeDirs = [file( ".gradle" )]
-		excludeDirs += file( "$buildDir/classes" )
-		excludeDirs += file( "$buildDir/packages" )
-		excludeDirs += file( "$buildDir/dependency-cache" )
-		excludeDirs += file( "$buildDir/libs" )
-		excludeDirs += file( "$buildDir/reports" )
-		excludeDirs += file( "$buildDir/resources" )
-		excludeDirs += file( "$buildDir/test-results" )
-		excludeDirs += file( "$buildDir/tmp" )
-
-		downloadSources = true
-	}
 }
