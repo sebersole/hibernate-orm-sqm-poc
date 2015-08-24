@@ -7,12 +7,11 @@
 package org.hibernate.query.parser.hql;
 
 import java.util.Collection;
-import java.util.List;
 
-import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.SemanticException;
 import org.hibernate.query.parser.SemanticQueryInterpreter;
 import org.hibernate.query.parser.internal.hql.HqlParseTreeBuilder;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.hql.phase1.FromClauseProcessor;
 import org.hibernate.query.parser.internal.hql.phase2.SemanticQueryBuilder;
 import org.hibernate.sqm.query.QuerySpec;
@@ -20,6 +19,8 @@ import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.expression.LiteralIntegerExpression;
 import org.hibernate.sqm.query.expression.LiteralLongExpression;
 import org.hibernate.sqm.query.from.FromClause;
+import org.hibernate.sqm.query.from.FromElementSpace;
+import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
 
 import org.junit.Test;
 
@@ -27,9 +28,13 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -116,14 +121,35 @@ public class SimpleSemanticQueryBuilderTest {
 	}
 
 	@Test
-	public void testNestedQuery() throws Exception {
-		final String query = "select a from Something a where a.entity IN (select entity from Entity where entity.basic1 = 5)  ";
+	public void testSimpleUncorrelatedSubQuery() throws Exception {
+		final String query = "select a from Something a where a.entity IN (select e from SomethingElse e where e.basic1 = 5)";
 		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpret(
 				query,
 				new ConsumerContextTestingImpl()
 		);
-		List<FromClause> childFromClauses = selectStatement.getQuerySpec().getFromClause().getChildFromClauses();
-		assertThat( childFromClauses.size(), is( 1 ) );
+
+		// assertions against the sub-query from-clause
+		assertThat( selectStatement.getQuerySpec().getFromClause().getChildFromClauses().size(), is( 1 ) );
+
+		FromClause subQueryFromClause = selectStatement.getQuerySpec().getFromClause().getChildFromClauses().get( 0 );
+		assertThat( subQueryFromClause.getChildFromClauses().size(), is( 0 ) );
+		assertThat( subQueryFromClause.getFromElementSpaces().size(), is( 1 ) );
+
+		FromElementSpace fromElementSpace = subQueryFromClause.getFromElementSpaces().get( 0 );
+		assertThat( fromElementSpace.getRoot(), notNullValue() );
+		assertThat( fromElementSpace.getJoins().size(), is( 0 ) );
+
+		assertThat( fromElementSpace.getRoot().getTypeDescriptor().getTypeName(), is( "com.acme.SomethingElse" ) );
+
+		// assertions against the root query predicate that defines the sub-query
+		assertThat( selectStatement.getQuerySpec().getWhereClause().getPredicate(), notNullValue() );
+		assertThat(
+				selectStatement.getQuerySpec().getWhereClause().getPredicate(),
+				is( instanceOf( InSubQueryPredicate.class ) )
+		);
+
+		InSubQueryPredicate subQueryPredicate = (InSubQueryPredicate) selectStatement.getQuerySpec().getWhereClause().getPredicate();
+		assertSame( subQueryFromClause, subQueryPredicate.getSubQueryExpression().getQuerySpec().getFromClause() );
 	}
 
 	@Test

@@ -54,6 +54,7 @@ import org.hibernate.sqm.query.expression.LiteralStringExpression;
 import org.hibernate.sqm.query.expression.LiteralTrueExpression;
 import org.hibernate.sqm.query.expression.ParameterNamedExpression;
 import org.hibernate.sqm.query.expression.ParameterPositionalExpression;
+import org.hibernate.sqm.query.expression.SubQueryExpression;
 import org.hibernate.sqm.query.expression.UnaryOperationExpression;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElement;
@@ -66,6 +67,8 @@ import org.hibernate.sqm.query.order.SortSpecification;
 import org.hibernate.sqm.query.predicate.AndPredicate;
 import org.hibernate.sqm.query.predicate.BetweenPredicate;
 import org.hibernate.sqm.query.predicate.GroupedPredicate;
+import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
+import org.hibernate.sqm.query.predicate.InTupleListPredicate;
 import org.hibernate.sqm.query.predicate.IndexedAttributePathPart;
 import org.hibernate.sqm.query.predicate.IsEmptyPredicate;
 import org.hibernate.sqm.query.predicate.IsNullPredicate;
@@ -449,6 +452,42 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 			throw new SemanticException( "Path argument to MEMBER OF must be a collection" );
 		}
 		return new MemberOfPredicate( attributeReference );
+	}
+
+	@Override
+	public Object visitInPredicate(HqlParser.InPredicateContext ctx) {
+		if ( HqlParser.ExplicitTupleInListContext.class.isInstance( ctx.inList() ) ) {
+			final HqlParser.ExplicitTupleInListContext tupleExpressionListContext = (HqlParser.ExplicitTupleInListContext) ctx.inList();
+			final List<Expression> tupleExpressions = new ArrayList<Expression>( tupleExpressionListContext.expression().size() );
+			for ( HqlParser.ExpressionContext expressionContext : tupleExpressionListContext.expression() ) {
+				tupleExpressions.add( (Expression) expressionContext.accept( this ) );
+			}
+
+			return new InTupleListPredicate(
+					(Expression) ctx.expression().accept( this ),
+					tupleExpressions
+			);
+		}
+		else if ( HqlParser.SubQueryInListContext.class.isInstance( ctx.inList() ) ) {
+			final HqlParser.SubQueryInListContext subQueryContext = (HqlParser.SubQueryInListContext) ctx.inList();
+			final Expression subQueryExpression = (Expression) subQueryContext.expression().accept( this );
+
+			if ( !SubQueryExpression.class.isInstance( subQueryExpression ) ) {
+				throw new ParsingException(
+						"Was expecting a SubQueryExpression, but found " + subQueryExpression.getClass().getSimpleName()
+								+ " : " + subQueryContext.expression().toString()
+				);
+			}
+
+			return new InSubQueryPredicate(
+					(Expression) ctx.expression().accept( this ),
+					(SubQueryExpression) subQueryExpression
+			);
+		}
+
+		// todo : handle PersistentCollectionReferenceInList labeled branch
+
+		throw new ParsingException( "Unexpected IN predicate type [" + ctx.getClass().getSimpleName() + "] : " + ctx.toString() );
 	}
 
 	@Override
@@ -859,5 +898,10 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 		}
 
 		return arguments;
+	}
+
+	@Override
+	public SubQueryExpression visitSubQueryExpression(HqlParser.SubQueryExpressionContext ctx) {
+		return new SubQueryExpression( visitQuerySpec( ctx.querySpec() ) );
 	}
 }

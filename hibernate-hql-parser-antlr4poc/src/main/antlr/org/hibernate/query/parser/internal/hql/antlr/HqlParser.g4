@@ -269,7 +269,7 @@ predicate
 	| expression GREATER_EQUAL expression							# GreaterThanOrEqualPredicate
 	| expression LESS expression									# LessThanPredicate
 	| expression LESS_EQUAL expression								# LessThanOrEqualPredicate
-	| expression inKeyword inList											# InPredicate
+	| expression inKeyword inList									# InPredicate
 	| expression betweenKeyword expression andKeyword expression	# BetweenPredicate
 	| expression likeKeyword expression likeEscape					# LikePredicate
 	| memberOfKeyword path											# MemberOfPredicate
@@ -278,7 +278,7 @@ predicate
 inList
 	: elementsKeyword? LEFT_PAREN dotIdentifierSequence	RIGHT_PAREN	# PersistentCollectionReferenceInList
 	| LEFT_PAREN expression (COMMA expression)*	RIGHT_PAREN			# ExplicitTupleInList
-	| expression													# SubqueryInList
+	| expression													# SubQueryInList
 	;
 
 likeEscape
@@ -298,7 +298,7 @@ expression
 	| parameter									# ParameterExpression
 	| function									# FunctionExpression
 	| path										# PathExpression
-	| LEFT_PAREN selectStatement RIGHT_PAREN	# Subquery
+	| LEFT_PAREN querySpec RIGHT_PAREN			# SubQueryExpression
 	;
 
 literal

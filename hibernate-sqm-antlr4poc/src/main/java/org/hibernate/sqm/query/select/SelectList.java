@@ -30,4 +30,8 @@ public class SelectList implements Selection {
 		}
 		selectListItems.add( item );
 	}
+
+	public List<SelectListItem> getSelectListItems() {
+		return selectListItems;
+	}
 }
