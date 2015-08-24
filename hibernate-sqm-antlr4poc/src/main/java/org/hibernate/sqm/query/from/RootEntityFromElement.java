@@ -27,4 +27,9 @@ public class RootEntityFromElement extends AbstractFromElement {
 	public EntityTypeDescriptor getTypeDescriptor() {
 		return (EntityTypeDescriptor) super.getTypeDescriptor();
 	}
+
+	@Override
+	public String toString() {
+		return getTypeDescriptor().getTypeName() + " as " + getAlias();
+	}
 }

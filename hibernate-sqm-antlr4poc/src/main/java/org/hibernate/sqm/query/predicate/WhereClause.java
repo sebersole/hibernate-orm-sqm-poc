@@ -26,4 +26,9 @@ public class WhereClause {
 	public void setPredicate(Predicate predicate) {
 		this.predicate = predicate;
 	}
+
+	@Override
+	public String toString() {
+		return "where " + predicate;
+	}
 }

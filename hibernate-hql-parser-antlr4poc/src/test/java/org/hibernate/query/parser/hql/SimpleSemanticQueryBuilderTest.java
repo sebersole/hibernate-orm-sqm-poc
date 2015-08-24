@@ -103,7 +103,7 @@ public class SimpleSemanticQueryBuilderTest {
 	@Test
 	public void testAttributeJoinWithOnPredicate() throws Exception {
 		final String query = "select a from Something a left outer join a.entity c on c.basic1 > 5 and c.basic2 < 20";
-		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpretQuery(
+		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpret(
 				query,
 				new ConsumerContextTestingImpl()
 		);
@@ -115,7 +115,7 @@ public class SimpleSemanticQueryBuilderTest {
 	public void testInvalidOnPredicateWithImplicitJoin() throws Exception {
 		final String query = "select a from Something a left outer join a.entity c on c.entity.basic1 > 5 and c.basic2 < 20";
 		try {
-			SemanticQueryInterpreter.interpretQuery( query, new ConsumerContextTestingImpl() );
+			SemanticQueryInterpreter.interpret( query, new ConsumerContextTestingImpl() );
 			fail();
 		}
 		catch (SemanticException expected) {
@@ -126,7 +126,7 @@ public class SimpleSemanticQueryBuilderTest {
 	@Test
 	public void testSimpleDynamicInstantiation() throws Exception {
 		final String query = "select new org.hibernate.query.parser.hql.SimpleSemanticQueryBuilderTest$DTO(a.basic1 as id, a.basic2 as name) from Something a";
-		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpretQuery(
+		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpret(
 				query,
 				new ConsumerContextTestingImpl()
 		);
