@@ -30,6 +30,7 @@ import org.hibernate.sqm.query.expression.LiteralStringExpression;
 import org.hibernate.sqm.query.expression.LiteralTrueExpression;
 import org.hibernate.sqm.query.expression.ParameterNamedExpression;
 import org.hibernate.sqm.query.expression.ParameterPositionalExpression;
+import org.hibernate.sqm.query.expression.SubQueryExpression;
 import org.hibernate.sqm.query.expression.UnaryOperationExpression;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElementSpace;
@@ -40,6 +41,7 @@ import org.hibernate.sqm.query.order.SortSpecification;
 import org.hibernate.sqm.query.predicate.AndPredicate;
 import org.hibernate.sqm.query.predicate.BetweenPredicate;
 import org.hibernate.sqm.query.predicate.GroupedPredicate;
+import org.hibernate.sqm.query.predicate.InPredicate;
 import org.hibernate.sqm.query.predicate.IsEmptyPredicate;
 import org.hibernate.sqm.query.predicate.IsNullPredicate;
 import org.hibernate.sqm.query.predicate.LikePredicate;
@@ -104,6 +106,8 @@ public interface SemanticQueryVisitor<T> {
 
 	T visitNegatedPredicate(NegatedPredicate predicate);
 
+	T visitInPredicate(InPredicate predicate);
+
 	T visitOrderByClause(OrderByClause orderByClause);
 
 	T visitSortSpecification(SortSpecification sortSpecification);
@@ -151,4 +155,6 @@ public interface SemanticQueryVisitor<T> {
 	T visitConstantFieldExpression(ConstantFieldExpression expression);
 
 	T visitBinaryArithmeticExpression(BinaryArithmeticExpression expression);
+
+	T visitSubQueryExpression(SubQueryExpression expression);
 }
