@@ -6,7 +6,7 @@
  */
 package org.hibernate.query.parser.internal.hql.path;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.FromElementBuilder;
 import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.sqm.path.AttributePathPart;

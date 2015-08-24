@@ -13,8 +13,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
-import org.hibernate.hql.parser.antlr.HqlParserBaseVisitor;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParserBaseVisitor;
 import org.hibernate.query.parser.LiteralNumberFormatException;
 import org.hibernate.query.parser.ParsingException;
 import org.hibernate.query.parser.SemanticException;

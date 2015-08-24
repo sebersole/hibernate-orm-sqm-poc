@@ -6,8 +6,8 @@
  */
 package org.hibernate.query.parser.internal.hql;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
-import org.hibernate.hql.parser.antlr.HqlParserBaseListener;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParserBaseListener;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.NotNull;

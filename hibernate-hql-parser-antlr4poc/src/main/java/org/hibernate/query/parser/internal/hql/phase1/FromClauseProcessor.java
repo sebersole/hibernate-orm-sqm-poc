@@ -9,8 +9,8 @@ package org.hibernate.query.parser.internal.hql.phase1;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
-import org.hibernate.hql.parser.antlr.HqlParserBaseListener;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParserBaseListener;
 import org.hibernate.query.parser.ParsingException;
 import org.hibernate.query.parser.SemanticException;
 import org.hibernate.query.parser.internal.FromClauseIndex;

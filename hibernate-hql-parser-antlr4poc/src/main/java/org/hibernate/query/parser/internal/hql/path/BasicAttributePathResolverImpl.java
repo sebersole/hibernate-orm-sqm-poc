@@ -9,7 +9,7 @@ package org.hibernate.query.parser.internal.hql.path;
 import org.hibernate.query.parser.internal.FromClauseIndex;
 import org.hibernate.query.parser.internal.FromElementBuilder;
 import org.hibernate.query.parser.internal.ParsingContext;
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.sqm.domain.AttributeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;

@@ -6,7 +6,7 @@
  */
 package org.hibernate.query.parser;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.hql.phase2.SemanticQueryBuilder;
 import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.query.parser.internal.hql.HqlParseTreeBuilder;

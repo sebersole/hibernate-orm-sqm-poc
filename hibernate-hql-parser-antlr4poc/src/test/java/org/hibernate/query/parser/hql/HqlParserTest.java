@@ -8,10 +8,10 @@ package org.hibernate.query.parser.hql;
 
 import java.util.Collection;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
-import org.hibernate.hql.parser.antlr.HqlParser.EqualityPredicateContext;
-import org.hibernate.hql.parser.antlr.HqlParser.LiteralExpressionContext;
-import org.hibernate.hql.parser.antlr.HqlParserBaseVisitor;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser.EqualityPredicateContext;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser.LiteralExpressionContext;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParserBaseVisitor;
 import org.hibernate.query.parser.internal.hql.HqlParseTreeBuilder;
 
 import org.junit.Test;

@@ -6,7 +6,7 @@
  */
 package org.hibernate.query.parser.hql;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.ImplicitAliasGenerator;
 import org.hibernate.query.parser.internal.hql.HqlParseTreeBuilder;
 import org.hibernate.query.parser.internal.hql.phase1.FromClauseProcessor;

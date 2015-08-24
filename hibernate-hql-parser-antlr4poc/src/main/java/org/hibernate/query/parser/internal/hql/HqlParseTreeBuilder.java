@@ -6,8 +6,8 @@
  */
 package org.hibernate.query.parser.internal.hql;
 
-import org.hibernate.hql.parser.antlr.HqlLexer;
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlLexer;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;

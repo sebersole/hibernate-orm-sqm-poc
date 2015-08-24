@@ -13,6 +13,6 @@ but my concern was relying on this in the code considering de-typed models (i.e.
 * Proper handling for GroupedPredicate alternatives (explicit grouping parenthesis) - ATM I simply
 created a GroupedPredicate class; maybe that is enough
 * Proper identification of left and right hand side of joins, at least for joins with ON or WITH clauses.  See 
-`org.hibernate.hql.parser.antlr.SemanticQueryBuilder#visitQualifiedJoinPredicate` for details.  Note that I keep
+`org.hibernate.query.parser.internal.hql.antlr.SemanticQueryBuilder#visitQualifiedJoinPredicate` for details.  Note that I keep
 joins in a flat structure because its easier during the initial phase (frm clause processing); and in fact it might
 be impossible to properly identify the left hand side of an "ad hoc" entity join.

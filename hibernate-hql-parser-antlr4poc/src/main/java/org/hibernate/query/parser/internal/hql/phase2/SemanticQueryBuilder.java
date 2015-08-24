@@ -8,7 +8,7 @@ package org.hibernate.query.parser.internal.hql.phase2;
 
 import org.hibernate.query.parser.NotYetImplementedException;
 import org.hibernate.query.parser.ParsingException;
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.query.parser.internal.hql.AbstractHqlParseTreeVisitor;
 import org.hibernate.query.parser.internal.hql.phase1.FromClauseProcessor;

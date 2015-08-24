@@ -8,7 +8,7 @@ package org.hibernate.query.parser.hql;
 
 import java.util.Collection;
 
-import org.hibernate.hql.parser.antlr.HqlParser;
+import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.SemanticException;
 import org.hibernate.query.parser.SemanticQueryInterpreter;
 import org.hibernate.query.parser.internal.hql.HqlParseTreeBuilder;
