@@ -110,6 +110,16 @@ public class SimpleSemanticQueryBuilderTest {
 		QuerySpec querySpec = selectStatement.getQuerySpec();
 		assertNotNull( querySpec );
 	}
+	@Test
+	public void testNestedQuery() throws Exception {
+		final String query = "select a from Something where a.entity IN (select entity from Entity)  ";
+		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpretQuery(
+				query,
+				new ConsumerContextTestingImpl()
+		);
+		QuerySpec querySpec = selectStatement.getQuerySpec();
+		assertNotNull( querySpec );
+	}
 
 	@Test
 	public void testInvalidOnPredicateWithImplicitJoin() throws Exception {
