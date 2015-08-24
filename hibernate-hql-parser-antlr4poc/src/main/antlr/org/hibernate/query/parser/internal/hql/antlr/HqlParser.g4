@@ -269,7 +269,7 @@ predicate
 	| expression GREATER_EQUAL expression							# GreaterThanOrEqualPredicate
 	| expression LESS expression									# LessThanPredicate
 	| expression LESS_EQUAL expression								# LessThanOrEqualPredicate
-	| expression IN inList											# InPredicate
+	| expression inKeyword inList											# InPredicate
 	| expression betweenKeyword expression andKeyword expression	# BetweenPredicate
 	| expression likeKeyword expression likeEscape					# LikePredicate
 	| memberOfKeyword path											# MemberOfPredicate
@@ -278,6 +278,7 @@ predicate
 inList
 	: elementsKeyword? LEFT_PAREN dotIdentifierSequence	RIGHT_PAREN	# PersistentCollectionReferenceInList
 	| LEFT_PAREN expression (COMMA expression)*	RIGHT_PAREN			# ExplicitTupleInList
+	| expression													# SubqueryInList
 	;
 
 likeEscape
@@ -285,18 +286,19 @@ likeEscape
 	;
 
 expression
-	: expression DOUBLE_PIPE expression		# ConcatenationExpression
-	| expression PLUS expression			# AdditionExpression
-	| expression MINUS expression			# SubtractionExpression
-	| expression ASTERISK expression		# MultiplicationExpression
-	| expression SLASH expression			# DivisionExpression
-	| expression PERCENT expression			# ModuloExpression
-	| MINUS expression						# UnaryMinusExpression
-	| PLUS expression						# UnaryPlusExpression
-	| literal								# LiteralExpression
-	| parameter								# ParameterExpression
-	| function								# FunctionExpression
-	| path									# PathExpression
+	: expression DOUBLE_PIPE expression			# ConcatenationExpression
+	| expression PLUS expression				# AdditionExpression
+	| expression MINUS expression				# SubtractionExpression
+	| expression ASTERISK expression			# MultiplicationExpression
+	| expression SLASH expression				# DivisionExpression
+	| expression PERCENT expression				# ModuloExpression
+	| MINUS expression							# UnaryMinusExpression
+	| PLUS expression							# UnaryPlusExpression
+	| literal									# LiteralExpression
+	| parameter									# ParameterExpression
+	| function									# FunctionExpression
+	| path										# PathExpression
+	| LEFT_PAREN selectStatement RIGHT_PAREN	# Subquery
 	;
 
 literal
