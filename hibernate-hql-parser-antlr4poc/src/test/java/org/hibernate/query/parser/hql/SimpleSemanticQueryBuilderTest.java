@@ -7,6 +7,7 @@
 package org.hibernate.query.parser.hql;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.SemanticException;
@@ -18,6 +19,7 @@ import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.expression.LiteralIntegerExpression;
 import org.hibernate.sqm.query.expression.LiteralLongExpression;
+import org.hibernate.sqm.query.from.FromClause;
 
 import org.junit.Test;
 
@@ -25,8 +27,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -110,15 +114,16 @@ public class SimpleSemanticQueryBuilderTest {
 		QuerySpec querySpec = selectStatement.getQuerySpec();
 		assertNotNull( querySpec );
 	}
+
 	@Test
 	public void testNestedQuery() throws Exception {
-		final String query = "select a from Something where a.entity IN (select entity from Entity)  ";
-		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpretQuery(
+		final String query = "select a from Something a where a.entity IN (select entity from Entity where entity.basic1 = 5)  ";
+		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpret(
 				query,
 				new ConsumerContextTestingImpl()
 		);
-		QuerySpec querySpec = selectStatement.getQuerySpec();
-		assertNotNull( querySpec );
+		List<FromClause> childFromClauses = selectStatement.getQuerySpec().getFromClause().getChildFromClauses();
+		assertThat( childFromClauses.size(), is( 1 ) );
 	}
 
 	@Test
