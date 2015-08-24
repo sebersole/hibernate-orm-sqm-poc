@@ -9,6 +9,8 @@ package org.hibernate.query.parser.internal.hql.phase1;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.hibernate.query.parser.StrictJpaComplianceViolation;
+import org.hibernate.query.parser.internal.ImplicitAliasGenerator;
 import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.hql.antlr.HqlParserBaseListener;
 import org.hibernate.query.parser.ParsingException;
@@ -22,6 +24,7 @@ import org.hibernate.query.parser.internal.hql.path.BasicAttributePathResolverIm
 import org.hibernate.query.parser.internal.hql.path.JoinPredicatePathResolverImpl;
 import org.hibernate.sqm.domain.AttributeDescriptor;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
+import org.hibernate.sqm.domain.PolymorphicEntityTypeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.Statement;
@@ -29,6 +32,7 @@ import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.FromElementSpace;
+import org.hibernate.sqm.query.from.QualifiedAttributeJoinFromElement;
 import org.hibernate.sqm.query.from.QualifiedJoinedFromElement;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 import org.hibernate.sqm.query.predicate.Predicate;
@@ -91,6 +95,15 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 	@Override
 	public void enterSelectStatement(HqlParser.SelectStatementContext ctx) {
 		statementType = Statement.Type.SELECT;
+
+		if ( parsingContext.getConsumerContext().useStrictJpaCompliance() ) {
+			if ( ctx.querySpec().selectClause() == null ) {
+				throw new StrictJpaComplianceViolation(
+						"Encountered implicit select-clause, but strict JPQL compliance was requested",
+						StrictJpaComplianceViolation.Type.IMPLICIT_SELECT
+				);
+			}
+		}
 	}
 
 	@Override
@@ -147,6 +160,22 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 
 	@Override
 	public void enterFromElementSpaceRoot(HqlParser.FromElementSpaceRootContext ctx) {
+		final EntityTypeDescriptor entityTypeDescriptor = resolveEntityReference(
+				ctx.mainEntityPersisterReference().dotIdentifierSequence()
+		);
+
+		if ( PolymorphicEntityTypeDescriptor.class.isInstance( entityTypeDescriptor ) ) {
+			if ( parsingContext.getConsumerContext().useStrictJpaCompliance() ) {
+				throw new StrictJpaComplianceViolation(
+						"Encountered unmapped polymorphic reference ["  + entityTypeDescriptor.getTypeName()
+								+ "], but strict JPQL compliance was requested",
+						StrictJpaComplianceViolation.Type.UNMAPPED_POLYMORPHISM
+				);
+			}
+
+			// todo : disallow in subqueries as well
+		}
+
 		final RootEntityFromElement rootEntityFromElement = fromElementBuilder.makeRootEntityFromElement(
 				currentFromElementSpace,
 				resolveEntityReference( ctx.mainEntityPersisterReference().dotIdentifierSequence() ),
@@ -174,9 +203,20 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 
 	@Override
 	public void enterCrossJoin(HqlParser.CrossJoinContext ctx) {
+		final EntityTypeDescriptor entityTypeDescriptor = resolveEntityReference(
+				ctx.mainEntityPersisterReference().dotIdentifierSequence()
+		);
+
+		if ( PolymorphicEntityTypeDescriptor.class.isInstance( entityTypeDescriptor ) ) {
+			throw new SemanticException(
+					"Unmapped polymorphic references are only valid as query root, not in cross join : " +
+							entityTypeDescriptor.getTypeName()
+			);
+		}
+
 		final CrossJoinedFromElement join = fromElementBuilder.makeCrossJoinedFromElement(
 				currentFromElementSpace,
-				resolveEntityReference( ctx.mainEntityPersisterReference().dotIdentifierSequence() ),
+				entityTypeDescriptor,
 				interpretAlias( ctx.mainEntityPersisterReference().IDENTIFIER() )
 		);
 		fromElementMap.put( ctx.getText(), join );
@@ -232,6 +272,19 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 
 		if ( joinedPath == null ) {
 			throw new ParsingException( "Could not resolve join path : " + ctx.qualifiedJoinRhs().getText() );
+		}
+
+		if ( parsingContext.getConsumerContext().useStrictJpaCompliance() ) {
+			if ( !ImplicitAliasGenerator.isImplicitAlias( joinedPath.getAlias() ) ) {
+				if ( QualifiedAttributeJoinFromElement.class.isInstance( joinedPath ) ) {
+					if ( QualifiedAttributeJoinFromElement.class.cast( joinedPath ).isFetched() ) {
+						throw new StrictJpaComplianceViolation(
+								"Encountered aliased fetch join, but strict JPQL compliance was requested",
+								StrictJpaComplianceViolation.Type.ALIASED_FETCH_JOIN
+						);
+					}
+				}
+			}
 		}
 
 		if ( ctx.qualifiedJoinPredicate() != null ) {

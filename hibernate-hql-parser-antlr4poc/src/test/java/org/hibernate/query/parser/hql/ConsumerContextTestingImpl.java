@@ -26,6 +26,9 @@ import org.hibernate.sqm.domain.TypeDescriptor;
  * @author Steve Ebersole
  */
 public class ConsumerContextTestingImpl implements ConsumerContext {
+	// false (full HQL support) by default
+	private boolean strictJpaCompliance;
+
 	@Override
 	public EntityTypeDescriptor resolveEntityReference(String reference) {
 		if ( reference.startsWith( "Polymorphic" ) ) {
@@ -46,6 +49,19 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 	@Override
 	public Class classByName(String name) throws ClassNotFoundException {
 		return Class.forName( name );
+	}
+
+	@Override
+	public boolean useStrictJpaCompliance() {
+		return strictJpaCompliance;
+	}
+
+	public void enableStrictJpaCompliance() {
+		strictJpaCompliance = true;
+	}
+
+	public void disableStrictJpaCompliance() {
+		strictJpaCompliance = false;
 	}
 
 	public static abstract class AbstractTypeDescriptorImpl implements TypeDescriptor {

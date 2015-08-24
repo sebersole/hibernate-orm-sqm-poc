@@ -184,6 +184,7 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 			selectClause = visitSelectClause( ctx.selectClause() );
 		}
 		else {
+			log.info( "Encountered implicit select clause which is a deprecated feature : " + ctx.toString() );
 			selectClause = buildInferredSelectClause( getCurrentFromClause() );
 		}
 

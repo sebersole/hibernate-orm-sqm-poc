@@ -18,10 +18,14 @@ import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.Statement;
 import org.hibernate.sqm.query.from.FromClause;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author Steve Ebersole
  */
 public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
+	private static final Logger log = Logger.getLogger( SemanticQueryBuilder.class );
+
 	private final FromClauseProcessor fromClauseProcessor;
 
 	private FromClause currentFromClause;
