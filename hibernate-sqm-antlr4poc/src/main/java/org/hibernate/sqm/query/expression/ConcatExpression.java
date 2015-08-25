@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
 /**
@@ -32,5 +33,10 @@ public class ConcatExpression implements Expression {
 	public TypeDescriptor getTypeDescriptor() {
 		// for now
 		return lhsOperand.getTypeDescriptor();
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitConcatExpression( this );
 	}
 }

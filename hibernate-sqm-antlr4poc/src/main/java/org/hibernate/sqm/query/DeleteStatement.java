@@ -8,6 +8,7 @@ package org.hibernate.sqm.query;
 
 import java.util.Locale;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.predicate.WhereClauseContainer;
@@ -60,5 +61,10 @@ public class DeleteStatement implements Statement, WhereClauseContainer {
 				entityFromElement,
 				whereClause
 		);
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitDeleteStatement( this );
 	}
 }

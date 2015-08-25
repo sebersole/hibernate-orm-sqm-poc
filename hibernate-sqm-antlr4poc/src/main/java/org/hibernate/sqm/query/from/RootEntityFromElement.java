@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.from;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 
 /**
@@ -31,5 +32,10 @@ public class RootEntityFromElement extends AbstractFromElement {
 	@Override
 	public String toString() {
 		return getTypeDescriptor().getTypeName() + " as " + getAlias();
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		throw new UnsupportedOperationException( "see todo.md comment" );
 	}
 }

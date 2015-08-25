@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.expression.Expression;
 
 /**
@@ -35,5 +36,10 @@ public class BetweenPredicate implements Predicate {
 
 	public Expression getUpperBound() {
 		return upperBound;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitBetweenPredicate( this );
 	}
 }

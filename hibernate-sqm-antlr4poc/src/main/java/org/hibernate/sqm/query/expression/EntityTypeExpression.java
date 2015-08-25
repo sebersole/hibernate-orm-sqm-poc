@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
@@ -22,7 +23,12 @@ public class EntityTypeExpression implements Expression {
 	}
 
 	@Override
-	public TypeDescriptor getTypeDescriptor() {
+	public EntityTypeDescriptor getTypeDescriptor() {
 		return entityTypeDescriptor;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitEntityTypeExpression( this );
 	}
 }

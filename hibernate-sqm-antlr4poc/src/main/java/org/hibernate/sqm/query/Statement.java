@@ -6,6 +6,8 @@
  */
 package org.hibernate.sqm.query;
 
+import org.hibernate.sqm.SemanticQueryWalker;
+
 /**
  * @author Steve Ebersole
  */
@@ -18,4 +20,6 @@ public interface Statement {
 	}
 
 	Type getType();
+
+	<T> T accept(SemanticQueryWalker<T> walker);
 }

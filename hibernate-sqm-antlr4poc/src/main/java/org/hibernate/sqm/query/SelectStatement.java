@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.order.OrderByClause;
 
 /**
@@ -16,7 +17,6 @@ public class SelectStatement implements Statement {
 	private OrderByClause orderByClause;
 
 	public SelectStatement() {
-		this.orderByClause = new OrderByClause();
 	}
 
 	public QuerySpec getQuerySpec() {
@@ -44,5 +44,10 @@ public class SelectStatement implements Statement {
 	@Override
 	public Type getType() {
 		return Type.SELECT;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitSelectStatement( this );
 	}
 }

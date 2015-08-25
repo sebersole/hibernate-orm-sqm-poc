@@ -12,7 +12,7 @@ import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.sqm.path.AttributePathPart;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
 import org.hibernate.sqm.query.from.FromElement;
-import org.hibernate.sqm.query.predicate.IndexedAttributePathPart;
+import org.hibernate.sqm.query.expression.IndexedAttributePathPart;
 
 import org.jboss.logging.Logger;
 

@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.from;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 import org.hibernate.sqm.query.predicate.Predicate;
@@ -45,5 +46,10 @@ public class QualifiedEntityJoinFromElement
 
 	public void setOnClausePredicate(Predicate predicate) {
 		this.onClausePredicate = predicate;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitQualifiedEntityJoinFromElement( this );
 	}
 }

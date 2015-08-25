@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.from;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 import org.hibernate.sqm.query.JoinType;
 
@@ -33,5 +34,10 @@ public class CrossJoinedFromElement extends AbstractFromElement implements Joine
 	@Override
 	public JoinType getJoinType() {
 		return JoinType.CROSS;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitCrossJoinedFromElement( this );
 	}
 }

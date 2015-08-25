@@ -8,6 +8,7 @@ package org.hibernate.sqm.query.expression;
 
 import java.util.List;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
 /**
@@ -38,5 +39,10 @@ public class FunctionExpression implements Expression {
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
 		return resultTypeDescriptor;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitFunctionExpression( this );
 	}
 }

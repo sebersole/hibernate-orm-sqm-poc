@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.AttributeDescriptor;
 import org.hibernate.sqm.domain.BasicTypeDescriptor;
 import org.hibernate.sqm.domain.TypeDescriptor;
@@ -91,5 +92,10 @@ public class DynamicInstantiation implements Selection, Expression {
 		public AttributeDescriptor getAttributeDescriptor(String attributeName) {
 			return null;
 		}
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitDynamicInstantiation( this );
 	}
 }

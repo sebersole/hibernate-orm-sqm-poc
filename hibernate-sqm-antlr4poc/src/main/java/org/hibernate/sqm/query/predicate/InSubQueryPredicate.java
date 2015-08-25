@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.expression.SubQueryExpression;
 
@@ -30,5 +31,10 @@ public class InSubQueryPredicate implements InPredicate {
 
 	public SubQueryExpression getSubQueryExpression() {
 		return subQueryExpression;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitInSubQueryPredicate( this );
 	}
 }

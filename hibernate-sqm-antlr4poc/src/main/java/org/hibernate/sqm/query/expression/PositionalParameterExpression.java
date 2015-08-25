@@ -6,17 +6,18 @@
  */
 package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
 /**
  * @author Steve Ebersole
  */
-public class ParameterNamedExpression implements ParameterExpression {
-	private final String name;
+public class PositionalParameterExpression implements ParameterExpression {
+	private final int position;
 	private TypeDescriptor typeDescriptor;
 
-	public ParameterNamedExpression(String name) {
-		this.name = name;
+	public PositionalParameterExpression(int position) {
+		this.position = position;
 	}
 
 	@Override
@@ -25,12 +26,17 @@ public class ParameterNamedExpression implements ParameterExpression {
 	}
 
 	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitPositionalParameterExpression( this );
+	}
+
+	@Override
 	public String getName() {
-		return name;
+		return null;
 	}
 
 	@Override
 	public Integer getPosition() {
-		return null;
+		return position;
 	}
 }

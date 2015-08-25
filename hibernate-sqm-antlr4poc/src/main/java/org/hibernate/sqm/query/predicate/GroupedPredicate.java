@@ -6,6 +6,8 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
+
 /**
  * @author Steve Ebersole
  */
@@ -18,5 +20,10 @@ public class GroupedPredicate implements Predicate {
 
 	public Predicate getSubPredicate() {
 		return subPredicate;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitGroupedPredicate( this );
 	}
 }

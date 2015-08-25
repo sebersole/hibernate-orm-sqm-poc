@@ -8,6 +8,7 @@ package org.hibernate.sqm.query.expression;
 
 import java.math.BigInteger;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.StandardBasicTypeDescriptors;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
@@ -22,5 +23,10 @@ public class LiteralBigIntegerExpression extends AbstractLiteralExpressionImpl<B
 	@Override
 	public TypeDescriptor getTypeDescriptor() {
 		return StandardBasicTypeDescriptors.INSTANCE.BIG_INTEGER;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitLiteralBigIntegerExpression( this );
 	}
 }

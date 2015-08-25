@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.expression.Expression;
 
 /**
@@ -30,5 +31,10 @@ public class IsEmptyPredicate implements Predicate {
 
 	public boolean isNegated() {
 		return negated;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitIsEmptyPredicate( this );
 	}
 }

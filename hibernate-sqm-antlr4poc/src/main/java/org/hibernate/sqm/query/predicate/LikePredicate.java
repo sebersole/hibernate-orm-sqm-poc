@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.expression.Expression;
 
 /**
@@ -39,5 +40,10 @@ public class LikePredicate implements Predicate {
 
 	public Expression getEscapeCharacter() {
 		return escapeCharacter;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitLikePredicate( this );
 	}
 }

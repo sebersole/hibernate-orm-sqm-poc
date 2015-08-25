@@ -6,6 +6,8 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
+
 /**
  * @author Steve Ebersole
  */
@@ -24,5 +26,10 @@ public class AndPredicate implements Predicate {
 
 	public Predicate getRightHandPredicate() {
 		return rightHandPredicate;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitAndPredicate( this );
 	}
 }

@@ -6,8 +6,11 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
+
 /**
  * @author Steve Ebersole
  */
 public interface Predicate {
+	<T> T accept(SemanticQueryWalker<T> walker);
 }

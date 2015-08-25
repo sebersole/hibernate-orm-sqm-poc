@@ -6,13 +6,14 @@
  */
 package org.hibernate.sqm.query.select;
 
+import org.hibernate.sqm.SemanticQueryWalker;
+
 /**
  * Represents the "object level view" of the query selection.  For a given query there
  * is just one Selection although that Selection might contain multiple "selection items".
  *
  * @author Steve Ebersole
- *
- * @see
  */
 public interface Selection {
+	<T> T accept(SemanticQueryWalker<T> walker);
 }

@@ -8,6 +8,7 @@ package org.hibernate.sqm.query;
 
 import java.util.Locale;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.predicate.WhereClauseContainer;
@@ -62,5 +63,10 @@ public class UpdateStatement implements Statement, WhereClauseContainer {
 				"[no set clause]",
 				whereClause
 		);
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitUpdateStatement( this );
 	}
 }

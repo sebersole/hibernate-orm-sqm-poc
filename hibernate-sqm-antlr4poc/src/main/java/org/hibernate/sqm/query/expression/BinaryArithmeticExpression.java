@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
 /**
@@ -102,5 +103,10 @@ public class BinaryArithmeticExpression implements Expression {
 	public TypeDescriptor getTypeDescriptor() {
 		// for now...
 		return getLeftHandOperand().getTypeDescriptor();
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitBinaryArithmeticExpression( this );
 	}
 }

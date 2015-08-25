@@ -18,7 +18,7 @@ public class TreatedJoinedFromElement extends TreatedFromElement implements Join
 	}
 
 	@Override
-	protected JoinedFromElement getWrapped() {
+	public JoinedFromElement getWrapped() {
 		return (JoinedFromElement) super.getWrapped();
 	}
 

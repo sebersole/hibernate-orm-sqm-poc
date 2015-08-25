@@ -8,6 +8,7 @@ package org.hibernate.sqm.query.expression;
 
 import java.util.Locale;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.AttributeDescriptor;
 import org.hibernate.sqm.domain.TypeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
@@ -63,5 +64,10 @@ public class AttributeReferenceExpression implements AttributePathPart {
 	public FromElement getUnderlyingFromElement() {
 		// todo : not sure this is correct in all cases..
 		return source;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitAttributeReferenceExpression( this );
 	}
 }

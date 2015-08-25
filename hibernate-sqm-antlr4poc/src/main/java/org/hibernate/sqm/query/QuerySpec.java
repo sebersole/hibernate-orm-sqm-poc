@@ -8,9 +8,9 @@ package org.hibernate.sqm.query;
 
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromClauseContainer;
-import org.hibernate.sqm.query.select.SelectClause;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.predicate.WhereClauseContainer;
+import org.hibernate.sqm.query.select.SelectClause;
 
 /**
  * Defines the commonality between a root query and a subquery.

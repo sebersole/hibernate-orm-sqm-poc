@@ -7,6 +7,7 @@
 package org.hibernate.sqm.query.order;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.sqm.query.expression.Expression;
@@ -31,5 +32,14 @@ public class OrderByClause {
 	public OrderByClause addSortSpecification(Expression expression) {
 		addSortSpecification( new SortSpecification( expression ) );
 		return this;
+	}
+
+	public List<SortSpecification> getSortSpecifications() {
+		if ( sortSpecifications == null ) {
+			return Collections.emptyList();
+		}
+		else {
+			return Collections.unmodifiableList( sortSpecifications );
+		}
 	}
 }

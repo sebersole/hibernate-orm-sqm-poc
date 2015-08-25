@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.expression.Expression;
 
 /**
@@ -76,5 +77,10 @@ public class RelationalPredicate implements Predicate {
 
 	public Type getType() {
 		return type;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitRelationalPredicate( this );
 	}
 }

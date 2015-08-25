@@ -6,9 +6,11 @@
  */
 package org.hibernate.sqm.query.predicate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.sqm.Helper;
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.query.expression.Expression;
 
 /**
@@ -17,6 +19,10 @@ import org.hibernate.sqm.query.expression.Expression;
 public class InTupleListPredicate implements InPredicate {
 	private final Expression testExpression;
 	private final List<Expression> tupleListExpressions;
+
+	public InTupleListPredicate(Expression testExpression) {
+		this( testExpression, new ArrayList<Expression>() );
+	}
 
 	public InTupleListPredicate(Expression testExpression, Expression... tupleListExpressions) {
 		this( testExpression, Helper.toExpandableList( tupleListExpressions ) );
@@ -36,5 +42,14 @@ public class InTupleListPredicate implements InPredicate {
 
 	public List<Expression> getTupleListExpressions() {
 		return tupleListExpressions;
+	}
+
+	public void addExpression(Expression expression) {
+		tupleListExpressions.add( expression );
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitInTupleListPredicate( this );
 	}
 }

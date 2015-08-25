@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.from;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 
 /**
@@ -20,7 +21,7 @@ public class TreatedFromElement implements FromElement {
 		this.treatedAs = treatedAs;
 	}
 
-	protected FromElement getWrapped() {
+	public FromElement getWrapped() {
 		return wrapped;
 	}
 
@@ -51,5 +52,10 @@ public class TreatedFromElement implements FromElement {
 	@Override
 	public FromElement getUnderlyingFromElement() {
 		return getWrapped();
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		throw new UnsupportedOperationException( "see todo.md comment" );
 	}
 }

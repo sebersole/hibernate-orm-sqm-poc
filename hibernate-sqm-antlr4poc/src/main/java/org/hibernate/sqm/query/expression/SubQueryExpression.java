@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.select.SelectList;
@@ -41,5 +42,10 @@ public class SubQueryExpression implements Expression {
 
 	public QuerySpec getQuerySpec() {
 		return querySpec;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitSubQueryExpression( this );
 	}
 }

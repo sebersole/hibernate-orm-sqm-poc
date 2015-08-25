@@ -7,10 +7,7 @@
 package org.hibernate.sqm.query.from;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
-import org.jboss.logging.Logger;
 
 /**
  * Contract representing a from clause.
@@ -21,14 +18,15 @@ import org.jboss.logging.Logger;
  * @author Steve Ebersole
  */
 public class FromClause {
-	private static final Logger log = Logger.getLogger( FromClause.class );
-
 	private List<FromElementSpace> fromElementSpaces = new ArrayList<FromElementSpace>();
 
 	public List<FromElementSpace> getFromElementSpaces() {
 		return fromElementSpaces;
 	}
 
+	public void addFromElementSpace(FromElementSpace space) {
+
+	}
 	public FromElementSpace makeFromElementSpace() {
 		final FromElementSpace space = new FromElementSpace( this );
 		fromElementSpaces.add( space );

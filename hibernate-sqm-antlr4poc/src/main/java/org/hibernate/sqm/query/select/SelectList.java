@@ -9,6 +9,8 @@ package org.hibernate.sqm.query.select;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.sqm.SemanticQueryWalker;
+
 /**
  * @author Steve Ebersole
  */
@@ -33,5 +35,10 @@ public class SelectList implements Selection {
 
 	public List<SelectListItem> getSelectListItems() {
 		return selectListItems;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitSelectList( this );
 	}
 }

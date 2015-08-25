@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.from;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
 
@@ -18,4 +19,6 @@ public interface FromElement extends AttributePathPart {
 	TypeDescriptor getTypeDescriptor();
 
 	void addTreatedAs(TypeDescriptor typeDescriptor);
+
+	<T> T accept(SemanticQueryWalker<T> walker);
 }

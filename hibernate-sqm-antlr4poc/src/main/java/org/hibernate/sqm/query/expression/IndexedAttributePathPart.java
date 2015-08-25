@@ -4,12 +4,12 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.sqm.query.predicate;
+package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.CollectionTypeDescriptor;
 import org.hibernate.sqm.domain.TypeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
-import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.from.FromElement;
 
 /**
@@ -46,5 +46,10 @@ public class IndexedAttributePathPart implements AttributePathPart {
 	public FromElement getUnderlyingFromElement() {
 		// todo : almost positive this is not accurate in most cases
 		return source.getUnderlyingFromElement();
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		throw new UnsupportedOperationException( "see todo comment" );
 	}
 }

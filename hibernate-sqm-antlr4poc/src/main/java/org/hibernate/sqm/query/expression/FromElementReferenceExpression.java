@@ -6,6 +6,7 @@
  */
 package org.hibernate.sqm.query.expression;
 
+import org.hibernate.sqm.SemanticQueryWalker;
 import org.hibernate.sqm.domain.TypeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
 import org.hibernate.sqm.query.from.FromElement;
@@ -32,5 +33,10 @@ public class FromElementReferenceExpression implements AttributePathPart {
 	@Override
 	public FromElement getUnderlyingFromElement() {
 		return fromElement;
+	}
+
+	@Override
+	public <T> T accept(SemanticQueryWalker<T> walker) {
+		return walker.visitFromElementReferenceExpression( this );
 	}
 }
