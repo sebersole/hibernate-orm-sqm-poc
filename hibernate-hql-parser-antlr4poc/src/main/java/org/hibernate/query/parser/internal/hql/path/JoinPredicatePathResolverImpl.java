@@ -10,10 +10,10 @@ import org.hibernate.query.parser.SemanticException;
 import org.hibernate.query.parser.internal.FromClauseIndex;
 import org.hibernate.query.parser.internal.FromElementBuilder;
 import org.hibernate.query.parser.internal.ParsingContext;
+import org.hibernate.query.parser.internal.hql.phase1.FromClauseNode;
 import org.hibernate.sqm.domain.AttributeDescriptor;
 import org.hibernate.sqm.domain.CollectionTypeDescriptor;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
-import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.QualifiedJoinedFromElement;
 
@@ -28,7 +28,7 @@ public class JoinPredicatePathResolverImpl extends BasicAttributePathResolverImp
 			FromElementBuilder fromElementBuilder,
 			FromClauseIndex fromClauseIndex,
 			ParsingContext parsingContext,
-			FromClause fromClause,
+			FromClauseNode fromClause,
 			QualifiedJoinedFromElement joinRhs) {
 		super( fromElementBuilder, fromClauseIndex, parsingContext, fromClause );
 		this.joinRhs = joinRhs;

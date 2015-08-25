@@ -42,32 +42,36 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 /**
  * The main piece of Phase 1 processing of an HQL/JPQL statement responsible for processing the from clauses
  * present in the query and building some in-flight indexes (symbol tables) to be used later.
- * <p/>
+ * <p>
  * This is needed because, just like SQL, the from clause defines the namespace for the query.  We need to
  * know that namespace before we can start processing the other clauses which work within that namespace.
- * <p/>
+ * <p>
  * E.g., in the HQL {@code select p.name from Person p} we cannot effectively process the {@code p.name}
  * reference in the select clause until after we have processed the from clause and can then recognize that
  * {@code p} is a (forward) reference to the alias {@code p} defined in the from clause.
  *
  * @author Steve Ebersole
  */
-public class FromClauseProcessor  extends HqlParserBaseListener {
+public class FromClauseProcessor extends HqlParserBaseListener {
 	private final ParsingContext parsingContext;
-	private final FromClause rootFromClause;
+	private final FromClauseNode rootFromClause;
 	private final FromClauseIndex fromClauseIndex;
 	private final FromElementBuilder fromElementBuilder;
+	private FromClauseNode currentFromClauseNode;
+	private FromElementSpace currentFromElementSpace;
 
 	private Statement.Type statementType;
 
 	// Using HqlParser.QuerySpecContext references directly did not work in my experience, as each walk
 	// seems to build new instances.  So here use the context text as key.
-	private final Map<String, FromClause> fromClauseMap = new HashMap<String, FromClause>();
+	private final Map<String, FromClauseNode> fromClauseMap = new HashMap<String, FromClauseNode>();
 	private final Map<String, FromElement> fromElementMap = new HashMap<String, FromElement>();
 
 	public FromClauseProcessor(ParsingContext parsingContext) {
 		this.parsingContext = parsingContext;
-		this.rootFromClause = new FromClause();
+
+		this.rootFromClause = new FromClauseNode( new FromClause() );
+
 		this.fromClauseIndex = new FromClauseIndex();
 		this.fromElementBuilder = new FromElementBuilder( parsingContext, fromClauseIndex );
 	}
@@ -76,7 +80,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		return statementType;
 	}
 
-	public FromClause getRootFromClause() {
+	public FromClauseNode getRootFromClause() {
 		return rootFromClause;
 	}
 
@@ -88,7 +92,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		return fromElementBuilder;
 	}
 
-	public FromClause findFromClauseForQuerySpec(HqlParser.QuerySpecContext ctx) {
+	public FromClauseNode findFromClauseForQuerySpec(HqlParser.QuerySpecContext ctx) {
 		return fromClauseMap.get( ctx.getText() );
 	}
 
@@ -121,36 +125,31 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		statementType = Statement.Type.DELETE;
 	}
 
-	private FromClause currentFromClause;
-
 	@Override
 	public void enterFromClause(HqlParser.FromClauseContext ctx) {
 		super.enterFromClause( ctx );
 
-		if ( currentFromClause == null ) {
-			currentFromClause = rootFromClause;
+		if ( currentFromClauseNode == null ) {
+			currentFromClauseNode = rootFromClause;
 		}
 		else {
-			currentFromClause = currentFromClause.makeChildFromClause();
+			currentFromClauseNode = new FromClauseNode( new FromClause(), currentFromClauseNode );
 		}
 	}
 
 	@Override
 	public void exitQuerySpec(HqlParser.QuerySpecContext ctx) {
-		fromClauseMap.put( ctx.getText(), currentFromClause );
+		fromClauseMap.put( ctx.getText(), currentFromClauseNode );
 
-		if ( currentFromClause == null ) {
+		if ( currentFromClauseNode == null ) {
 			throw new ParsingException( "Mismatch currentFromClause handling" );
 		}
-		currentFromClause = currentFromClause.getParentFromClause();
+		currentFromClauseNode = currentFromClauseNode.getParent();
 	}
-
-
-	private FromElementSpace currentFromElementSpace;
 
 	@Override
 	public void enterFromElementSpace(HqlParser.FromElementSpaceContext ctx) {
-		currentFromElementSpace = currentFromClause.makeFromElementSpace();
+		currentFromElementSpace = currentFromClauseNode.getValue().makeFromElementSpace();
 	}
 
 	@Override
@@ -167,7 +166,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		if ( PolymorphicEntityTypeDescriptor.class.isInstance( entityTypeDescriptor ) ) {
 			if ( parsingContext.getConsumerContext().useStrictJpaCompliance() ) {
 				throw new StrictJpaComplianceViolation(
-						"Encountered unmapped polymorphic reference ["  + entityTypeDescriptor.getTypeName()
+						"Encountered unmapped polymorphic reference [" + entityTypeDescriptor.getTypeName()
 								+ "], but strict JPQL compliance was requested",
 						StrictJpaComplianceViolation.Type.UNMAPPED_POLYMORPHISM
 				);
@@ -186,7 +185,9 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 
 	private EntityTypeDescriptor resolveEntityReference(HqlParser.DotIdentifierSequenceContext dotIdentifierSequenceContext) {
 		final String entityName = dotIdentifierSequenceContext.getText();
-		final EntityTypeDescriptor entityTypeDescriptor = parsingContext.getConsumerContext().resolveEntityReference( entityName );
+		final EntityTypeDescriptor entityTypeDescriptor = parsingContext.getConsumerContext().resolveEntityReference(
+				entityName
+		);
 		if ( entityTypeDescriptor == null ) {
 			throw new SemanticException( "Unresolved entity name : " + entityName );
 		}
@@ -229,6 +230,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 				fromClauseIndex,
 				parsingContext,
 				currentFromElementSpace,
+				currentFromClauseNode,
 				JoinType.INNER,
 				interpretAlias( ctx.IDENTIFIER() ),
 				false
@@ -261,6 +263,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 				fromClauseIndex,
 				parsingContext,
 				currentFromElementSpace,
+				currentFromClauseNode,
 				joinType,
 				interpretAlias( ctx.qualifiedJoinRhs().IDENTIFIER() ),
 				ctx.fetchKeyword() != null
@@ -300,6 +303,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		private final FromClauseIndex fromClauseIndex;
 		private final ParsingContext parsingContext;
 		private final FromElementSpace fromElementSpace;
+		private final FromClauseNode currentFromClauseNode;
 
 		private QualifiedJoinedFromElement currentJoinRhs;
 
@@ -308,6 +312,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 				FromClauseIndex fromClauseIndex,
 				ParsingContext parsingContext,
 				FromElementSpace fromElementSpace,
+				FromClauseNode fromClauseNode,
 				JoinType joinType,
 				String alias,
 				boolean fetched) {
@@ -316,10 +321,12 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 			this.fromClauseIndex = fromClauseIndex;
 			this.parsingContext = parsingContext;
 			this.fromElementSpace = fromElementSpace;
+			this.currentFromClauseNode = fromClauseNode;
 			this.attributePathResolverStack.push(
 					new JoinAttributePathResolver(
 							fromElementBuilder,
 							fromClauseIndex,
+							currentFromClauseNode,
 							parsingContext,
 							fromElementSpace,
 							joinType,
@@ -332,6 +339,11 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		@Override
 		public FromClause getCurrentFromClause() {
 			return fromElementSpace.getFromClause();
+		}
+
+		@Override
+		public FromClauseNode getCurrentFromClauseNode() {
+			return currentFromClauseNode;
 		}
 
 		@Override
@@ -354,7 +366,7 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 							fromElementBuilder,
 							fromClauseIndex,
 							parsingContext,
-							getCurrentFromClause(),
+							getCurrentFromClauseNode(),
 							currentJoinRhs
 					)
 			);
@@ -377,12 +389,13 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		public JoinAttributePathResolver(
 				FromElementBuilder fromElementBuilder,
 				FromClauseIndex fromClauseIndex,
+				FromClauseNode currentFromClauseNode,
 				ParsingContext parsingContext,
 				FromElementSpace fromElementSpace,
 				JoinType joinType,
 				String alias,
 				boolean fetched) {
-			super( fromElementBuilder, fromClauseIndex, parsingContext, fromElementSpace.getFromClause() );
+			super( fromElementBuilder, fromClauseIndex, parsingContext, currentFromClauseNode );
 			this.fromElementBuilder = fromElementBuilder;
 			this.fromElementSpace = fromElementSpace;
 			this.joinType = joinType;
@@ -412,7 +425,9 @@ public class FromClauseProcessor  extends HqlParserBaseListener {
 		}
 
 		protected AttributeDescriptor resolveAttributeDescriptor(FromElement lhs, String attributeName) {
-			final AttributeDescriptor attributeDescriptor = lhs.getTypeDescriptor().getAttributeDescriptor( attributeName );
+			final AttributeDescriptor attributeDescriptor = lhs.getTypeDescriptor().getAttributeDescriptor(
+					attributeName
+			);
 			if ( attributeDescriptor == null ) {
 				throw new SemanticException(
 						"Name [" + attributeName + "] is not a valid attribute on from-element [" +

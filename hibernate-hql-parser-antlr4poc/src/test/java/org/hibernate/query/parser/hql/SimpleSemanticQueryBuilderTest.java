@@ -122,24 +122,11 @@ public class SimpleSemanticQueryBuilderTest {
 
 	@Test
 	public void testSimpleUncorrelatedSubQuery() throws Exception {
-		final String query = "select a from Something a where a.entity IN (select e from SomethingElse e where e.basic1 = 5)";
+		final String query = "select a from Something a where a.entity IN (select e from SomethingElse e where e.basic1 IN(select e from SomethingElse2 b where b.basic2 = 2 ))";
 		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpret(
 				query,
 				new ConsumerContextTestingImpl()
 		);
-
-		// assertions against the sub-query from-clause
-		assertThat( selectStatement.getQuerySpec().getFromClause().getChildFromClauses().size(), is( 1 ) );
-
-		FromClause subQueryFromClause = selectStatement.getQuerySpec().getFromClause().getChildFromClauses().get( 0 );
-		assertThat( subQueryFromClause.getChildFromClauses().size(), is( 0 ) );
-		assertThat( subQueryFromClause.getFromElementSpaces().size(), is( 1 ) );
-
-		FromElementSpace fromElementSpace = subQueryFromClause.getFromElementSpaces().get( 0 );
-		assertThat( fromElementSpace.getRoot(), notNullValue() );
-		assertThat( fromElementSpace.getJoins().size(), is( 0 ) );
-
-		assertThat( fromElementSpace.getRoot().getTypeDescriptor().getTypeName(), is( "com.acme.SomethingElse" ) );
 
 		// assertions against the root query predicate that defines the sub-query
 		assertThat( selectStatement.getQuerySpec().getWhereClause().getPredicate(), notNullValue() );
@@ -149,7 +136,15 @@ public class SimpleSemanticQueryBuilderTest {
 		);
 
 		InSubQueryPredicate subQueryPredicate = (InSubQueryPredicate) selectStatement.getQuerySpec().getWhereClause().getPredicate();
-		assertSame( subQueryFromClause, subQueryPredicate.getSubQueryExpression().getQuerySpec().getFromClause() );
+		FromClause fromClause = subQueryPredicate.getSubQueryExpression().getQuerySpec().getFromClause();
+		assertNotNull( fromClause );
+		assertThat( fromClause.getFromElementSpaces().size(), is( 1 ) );
+
+		FromElementSpace fromElementSpace = fromClause.getFromElementSpaces().get( 0 );
+		assertThat( fromElementSpace.getRoot(), notNullValue() );
+		assertThat( fromElementSpace.getJoins().size(), is( 0 ) );
+
+		assertThat( fromElementSpace.getRoot().getTypeDescriptor().getTypeName(), is( "com.acme.SomethingElse" ) );
 	}
 
 	@Test
