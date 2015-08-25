@@ -6,11 +6,14 @@
  */
 package org.hibernate.query.parser.internal;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.hibernate.query.parser.internal.hql.phase1.FromClauseNode;
+import org.hibernate.query.parser.internal.hql.phase1.FromClauseStackNode;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.FromElementSpace;
 import org.hibernate.sqm.query.from.JoinedFromElement;
@@ -25,6 +28,8 @@ import org.jboss.logging.Logger;
  */
 public class FromClauseIndex {
 	private static final Logger log = Logger.getLogger( FromClauseIndex.class );
+
+	private List<FromClauseStackNode> roots;
 
 	private Map<String,FromElement> fromElementsByAlias = new HashMap<String, FromElement>();
 	private Map<String,FromElement> fromElementsByPath = new HashMap<String, FromElement>();
@@ -44,20 +49,13 @@ public class FromClauseIndex {
 		}
 	}
 
-	public FromElement findFromElementByAlias(FromClauseNode currentFromClause, String alias) {
-		FromElement fromElement = fromElementsByAlias.get( alias );
-//		if ( fromElement == null ) {
-//			if ( parentFromClause != null ) {
-//				log.debugf( "Unable to resolve alias [%s] in local FromClause; checking parent" );
-//				fromElement = parentFromClause.findFromElementByAlias( alias );
-//			}
-//		}
-		return fromElement;
+	public FromElement findFromElementByAlias(String alias) {
+		return fromElementsByAlias.get( alias );
 	}
 
-	public FromElement findFromElementWithAttribute(FromClauseNode fromClause, String name) {
+	public FromElement findFromElementWithAttribute(FromClauseStackNode fromClause, String name) {
 		FromElement found = null;
-		for ( FromElementSpace space : fromClause.getValue().getFromElementSpaces() ) {
+		for ( FromElementSpace space : fromClause.getFromClause().getFromElementSpaces() ) {
 			if ( space.getRoot().getTypeDescriptor().getAttributeDescriptor( name ) != null ) {
 				if ( found != null ) {
 					throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
@@ -78,10 +76,26 @@ public class FromClauseIndex {
 		if ( found == null ) {
 			if ( fromClause.hasParent() ) {
 				log.debugf( "Unable to resolve unqualified attribute [%s] in local FromClause; checking parent" );
-				found = findFromElementWithAttribute( fromClause.getParent(), name );
+				found = findFromElementWithAttribute( fromClause.getParentNode(), name );
 			}
 		}
 
 		return found;
+	}
+
+	public void registerRootFromClauseNode(FromClauseStackNode root) {
+		if ( roots == null ) {
+			roots = new ArrayList<FromClauseStackNode>();
+		}
+		roots.add( root );
+	}
+
+	public List<FromClauseStackNode> getRootFromClauseNodeList() {
+		if ( roots == null ) {
+			return Collections.emptyList();
+		}
+		else {
+			return Collections.unmodifiableList( roots );
+		}
 	}
 }

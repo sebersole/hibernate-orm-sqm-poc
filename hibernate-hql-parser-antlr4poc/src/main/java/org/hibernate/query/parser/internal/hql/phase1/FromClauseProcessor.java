@@ -54,23 +54,20 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  */
 public class FromClauseProcessor extends HqlParserBaseListener {
 	private final ParsingContext parsingContext;
-	private final FromClauseNode rootFromClause;
 	private final FromClauseIndex fromClauseIndex;
 	private final FromElementBuilder fromElementBuilder;
-	private FromClauseNode currentFromClauseNode;
+	private FromClauseStackNode currentFromClauseStackNode;
 	private FromElementSpace currentFromElementSpace;
 
 	private Statement.Type statementType;
 
 	// Using HqlParser.QuerySpecContext references directly did not work in my experience, as each walk
 	// seems to build new instances.  So here use the context text as key.
-	private final Map<String, FromClauseNode> fromClauseMap = new HashMap<String, FromClauseNode>();
+	private final Map<String, FromClauseStackNode> fromClauseMap = new HashMap<String, FromClauseStackNode>();
 	private final Map<String, FromElement> fromElementMap = new HashMap<String, FromElement>();
 
 	public FromClauseProcessor(ParsingContext parsingContext) {
 		this.parsingContext = parsingContext;
-
-		this.rootFromClause = new FromClauseNode( new FromClause() );
 
 		this.fromClauseIndex = new FromClauseIndex();
 		this.fromElementBuilder = new FromElementBuilder( parsingContext, fromClauseIndex );
@@ -78,10 +75,6 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 
 	public Statement.Type getStatementType() {
 		return statementType;
-	}
-
-	public FromClauseNode getRootFromClause() {
-		return rootFromClause;
 	}
 
 	public FromClauseIndex getFromClauseIndex() {
@@ -92,7 +85,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 		return fromElementBuilder;
 	}
 
-	public FromClauseNode findFromClauseForQuerySpec(HqlParser.QuerySpecContext ctx) {
+	public FromClauseStackNode findFromClauseForQuerySpec(HqlParser.QuerySpecContext ctx) {
 		return fromClauseMap.get( ctx.getText() );
 	}
 
@@ -126,30 +119,31 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 	}
 
 	@Override
-	public void enterFromClause(HqlParser.FromClauseContext ctx) {
-		super.enterFromClause( ctx );
+	public void enterQuerySpec(HqlParser.QuerySpecContext ctx) {
+		super.enterQuerySpec( ctx );
 
-		if ( currentFromClauseNode == null ) {
-			currentFromClauseNode = rootFromClause;
+		if ( currentFromClauseStackNode == null ) {
+			currentFromClauseStackNode = new FromClauseStackNode( new FromClause() );
+			fromClauseIndex.registerRootFromClauseNode( currentFromClauseStackNode );
 		}
 		else {
-			currentFromClauseNode = new FromClauseNode( new FromClause(), currentFromClauseNode );
+			currentFromClauseStackNode = new FromClauseStackNode( new FromClause(), currentFromClauseStackNode );
 		}
 	}
 
 	@Override
 	public void exitQuerySpec(HqlParser.QuerySpecContext ctx) {
-		fromClauseMap.put( ctx.getText(), currentFromClauseNode );
+		fromClauseMap.put( ctx.getText(), currentFromClauseStackNode );
 
-		if ( currentFromClauseNode == null ) {
+		if ( currentFromClauseStackNode == null ) {
 			throw new ParsingException( "Mismatch currentFromClause handling" );
 		}
-		currentFromClauseNode = currentFromClauseNode.getParent();
+		currentFromClauseStackNode = currentFromClauseStackNode.getParentNode();
 	}
 
 	@Override
 	public void enterFromElementSpace(HqlParser.FromElementSpaceContext ctx) {
-		currentFromElementSpace = currentFromClauseNode.getValue().makeFromElementSpace();
+		currentFromElementSpace = currentFromClauseStackNode.getFromClause().makeFromElementSpace();
 	}
 
 	@Override
@@ -230,7 +224,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 				fromClauseIndex,
 				parsingContext,
 				currentFromElementSpace,
-				currentFromClauseNode,
+				currentFromClauseStackNode,
 				JoinType.INNER,
 				interpretAlias( ctx.IDENTIFIER() ),
 				false
@@ -263,7 +257,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 				fromClauseIndex,
 				parsingContext,
 				currentFromElementSpace,
-				currentFromClauseNode,
+				currentFromClauseStackNode,
 				joinType,
 				interpretAlias( ctx.qualifiedJoinRhs().IDENTIFIER() ),
 				ctx.fetchKeyword() != null
@@ -303,7 +297,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 		private final FromClauseIndex fromClauseIndex;
 		private final ParsingContext parsingContext;
 		private final FromElementSpace fromElementSpace;
-		private final FromClauseNode currentFromClauseNode;
+		private final FromClauseStackNode currentFromClauseNode;
 
 		private QualifiedJoinedFromElement currentJoinRhs;
 
@@ -312,7 +306,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 				FromClauseIndex fromClauseIndex,
 				ParsingContext parsingContext,
 				FromElementSpace fromElementSpace,
-				FromClauseNode fromClauseNode,
+				FromClauseStackNode fromClauseNode,
 				JoinType joinType,
 				String alias,
 				boolean fetched) {
@@ -342,7 +336,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 		}
 
 		@Override
-		public FromClauseNode getCurrentFromClauseNode() {
+		public FromClauseStackNode getCurrentFromClauseNode() {
 			return currentFromClauseNode;
 		}
 
@@ -389,7 +383,7 @@ public class FromClauseProcessor extends HqlParserBaseListener {
 		public JoinAttributePathResolver(
 				FromElementBuilder fromElementBuilder,
 				FromClauseIndex fromClauseIndex,
-				FromClauseNode currentFromClauseNode,
+				FromClauseStackNode currentFromClauseNode,
 				ParsingContext parsingContext,
 				FromElementSpace fromElementSpace,
 				JoinType joinType,

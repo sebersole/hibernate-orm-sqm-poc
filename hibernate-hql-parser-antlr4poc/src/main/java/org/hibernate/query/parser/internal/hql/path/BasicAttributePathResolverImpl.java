@@ -10,7 +10,7 @@ import org.hibernate.query.parser.internal.FromClauseIndex;
 import org.hibernate.query.parser.internal.FromElementBuilder;
 import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
-import org.hibernate.query.parser.internal.hql.phase1.FromClauseNode;
+import org.hibernate.query.parser.internal.hql.phase1.FromClauseStackNode;
 import org.hibernate.sqm.domain.AttributeDescriptor;
 import org.hibernate.sqm.path.AttributePathPart;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
@@ -27,14 +27,14 @@ public class BasicAttributePathResolverImpl extends AbstractAttributePathResolve
 
 	private final FromElementBuilder fromElementBuilder;
 	private final FromClauseIndex fromClauseIndex;
-	private final FromClauseNode fromClause;
+	private final FromClauseStackNode fromClause;
 	private final ParsingContext parsingContext;
 
 	public BasicAttributePathResolverImpl(
 			FromElementBuilder fromElementBuilder,
 			FromClauseIndex fromClauseIndex,
 			ParsingContext parsingContext,
-			FromClauseNode fromClause) {
+			FromClauseStackNode fromClause) {
 		this.fromElementBuilder = fromElementBuilder;
 		this.fromClauseIndex = fromClauseIndex;
 		this.fromClause = fromClause;
@@ -93,7 +93,7 @@ public class BasicAttributePathResolverImpl extends AbstractAttributePathResolve
 	}
 
 	protected FromElement findFromElementByAlias(String alias) {
-		return fromClauseIndex.findFromElementByAlias( fromClause, alias );
+		return fromClauseIndex.findFromElementByAlias( alias );
 	}
 
 	protected FromElement findFromElementWithAttribute(String attributeName) {

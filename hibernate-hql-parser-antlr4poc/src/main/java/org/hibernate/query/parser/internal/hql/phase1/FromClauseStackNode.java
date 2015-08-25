@@ -10,29 +10,30 @@ import org.hibernate.sqm.query.from.FromClause;
 
 /**
  * @author Andrea Boriero
+ * @author Steve Ebersole
  */
-public class FromClauseNode {
-	FromClause fromClause;
-	FromClauseNode parent;
+public class FromClauseStackNode {
+	private FromClause fromClause;
+	private FromClauseStackNode parentNode;
 
-	public FromClauseNode(FromClause fromClause) {
+	public FromClauseStackNode(FromClause fromClause) {
 		this.fromClause = fromClause;
 	}
 
-	public FromClauseNode(FromClause fromClause, FromClauseNode parent) {
+	public FromClauseStackNode(FromClause fromClause, FromClauseStackNode parentNode) {
 		this.fromClause = fromClause;
-		this.parent = parent;
+		this.parentNode = parentNode;
 	}
 
-	public FromClause getValue() {
+	public FromClause getFromClause() {
 		return fromClause;
 	}
 
-	public FromClauseNode getParent() {
-		return parent;
+	public FromClauseStackNode getParentNode() {
+		return parentNode;
 	}
 
 	public boolean hasParent() {
-		return parent != null;
+		return parentNode != null;
 	}
 }

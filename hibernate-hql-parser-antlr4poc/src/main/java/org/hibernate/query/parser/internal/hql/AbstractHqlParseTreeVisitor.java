@@ -24,8 +24,7 @@ import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.query.parser.internal.hql.path.AttributePathResolver;
 import org.hibernate.query.parser.internal.hql.path.AttributePathResolverStack;
 import org.hibernate.query.parser.internal.hql.path.IndexedAttributeRootPathResolver;
-import org.hibernate.query.parser.internal.hql.phase1.FromClauseNode;
-import org.hibernate.query.parser.internal.hql.phase1.FromClauseProcessor;
+import org.hibernate.query.parser.internal.hql.phase1.FromClauseStackNode;
 import org.hibernate.sqm.domain.CollectionTypeDescriptor;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 import org.hibernate.sqm.domain.TypeDescriptor;
@@ -112,7 +111,7 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 
 	public abstract FromClause getCurrentFromClause();
 
-	public abstract FromClauseNode getCurrentFromClauseNode();
+	public abstract FromClauseStackNode getCurrentFromClauseNode();
 
 	public ParsingContext getParsingContext() {
 		return parsingContext;
@@ -291,7 +290,7 @@ public abstract class AbstractHqlParseTreeVisitor extends HqlParserBaseVisitor {
 	@Override
 	public Selection visitJpaSelectObjectSyntax(HqlParser.JpaSelectObjectSyntaxContext ctx) {
 		final String alias = ctx.IDENTIFIER().getText();
-		final FromElement fromElement = fromClauseIndex.findFromElementByAlias( getCurrentFromClauseNode(), alias );
+		final FromElement fromElement = fromClauseIndex.findFromElementByAlias( alias );
 		if ( fromElement == null ) {
 			throw new SemanticException( "Unable to resolve alias [" +  alias + "] in selection [" + ctx.getText() + "]" );
 		}
