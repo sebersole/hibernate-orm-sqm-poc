@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.hibernate.sqm.query.from.FromClause;
+import org.hibernate.query.parser.internal.hql.phase1.FromClauseNode;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.FromElementSpace;
 import org.hibernate.sqm.query.from.JoinedFromElement;
@@ -44,7 +44,7 @@ public class FromClauseIndex {
 		}
 	}
 
-	public FromElement findFromElementByAlias(FromClause currentFromClause, String alias) {
+	public FromElement findFromElementByAlias(FromClauseNode currentFromClause, String alias) {
 		FromElement fromElement = fromElementsByAlias.get( alias );
 //		if ( fromElement == null ) {
 //			if ( parentFromClause != null ) {
@@ -55,9 +55,9 @@ public class FromClauseIndex {
 		return fromElement;
 	}
 
-	public FromElement findFromElementWithAttribute(FromClause fromClause, String name) {
+	public FromElement findFromElementWithAttribute(FromClauseNode fromClause, String name) {
 		FromElement found = null;
-		for ( FromElementSpace space : fromClause.getFromElementSpaces() ) {
+		for ( FromElementSpace space : fromClause.getValue().getFromElementSpaces() ) {
 			if ( space.getRoot().getTypeDescriptor().getAttributeDescriptor( name ) != null ) {
 				if ( found != null ) {
 					throw new IllegalStateException( "Multiple from-elements expose unqualified attribute : " + name );
@@ -76,9 +76,9 @@ public class FromClauseIndex {
 		}
 
 		if ( found == null ) {
-			if ( fromClause.getParentFromClause() != null ) {
+			if ( fromClause.hasParent() ) {
 				log.debugf( "Unable to resolve unqualified attribute [%s] in local FromClause; checking parent" );
-				found = findFromElementWithAttribute( fromClause.getParentFromClause(), name );
+				found = findFromElementWithAttribute( fromClause.getParent(), name );
 			}
 		}
 

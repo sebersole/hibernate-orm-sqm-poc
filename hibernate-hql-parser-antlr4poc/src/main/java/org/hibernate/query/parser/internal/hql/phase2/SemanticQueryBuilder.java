@@ -11,6 +11,7 @@ import org.hibernate.query.parser.ParsingException;
 import org.hibernate.query.parser.internal.hql.antlr.HqlParser;
 import org.hibernate.query.parser.internal.ParsingContext;
 import org.hibernate.query.parser.internal.hql.AbstractHqlParseTreeVisitor;
+import org.hibernate.query.parser.internal.hql.phase1.FromClauseNode;
 import org.hibernate.query.parser.internal.hql.phase1.FromClauseProcessor;
 import org.hibernate.sqm.path.AttributePathPart;
 import org.hibernate.query.parser.internal.hql.path.BasicAttributePathResolverImpl;
@@ -28,7 +29,7 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 
 	private final FromClauseProcessor fromClauseProcessor;
 
-	private FromClause currentFromClause;
+	private FromClauseNode currentFromClauseNode;
 
 	public SemanticQueryBuilder(ParsingContext parsingContext, FromClauseProcessor fromClauseProcessor) {
 		super( parsingContext, fromClauseProcessor.getFromElementBuilder(), fromClauseProcessor.getFromClauseIndex() );
@@ -50,7 +51,12 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 
 	@Override
 	public FromClause getCurrentFromClause() {
-		return currentFromClause;
+		return currentFromClauseNode.getValue();
+	}
+
+	@Override
+	public FromClauseNode getCurrentFromClauseNode() {
+		return currentFromClauseNode;
 	}
 
 	@Override
@@ -61,18 +67,18 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 
 	@Override
 	public QuerySpec visitQuerySpec(HqlParser.QuerySpecContext ctx) {
-		final FromClause fromClause = fromClauseProcessor.findFromClauseForQuerySpec( ctx );
-		if ( fromClause == null ) {
+		final FromClauseNode fromClauseNode = fromClauseProcessor.findFromClauseForQuerySpec( ctx );
+		if ( fromClauseNode == null ) {
 			throw new ParsingException( "Could not resolve FromClause by QuerySpecContext" );
 		}
-		FromClause originalCurrentFromClause = currentFromClause;
-		currentFromClause = fromClause;
+		FromClauseNode originalCurrentFromClauseNode = currentFromClauseNode;
+		currentFromClauseNode = fromClauseNode;
 		attributePathResolverStack.push(
 				new BasicAttributePathResolverImpl(
 						fromClauseProcessor.getFromElementBuilder(),
 						fromClauseProcessor.getFromClauseIndex(),
 						getParsingContext(),
-						currentFromClause
+						currentFromClauseNode
 				)
 		);
 		try {
@@ -80,7 +86,7 @@ public class SemanticQueryBuilder extends AbstractHqlParseTreeVisitor {
 		}
 		finally {
 			attributePathResolverStack.pop();
-			currentFromClause = originalCurrentFromClause;
+			currentFromClauseNode = originalCurrentFromClauseNode;
 		}
 	}
 
