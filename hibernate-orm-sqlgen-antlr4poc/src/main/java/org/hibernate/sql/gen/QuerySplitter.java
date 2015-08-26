@@ -21,10 +21,13 @@ import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.Statement;
 import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
+import org.hibernate.sqm.query.expression.AvgFunction;
 import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
 import org.hibernate.sqm.query.expression.ConcatExpression;
 import org.hibernate.sqm.query.expression.ConstantEnumExpression;
 import org.hibernate.sqm.query.expression.ConstantFieldExpression;
+import org.hibernate.sqm.query.expression.CountFunction;
+import org.hibernate.sqm.query.expression.CountStarFunction;
 import org.hibernate.sqm.query.expression.EntityTypeExpression;
 import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.expression.FromElementReferenceExpression;
@@ -40,9 +43,12 @@ import org.hibernate.sqm.query.expression.LiteralLongExpression;
 import org.hibernate.sqm.query.expression.LiteralNullExpression;
 import org.hibernate.sqm.query.expression.LiteralStringExpression;
 import org.hibernate.sqm.query.expression.LiteralTrueExpression;
+import org.hibernate.sqm.query.expression.MaxFunction;
+import org.hibernate.sqm.query.expression.MinFunction;
 import org.hibernate.sqm.query.expression.NamedParameterExpression;
 import org.hibernate.sqm.query.expression.PositionalParameterExpression;
 import org.hibernate.sqm.query.expression.SubQueryExpression;
+import org.hibernate.sqm.query.expression.SumFunction;
 import org.hibernate.sqm.query.expression.UnaryOperationExpression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
@@ -69,11 +75,9 @@ import org.hibernate.sqm.query.predicate.OrPredicate;
 import org.hibernate.sqm.query.predicate.Predicate;
 import org.hibernate.sqm.query.predicate.RelationalPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
-import org.hibernate.sqm.query.select.AliasedDynamicInstantiationArgument;
 import org.hibernate.sqm.query.select.DynamicInstantiation;
+import org.hibernate.sqm.query.select.DynamicInstantiationArgument;
 import org.hibernate.sqm.query.select.SelectClause;
-import org.hibernate.sqm.query.select.SelectList;
-import org.hibernate.sqm.query.select.SelectListItem;
 import org.hibernate.sqm.query.select.Selection;
 
 /**
@@ -289,46 +293,33 @@ public class QuerySplitter {
 
 		@Override
 		public SelectClause visitSelectClause(SelectClause selectClause) {
-			return new SelectClause(
-					visitSelection( selectClause.getSelection() ),
-					selectClause.isDistinct()
-			);
+			SelectClause copy = new SelectClause( selectClause.isDistinct() );
+			for ( Selection selection : selectClause.getSelections() ) {
+				copy.addSelection( visitSelection( selection ) );
+			}
+			return copy;
 		}
 
 		@Override
 		public Selection visitSelection(Selection selection) {
-			return (Selection) selection.accept( this );
+			return new Selection(
+					(Expression) selection.getExpression().accept( this ),
+					selection.getAlias()
+			);
 		}
 
 		@Override
 		public DynamicInstantiation visitDynamicInstantiation(DynamicInstantiation dynamicInstantiation) {
 			DynamicInstantiation copy = new DynamicInstantiation( dynamicInstantiation.getInstantiationTarget() );
-			for ( AliasedDynamicInstantiationArgument aliasedArgument : dynamicInstantiation.getAliasedArguments() ) {
+			for ( DynamicInstantiationArgument aliasedArgument : dynamicInstantiation.getArguments() ) {
 				copy.addArgument(
-						new AliasedDynamicInstantiationArgument(
-								(Expression) aliasedArgument.getSelectedExpression().accept( this ),
-								aliasedArgument.getSelectedAlias()
+						new DynamicInstantiationArgument(
+								(Expression) aliasedArgument.getExpression().accept( this ),
+								aliasedArgument.getAlias()
 						)
 				);
 			}
 			return copy;
-		}
-
-		@Override
-		public SelectList visitSelectList(SelectList selectList) {
-			SelectList copy = new SelectList();
-			for ( SelectListItem selectListItem : selectList.getSelectListItems() ) {
-				copy.addSelectListItem( visitSelectListItem( selectListItem ) );
-			}
-			return copy;
-		}
-
-		@Override
-		public SelectListItem visitSelectListItem(SelectListItem selectListItem) {
-			return new SelectListItem(
-					(Expression) selectListItem.getSelectedExpression().accept( this ),
-					selectListItem.getSelectedAlias()
-			);
 		}
 
 		@Override
@@ -511,6 +502,51 @@ public class QuerySplitter {
 					expression.getFunctionName(),
 					argumentsCopy,
 					expression.getTypeDescriptor()
+			);
+		}
+
+		@Override
+		public AvgFunction visitAvgFunction(AvgFunction expression) {
+			return new AvgFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct()
+			);
+		}
+
+		@Override
+		public CountStarFunction visitCountStarFunction(CountStarFunction expression) {
+			return new CountStarFunction( expression.isDistinct() );
+		}
+
+		@Override
+		public CountFunction visitCountFunction(CountFunction expression) {
+			return new CountFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct()
+			);
+		}
+
+		@Override
+		public MaxFunction visitMaxFunction(MaxFunction expression) {
+			return new MaxFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct()
+			);
+		}
+
+		@Override
+		public MinFunction visitMinFunction(MinFunction expression) {
+			return new MinFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct()
+			);
+		}
+
+		@Override
+		public SumFunction visitSumFunction(SumFunction expression) {
+			return new SumFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct()
 			);
 		}
 
