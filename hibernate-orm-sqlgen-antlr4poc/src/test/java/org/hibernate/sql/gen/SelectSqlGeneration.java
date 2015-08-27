@@ -20,8 +20,8 @@ public class SelectSqlGeneration {
 				new ConsumerContextTestingImpl()
 		);
 
-		SqlPlan sqlPlan = SqlGenerator.generateSqlPlan( selectStatement );
+		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null );
 
-		assertNotNull( sqlPlan );
+		assertNotNull( jdbcSelectPlan );
 	}
 }
