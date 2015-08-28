@@ -9,13 +9,14 @@ import org.hibernate.sqm.query.expression.LiteralExpression;
  * Created by johara on 27/08/15.
  */
 public class ExpressionGenerator {
-	public static String generateExpressionSql(Expression expression) {
+	//TODO: redo dispatch for this call
+	public String generateExpressionSql(Expression expression) {
 
 		if(expression instanceof LiteralExpression ){
-			return LiteralExpressionSqlGenerator.generateSql( expression);
+			return new LiteralExpressionSqlGenerator().interpret( (LiteralExpression) expression );
 		}
 		if(expression instanceof AttributeReferenceExpression){
-			return AttributeReferenceExpressionSqlGenerator.generateSql( expression);
+			return new AttributeReferenceExpressionSqlGenerator().interpret( (AttributeReferenceExpression) expression );
 		}
 		else{
 			throw new ExpressionGeneratorNotImplementedException();

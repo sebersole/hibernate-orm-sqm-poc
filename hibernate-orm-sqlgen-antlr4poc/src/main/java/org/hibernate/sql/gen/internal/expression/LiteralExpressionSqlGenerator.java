@@ -1,18 +1,15 @@
 package org.hibernate.sql.gen.internal.expression;
 
-import org.hibernate.sql.gen.internal.InvalidExpressionException;
-import org.hibernate.sqm.query.expression.Expression;
+import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sqm.query.expression.LiteralExpression;
 
 /**
  * Created by johara on 27/08/15.
  */
-public class LiteralExpressionSqlGenerator {
-	public static String generateSql(Expression expression) {
-		if ( !(expression instanceof LiteralExpression) ) {
-			throw new InvalidExpressionException(expression.getClass(), LiteralExpression.class);
-		}
+public class LiteralExpressionSqlGenerator extends AbstractExpressionSqlGenerator<LiteralExpression>{
 
-		return ((LiteralExpression) expression).getLiteralValue().toString();
+	@Override
+	public String interpret(LiteralExpression expression) {
+		throw new NotYetImplementedException();
 	}
 }
