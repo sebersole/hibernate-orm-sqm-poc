@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Interprets a Semantic Query Model (SQM) into a group of JdbcOperationPlan objects.
  *
- * @author johara
+ * @author John O'Hara
  * @author Steve Ebersole
  */
 public class SqmJdbcInterpreter {

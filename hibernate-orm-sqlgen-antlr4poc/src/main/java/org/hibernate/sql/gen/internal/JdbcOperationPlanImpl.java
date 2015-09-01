@@ -3,17 +3,11 @@ package org.hibernate.sql.gen.internal;
 import org.hibernate.sql.gen.JdbcOperationPlan;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.ParameterBinder;
-import org.hibernate.sql.gen.internal.predicate.PredicateGenerator;
-import org.hibernate.sqm.query.SelectStatement;
-import org.hibernate.sqm.query.from.FromElementSpace;
-import org.hibernate.sqm.query.select.Selection;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
- * @author johara
+ * @author John O'Hara
  */
 public class JdbcOperationPlanImpl implements JdbcOperationPlan {
 	@Override

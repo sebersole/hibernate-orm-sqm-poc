@@ -6,7 +6,7 @@ import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.expression.LiteralExpression;
 
 /**
- * Created by johara on 27/08/15.
+ * Created by John O'Hara on 27/08/15.
  */
 public class ExpressionGenerator {
 	//TODO: redo dispatch for this call

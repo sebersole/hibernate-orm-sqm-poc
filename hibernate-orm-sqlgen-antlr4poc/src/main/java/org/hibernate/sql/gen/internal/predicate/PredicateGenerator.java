@@ -5,7 +5,7 @@ import org.hibernate.sqm.query.predicate.Predicate;
 import org.hibernate.sqm.query.predicate.RelationalPredicate;
 
 /**
- * Created by johara on 27/08/15.
+ * Created by John O'Hara on 27/08/15.
  */
 public class PredicateGenerator {
 	public String generatePredicateClause(Predicate predicate) {

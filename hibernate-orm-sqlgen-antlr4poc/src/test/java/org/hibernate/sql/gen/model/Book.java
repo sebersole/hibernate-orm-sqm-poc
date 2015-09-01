@@ -6,7 +6,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 
 /**
- * Created by johara on 21/08/15.
+ * Created by John O'Hara on 21/08/15.
  */
 @Entity
 public class Book {

@@ -4,7 +4,7 @@ import org.hibernate.sql.gen.internal.InvalidExpressionException;
 import org.hibernate.sqm.query.expression.Expression;
 
 /**
- * Created by johara on 27/08/15.
+ * Created by John O'Hara on 27/08/15.
  */
 public abstract class AbstractExpressionSqlGenerator<T extends Expression> implements ExpressionSqlGenerator<T> {
 

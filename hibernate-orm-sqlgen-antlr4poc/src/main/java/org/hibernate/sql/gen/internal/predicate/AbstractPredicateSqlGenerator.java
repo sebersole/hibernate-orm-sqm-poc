@@ -5,7 +5,7 @@ import org.hibernate.sqm.query.predicate.Predicate;
 
 
 /**
- * Created by johara on 27/08/15.
+ * Created by John O'Hara on 27/08/15.
  */
 public abstract class AbstractPredicateSqlGenerator<T extends Predicate> implements PredicateSqlGenerator<T> {
 

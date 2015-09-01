@@ -4,7 +4,7 @@ import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sqm.query.expression.SubQueryExpression;
 
 /**
- * Created by johara on 27/08/15.
+ * Created by John O'Hara on 27/08/15.
  */
 public class UnaryOpertaionExpressionSqlGenerator extends AbstractExpressionSqlGenerator<SubQueryExpression>{
 

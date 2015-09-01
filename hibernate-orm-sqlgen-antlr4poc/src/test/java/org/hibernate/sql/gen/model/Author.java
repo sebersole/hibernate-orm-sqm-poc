@@ -8,7 +8,7 @@ import javax.persistence.OneToMany;
 import java.util.Set;
 
 /**
- * Created by johara on 21/08/15.
+ * Created by John O'Hara on 21/08/15.
  */
 @Entity
 public class Author {

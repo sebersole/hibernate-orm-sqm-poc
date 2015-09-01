@@ -12,7 +12,7 @@ import java.util.List;
  * Represents the information needed to perform a JDBC operation.
  *
  * @author Steve Ebersole
- * @author johara
+ * @author John O'Hara
  */
 public interface JdbcOperationPlan {
 	/**

@@ -1,7 +1,7 @@
 package org.hibernate.sql.gen;
 
 /**
- * Created by johara on 27/08/15.
+ * Created by John O'Hara on 27/08/15.
  */
 public class NotYetImplementedException extends RuntimeException {
 	public NotYetImplementedException() {
