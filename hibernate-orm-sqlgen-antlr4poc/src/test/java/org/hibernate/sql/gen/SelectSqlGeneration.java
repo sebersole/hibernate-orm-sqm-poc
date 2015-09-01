@@ -28,7 +28,7 @@ public class SelectSqlGeneration {
 				consumerContext
 		);
 
-		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null, null );
+		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null );
 
 		assertNotNull( jdbcSelectPlan );
 	}
@@ -57,7 +57,7 @@ public class SelectSqlGeneration {
 				consumerContext
 		);
 
-		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null, sessionFactory.getAllClassMetadata() );
+		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null);
 
 		assertNotNull( jdbcSelectPlan );
 
