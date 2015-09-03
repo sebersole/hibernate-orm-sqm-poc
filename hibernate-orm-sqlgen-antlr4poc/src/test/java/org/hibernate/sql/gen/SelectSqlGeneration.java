@@ -6,16 +6,28 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.loader.plan.spi.LoadPlan;
 import org.hibernate.query.parser.ConsumerContext;
 import org.hibernate.query.parser.SemanticQueryInterpreter;
+import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
 import org.hibernate.sql.gen.sqm.ConsumerContextTestingImpl;
 import org.hibernate.sqm.query.SelectStatement;
 import org.junit.Test;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import java.util.List;
+
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 /**
- * Created by John O'Hara on 27/08/15.
+ * @author John O'Hara
  */
 public class SelectSqlGeneration {
 
@@ -29,6 +41,8 @@ public class SelectSqlGeneration {
 		);
 
 		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null );
+
+		LoadPlan loadPlan = jdbcSelectPlan.getLoadPlan();
 
 		assertNotNull( jdbcSelectPlan );
 	}
@@ -48,19 +62,49 @@ public class SelectSqlGeneration {
 				.build();
 //		.applyBeanManager( getBeanManagerFromSomewhere() )
 
-		assertNotNull(sessionFactory);
+		assertNotNull( sessionFactory );
 
-		final String query = "from Book b where b.id = 1";
-		final ConsumerContext consumerContext = new ConsumerContextTestingImpl();
+//		ConsumerContextImpl consumerContext = new ConsumerContextImpl(sessionFactory);
+
+		final String query = "from Message m where m.id = 1";
+//		final ConsumerContext consumerContext = new ConsumerContextTestingImpl();
+		final ConsumerContext consumerContext = new ConsumerContextImpl( (SessionFactoryImplementor) sessionFactory );
+
 		final SelectStatement selectStatement = (SelectStatement) SemanticQueryInterpreter.interpret(
 				query,
 				consumerContext
 		);
 
-		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null);
+		JdbcSelectPlan jdbcSelectPlan = SqmJdbcInterpreter.interpret( selectStatement, null, null );
 
 		assertNotNull( jdbcSelectPlan );
 
+		String selectSql = jdbcSelectPlan.getSql();
+
+		assertNotNull( selectSql );
+
+		assertSame( "select * from PUBLIC.Message as m where m.id = 1", selectSql );
+
 	}
 
+
+
+	@Entity( name = "Message" )
+	public static class Message {
+		@Id
+		private Integer mid;
+		private String msgTxt;
+		@ManyToOne( cascade = CascadeType.MERGE )
+		@JoinColumn
+		private Poster poster;
+	}
+
+	@Entity( name = "Poster" )
+	public static class Poster {
+		@Id
+		private Integer pid;
+		private String name;
+		@OneToMany(mappedBy = "poster")
+		private List<Message> messages;
+	}
 }

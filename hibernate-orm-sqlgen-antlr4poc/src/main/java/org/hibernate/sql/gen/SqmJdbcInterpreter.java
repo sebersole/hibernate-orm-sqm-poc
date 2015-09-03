@@ -14,11 +14,12 @@ import org.hibernate.sqm.query.SelectStatement;
 public class SqmJdbcInterpreter {
 	public static JdbcSelectPlan interpret(SelectStatement statement, QueryOptions queryOptions, Callback callback) {
 		// todo : this needs serious work
-		return new JdbcSelectPlanImpl();
+		return new JdbcSelectPlanImpl(statement);
 	}
 
 	public static JdbcOperationPlan[] interpret(NonSelectStatement statement, QueryOptions queryOptions, Callback callback) {
 		// todo : add a NonSelectStatement to SQM for grouping UPDATE, DELETE and INSERT queries.
 		throw new NotYetImplementedException();
 	}
+
 }

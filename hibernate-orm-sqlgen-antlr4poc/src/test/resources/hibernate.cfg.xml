@@ -27,6 +27,8 @@
 
         <mapping class="org.hibernate.sql.gen.model.Book"/>
         <mapping class="org.hibernate.sql.gen.model.Author"/>
+        <mapping class="org.hibernate.sql.gen.SelectSqlGeneration$Message"/>
+        <mapping class="org.hibernate.sql.gen.SelectSqlGeneration$Poster"/>
 
     </session-factory>
 </hibernate-configuration>

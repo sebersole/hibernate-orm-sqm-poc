@@ -14,6 +14,7 @@ import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.query.parser.ConsumerContext;
+import org.hibernate.sql.gen.internal.EntityTypeDescriptorImpl;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 
 /**

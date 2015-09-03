@@ -190,10 +190,10 @@ public class ConsumerContextTestingImpl implements ConsumerContext {
 			this.type = type;
 		}
 
-		@Override
-		public TypeDescriptor getDeclaringType() {
-			return source;
-		}
+//		@Override
+//		public TypeDescriptor getDeclaringType() {
+//			return source;
+//		}
 
 		@Override
 		public String getName() {
