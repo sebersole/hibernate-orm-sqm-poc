@@ -22,5 +22,13 @@ public interface JdbcOperationPlan {
 	 */
 	String getSql();
 
+	/**
+	 * One or more binders responsible for applying any query parameter bindings to be applied
+	 * to the PreparedStatement prior to execution.
+	 *
+	 * @return The query parameter binders
+	 */
 	List<ParameterBinder> getParameterBinders();
+
+	List<QueryOptionBinder> getQueryOptionBinders();
 }

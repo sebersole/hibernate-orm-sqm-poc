@@ -6,15 +6,11 @@
  */
 package org.hibernate.sql.gen.sqm;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.query.parser.ConsumerContext;
-import org.hibernate.sql.gen.internal.EntityTypeDescriptorImpl;
+import org.hibernate.sql.orm.internal.sqm.model.ModelMetadataImpl;
 import org.hibernate.sqm.domain.EntityTypeDescriptor;
 
 /**
@@ -28,32 +24,17 @@ import org.hibernate.sqm.domain.EntityTypeDescriptor;
 public class ConsumerContextImpl implements ConsumerContext {
 	private final SessionFactoryImplementor sessionFactory;
 	private final ClassLoaderService classLoaderService;
+	private final ModelMetadataImpl modelMetadata;
 
 	public ConsumerContextImpl(SessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
 		this.classLoaderService = sessionFactory.getServiceRegistry().getService( ClassLoaderService.class );
+		this.modelMetadata = new ModelMetadataImpl( sessionFactory );
 	}
 
 	@Override
 	public EntityTypeDescriptor resolveEntityReference(String reference) {
-		reference = sessionFactory.getImportedClassName( reference );
-
-		final String[] implementors = sessionFactory.getImplementors( reference );
-
-		if ( implementors == null || implementors.length == 0 ) {
-			return null;
-		}
-
-		if ( implementors.length == 1 ) {
-			return new EntityTypeDescriptorImpl( sessionFactory.getEntityPersister( implementors[0] ) );
-		}
-
-		List<EntityTypeDescriptor> descriptors = new ArrayList<EntityTypeDescriptor>();
-		for ( String implementor : implementors ) {
-			final EntityPersister persister = sessionFactory.getEntityPersister( implementor );
-			descriptors.add( new EntityTypeDescriptorImpl( persister ) );
-		}
-		return new PolymorphicEntityTypeDescriptorImpl( reference, descriptors );
+		return modelMetadata.resolveEntityReference( reference );
 	}
 
 	@Override

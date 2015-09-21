@@ -6,11 +6,24 @@
  */
 package org.hibernate.sql.gen;
 
-import org.hibernate.loader.plan.spi.LoadPlan;
+import java.util.List;
+
+import org.hibernate.loader.plan.spi.Return;
 
 /**
+ * JdbcOperationPlan specific to performing a {@code SELECT} query.  Tha main difference is the
+ * added definition of how to extract results from the query results.
+ *
  * @author Steve Ebersole
  */
 public interface JdbcSelectPlan extends JdbcOperationPlan {
-	LoadPlan getLoadPlan();
+	/**
+	 * LoadPlan was designed to be a PoC of this "SQM" work, but built around the limitations in
+	 * upstream ORM.  Moving forward, this just needs to be some form of "return" descriptors.  For now
+	 * just use the LoadPlan notion of a Return.  Expect the return type to change or for Return to be
+	 * changed as we continue SQM dev.
+	 *
+	 * @return
+	 */
+	List<Return> getReturns();
 }

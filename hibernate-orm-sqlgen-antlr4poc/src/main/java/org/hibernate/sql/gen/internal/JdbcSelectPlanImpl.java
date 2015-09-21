@@ -1,58 +1,51 @@
 package org.hibernate.sql.gen.internal;
 
-import org.hibernate.loader.plan.build.internal.LoadPlanImpl;
-import org.hibernate.loader.plan.spi.LoadPlan;
-import org.hibernate.loader.plan.spi.QuerySpaces;
-import org.hibernate.loader.plan.spi.Return;
-import org.hibernate.sql.gen.JdbcSelectPlan;
-import org.hibernate.sqm.query.SelectStatement;
-
 import java.util.List;
 
+import org.hibernate.loader.plan.spi.Return;
+import org.hibernate.sql.gen.JdbcSelectPlan;
+import org.hibernate.sql.gen.ParameterBinder;
+import org.hibernate.sql.gen.QueryOptionBinder;
+
 /**
+ * @author Steve Ebersole
  * @author John O'Hara
  */
-public class JdbcSelectPlanImpl extends JdbcOperationPlanImpl implements JdbcSelectPlan {
+public class JdbcSelectPlanImpl implements JdbcSelectPlan {
+	private final String sql;
+	private final List<ParameterBinder> parameterBinders;
+	private final List<QueryOptionBinder> queryOptionBinders;
+	private final List<Return> returnDescriptors;
 
-	private SelectStatement selectStatement;
-	private SqlGeneratorSemanticQueryWalker queryWalker;
+	public JdbcSelectPlanImpl(
+			String sql,
+			List<ParameterBinder> parameterBinders,
+			List<QueryOptionBinder> queryOptionBinders,
+			List<Return> returnDescriptors) {
 
-	public JdbcSelectPlanImpl(SelectStatement statement) {
-		super();
-		this.selectStatement = statement;
-		queryWalker = new SqlGeneratorSemanticQueryWalker();
+		this.sql = sql;
+		this.parameterBinders = parameterBinders;
+		this.queryOptionBinders = queryOptionBinders;
+		this.returnDescriptors = returnDescriptors;
+	}
 
+	@Override
+	public List<Return> getReturns() {
+		return returnDescriptors;
 	}
 
 	@Override
 	public String getSql() {
-		visitWalker();
-
-		StringBuilder sqlBuilder = new StringBuilder(  );
-
-		sqlBuilder.append( queryWalker.getSelectString() );
-		sqlBuilder.append( queryWalker.getFromString());
-		sqlBuilder.append( queryWalker.getWhereString());
-		sqlBuilder.append( ";" );
-
-		return sqlBuilder.toString();
+		return sql;
 	}
 
 	@Override
-	public LoadPlan getLoadPlan() {
-
-		visitWalker();
-
-		List<? extends Return> returns = queryWalker.getReturns();
-		QuerySpaces querySpaces = queryWalker.getQuerySpaces();
-		boolean areLazyAttributesForceFetched = queryWalker.areLazyAttributesForceFetched();
-
-		LoadPlan loadPlan = new LoadPlanImpl(returns, querySpaces, areLazyAttributesForceFetched );
-
-		return loadPlan;
+	public List<ParameterBinder> getParameterBinders() {
+		return parameterBinders;
 	}
 
-	private void visitWalker(){
-		queryWalker.visitSelectStatement( this.selectStatement );
+	@Override
+	public List<QueryOptionBinder> getQueryOptionBinders() {
+		return queryOptionBinders;
 	}
 }

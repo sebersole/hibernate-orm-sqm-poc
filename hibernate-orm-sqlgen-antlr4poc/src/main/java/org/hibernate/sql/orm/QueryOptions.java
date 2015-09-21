@@ -6,6 +6,13 @@
  */
 package org.hibernate.sql.orm;
 
+import java.io.Serializable;
+import java.util.List;
+
+import org.hibernate.LockOptions;
+import org.hibernate.ScrollMode;
+import org.hibernate.engine.spi.RowSelection;
+
 /**
  * This is largely {@link org.hibernate.engine.spi.QueryParameters}.  But I have always hated that name, as it
  * is so confusing.
@@ -14,4 +21,27 @@ package org.hibernate.sql.orm;
  */
 public interface QueryOptions {
 	QueryParameterBindings getParameterBindings();
+
+	LockOptions getLockOptions();
+	RowSelection getRowSelection();
+	ScrollMode getScrollMode();
+
+	boolean isCacheable();
+	String getCacheRegion();
+
+	String getComment();
+
+	List<String> getSqlHints();
+
+	// ugh
+//	private Serializable[] collectionKeys;
+//	private Object optionalObject;
+//	private String optionalEntityName;
+//	private Serializable optionalId;
+
+	// say who now?  what
+//	private boolean isReadOnlyInitialized;
+//	private boolean readOnly;
+
+//	private boolean callable;
 }
