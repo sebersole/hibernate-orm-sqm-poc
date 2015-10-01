@@ -8,5 +8,5 @@ See also the [SQM repo](https://github.com/hibernate/hibernate-semantic-query) f
 Proposed Changes
 ----------------
 
-Persisters (entiyt and colection) -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-persisters
-JPA type model -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-JPA-type-model
+* Persisters (entiyt and colection) -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-persisters
+* JPA type model -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-JPA-type-model
