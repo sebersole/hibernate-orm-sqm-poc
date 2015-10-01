@@ -30,11 +30,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test of a ImprovedEntityPersister over a simple (no secondary tables)
- * {@link org.hibernate.persister.entity.SingleTableEntityPersister}
+ * {@link SingleTableEntityPersister}
  *
  * @author Steve Ebersole
  */
-public class SingleTableEntityTest extends BaseUnitTest {
+public class SingleTableEntitySimpleTest extends BaseUnitTest {
 	@Test
 	public void testSingleSpace() {
 		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableEntity" );

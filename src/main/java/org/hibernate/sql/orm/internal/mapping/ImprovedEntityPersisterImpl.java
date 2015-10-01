@@ -44,6 +44,19 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex) {
+
+		// todo : limit inclusion of subclass tables.
+		// 		we should only include subclass tables in very specific circumstances (such
+		// 		as handling persister reference in select clause, JPQL TYPE cast, subclass attribute
+		// 		de-reference, etc).  In other cases it is an unnecessary overhead to include those
+		// 		table joins
+		//
+		// however... the easiest way to accomplish this is during the SQM building to have each FromElement
+		//		keep track of all needed subclass references.  The problem is that that gets tricky with the
+		// 		design goal of having SQM be completely independent from ORM.  It basically means we will end
+		// 		up needing to expose more model and mapping information in the org.hibernate.sqm.domain.ModelMetadata
+		// 		contracts
+
 		final EntityTableSpecificationGroup group = new EntityTableSpecificationGroup(
 				tableSpace,
 				sqlAliasBaseManager.getSqlAliasBase( fromElement ),

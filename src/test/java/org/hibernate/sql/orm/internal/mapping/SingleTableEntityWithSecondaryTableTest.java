@@ -36,7 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *
  * @author Steve Ebersole
  */
-public class SingleTableWithSecondaryTableEntityTest extends BaseUnitTest {
+public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 	@Test
 	public void testSingleSpace() {
 		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableWithSecondaryTableEntity" );

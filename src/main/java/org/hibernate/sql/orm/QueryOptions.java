@@ -6,7 +6,6 @@
  */
 package org.hibernate.sql.orm;
 
-import java.io.Serializable;
 import java.util.List;
 
 import org.hibernate.LockOptions;
