@@ -1,15 +1,9 @@
 TODO Items
 ----------
 
-* Created a unified "alias registry" to make sure we do not get alias collisions between different clauses/contexts.  
-	For example, `select a.address as a from Anything as a`
 * Possibly we should maintain a map from Expression -> "select alias" for substitution in other clauses.  For example,
 	given `select a.b + a.c as s from Anything a order by a.b + a.c` the more efficient query (SQL-wise) is a substitution to
 	`select a.b + a.c as s from Anything a order by s`.
-* I just add `org.hibernate.sqm.domain.BasicTypeDescriptor#getCorrespondingJavaType`.  It is very worthwhile to
-	know this information at the basic type level for many reasons such as validation operands of an operations, 
-	determining the result type of a arithmetic operation, etc.  We *could* move this up to `org.hibernate.sqm.domain.TypeDescriptor`
-	but my concern was relying on this in the code considering de-typed models (i.e. MAP entity-mode).
 * Proper handling for GroupedPredicate alternatives (explicit grouping parenthesis) - ATM I simply
 	created a GroupedPredicate class; maybe that is enough
 * Proper identification of left and right hand side of joins, at least for joins with ON or WITH clauses.  See 
@@ -23,3 +17,29 @@ TODO Items
 	of this is that I do not think its a good idea for all FromElement types (via org.hibernate.sqm.path.AttributePathPart) 
 	to be Expressions; that change has some bearing on the org.hibernate.query.parser.internal.hql.path.AttributePathResolver
 	code.
+
+
+Downcasting (TREAT)
+-----------------------
+
+Have FromElement (in SQM) maintain a List of down-cast targets.  Ultimately we need to know whether to render these
+as INNER or OUTER joins.  JPA only allows TREAT in FROM and WHERE, so SQM should consider uses in other context a 
+"strict JPQL violation".  
+
+An alternative to the INNER/OUTER decision is to always render an outer join here (to the subtype tables) and generate a 
+predicate where ever the TREAT occurs.   In the FROM clause it would become part of the join predicate.  In there WHERE 
+clause we'd generate a grouped predicate.  In SELECT (?) I guess just render a predicate into the WHERE
+
+
+
+Subclass attribute references
+-----------------------------
+
+Another piece to determine whether we need to include subclass tables is whether the query referenced any of the 
+subclass attributes.  JPQL disallows this (strict JPQL violation), but HQL allows it.
+
+One option would be to simply handle this via the mechanism for treat.  When a subclass attribute is referenced, implicitly
+add a TREAT reference to the FromElement.
+
+Another option is to just keep a list of the referenced attributes for each FromElement.  On the "back end" we can 
+work out the subclass table inclusion based on that info.
