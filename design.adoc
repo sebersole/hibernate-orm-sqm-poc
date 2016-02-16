@@ -1,0 +1,101 @@
+Design Guide
+============
+:toc:
+
+== Parameters
+
+There are multiple "parts" to parameter handling...
+
+=== ParameterSpec
+
+A ParameterSpec is the specification of a query parameter (name/position, type, etc).  It represents the
+expectation(s) after parsing a query string.
+
+Consider:
+
+[source]
+----
+Query q = session.createQuery( "from Person p where p.name = :name" );
+----
+
+At this point the (Named)ParameterSpec for `":name"` has been parsed.   ParameterSpec needs to understand
+anticipatedType.  Here, because `Person#name` is a `StringType` we would anticipate `":name"` to also 
+be a `StringType`; we will see later that ParameterBinding can adjust that.  
+
+It may also be a good idea to allow for a ParameterSpec to specify a requiredType.  This would accomodate
+cases where the placement of the parameter in the query requires a certain Type to used.
+
+Proposed ParameterSpec contract:
+
+[source]
+----
+interface ParameterSpec {
+    String getName();
+    Integer getPosition();
+    Type getAnticipatedType();
+    Type getRequiredType();
+}
+----
+
+
+=== ParameterBinding
+
+ParameterBinding is the binding for a parameter.  Defined another way, it represents the value 
+specified by the user for the parameter for this execution of the query.  
+
+It can be thought of as the combination of a ParameterSpec, the specified value as well as some 
+additional specifics like Type, TemporalType handling, etc.
+
+This part comes from the user.  Consider:
+
+[source]
+----
+Query q = session.createQuery( "from Person p where p.name = :name" );
+query.setParameter( "name", "Billy" );
+----
+
+Here, the `#setParameter` call creates the ParameterBinding.  This form would
+"pick up" the anticipated-Type from the ParameterSpec.  We'd also allow 
+specifying the Type to use.
+
+I think we should limit the overloaded form of this.  I can see the following options (using
+named parameters for illustration):
+
+[source]
+----
+interface Query {
+    ...
+
+    ParameterSpec getParameterSpec(String name);
+    
+    // returning this to keep API as before...
+
+    Query setParameter(String name, Object value);
+    Query setParameter(String name, Object value, Type type);
+    Query setParameter(String name, Date value, TemporalType temporalType);
+    Query setParameter(String name, Calendar value, TemporalType temporalType);
+}
+----
+
+
+Proposed ParameterBinding contract:
+
+[source]
+----
+interface ParameterBinding {
+    ParameterSpec getParameterSpec();
+
+    Object getValue();
+
+    Type getType();
+    TemporalType getTemporalType();
+}
+----
+
+
+=== ParameterBinder
+
+This is more of an esoteric concept at this point, but ultimately the idea is the binding of the 
+parameter value to JDBC.  It would be best to drive the binding of parameter values from "nodes 
+embedded in the query AST".  This could be a case where the implementation of ParameterSpec 
+additionally implements this "binding contract" as well.

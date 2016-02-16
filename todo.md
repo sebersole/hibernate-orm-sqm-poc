@@ -18,6 +18,7 @@ TODO Items
 	to be Expressions; that change has some bearing on the org.hibernate.query.parser.internal.hql.path.AttributePathResolver
 	code.
 
+Keep track of downcasts on FromElement
 
 Downcasting (TREAT)
 -----------------------
