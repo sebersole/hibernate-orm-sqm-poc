@@ -16,9 +16,11 @@ import org.hibernate.sql.gen.ParameterBinder;
 import org.hibernate.sql.gen.QueryOptionBinder;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
-import org.hibernate.sql.orm.internal.sqm.model.EntityTypeDescriptorImpl;
+import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.SemanticQueryWalker;
+import org.hibernate.sqm.parser.internal.path.resolution.TreatedFromElement;
 import org.hibernate.sqm.query.DeleteStatement;
+import org.hibernate.sqm.query.InsertSelectStatement;
 import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.Statement;
@@ -26,13 +28,15 @@ import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
 import org.hibernate.sqm.query.expression.AvgFunction;
 import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
+import org.hibernate.sqm.query.expression.CollectionIndexFunction;
+import org.hibernate.sqm.query.expression.CollectionSizeFunction;
+import org.hibernate.sqm.query.expression.CollectionValueFunction;
 import org.hibernate.sqm.query.expression.ConcatExpression;
 import org.hibernate.sqm.query.expression.ConstantEnumExpression;
 import org.hibernate.sqm.query.expression.ConstantFieldExpression;
 import org.hibernate.sqm.query.expression.CountFunction;
 import org.hibernate.sqm.query.expression.CountStarFunction;
 import org.hibernate.sqm.query.expression.EntityTypeExpression;
-import org.hibernate.sqm.query.expression.FromElementReferenceExpression;
 import org.hibernate.sqm.query.expression.FunctionExpression;
 import org.hibernate.sqm.query.expression.LiteralBigDecimalExpression;
 import org.hibernate.sqm.query.expression.LiteralBigIntegerExpression;
@@ -45,8 +49,14 @@ import org.hibernate.sqm.query.expression.LiteralLongExpression;
 import org.hibernate.sqm.query.expression.LiteralNullExpression;
 import org.hibernate.sqm.query.expression.LiteralStringExpression;
 import org.hibernate.sqm.query.expression.LiteralTrueExpression;
+import org.hibernate.sqm.query.expression.MapEntryFunction;
+import org.hibernate.sqm.query.expression.MapKeyFunction;
+import org.hibernate.sqm.query.expression.MaxElementFunction;
 import org.hibernate.sqm.query.expression.MaxFunction;
+import org.hibernate.sqm.query.expression.MaxIndexFunction;
+import org.hibernate.sqm.query.expression.MinElementFunction;
 import org.hibernate.sqm.query.expression.MinFunction;
+import org.hibernate.sqm.query.expression.MinIndexFunction;
 import org.hibernate.sqm.query.expression.NamedParameterExpression;
 import org.hibernate.sqm.query.expression.PositionalParameterExpression;
 import org.hibernate.sqm.query.expression.SubQueryExpression;
@@ -59,19 +69,18 @@ import org.hibernate.sqm.query.from.JoinedFromElement;
 import org.hibernate.sqm.query.from.QualifiedAttributeJoinFromElement;
 import org.hibernate.sqm.query.from.QualifiedEntityJoinFromElement;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
-import org.hibernate.sqm.query.from.TreatedJoinedFromElement;
 import org.hibernate.sqm.query.order.OrderByClause;
 import org.hibernate.sqm.query.order.SortSpecification;
 import org.hibernate.sqm.query.predicate.AndPredicate;
 import org.hibernate.sqm.query.predicate.BetweenPredicate;
+import org.hibernate.sqm.query.predicate.EmptinessPredicate;
 import org.hibernate.sqm.query.predicate.GroupedPredicate;
 import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
 import org.hibernate.sqm.query.predicate.InTupleListPredicate;
-import org.hibernate.sqm.query.predicate.IsEmptyPredicate;
-import org.hibernate.sqm.query.predicate.IsNullPredicate;
 import org.hibernate.sqm.query.predicate.LikePredicate;
 import org.hibernate.sqm.query.predicate.MemberOfPredicate;
 import org.hibernate.sqm.query.predicate.NegatedPredicate;
+import org.hibernate.sqm.query.predicate.NullnessPredicate;
 import org.hibernate.sqm.query.predicate.OrPredicate;
 import org.hibernate.sqm.query.predicate.RelationalPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
@@ -161,6 +170,11 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
+	public Object visitInsertSelectStatement(InsertSelectStatement statement) {
+		throw new AssertionFailure( "Not expecting DeleteStatement" );
+	}
+
+	@Override
 	public SelectQuery visitSelectStatement(SelectStatement statement) {
 		if ( sqlAst != null ) {
 			throw new AssertionFailure( "SelectQuery already visited" );
@@ -237,7 +251,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 
 	@Override
 	public Void visitRootEntityFromElement(RootEntityFromElement rootEntityFromElement) {
-		final EntityTypeDescriptorImpl entityTypeDescriptor = (EntityTypeDescriptorImpl) rootEntityFromElement.getTypeDescriptor();
+		final EntityTypeImpl entityTypeDescriptor = (EntityTypeImpl) rootEntityFromElement.getBoundModelType();
 		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
 
 		final EntityTableSpecificationGroup group = entityPersister.getEntityTableSpecificationGroup(
@@ -258,7 +272,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitTreatedJoinFromElement(TreatedJoinedFromElement joinedFromElement) {
+	public Object visitTreatedFromElement(TreatedFromElement treatedFromElement) {
 		throw new NotYetImplementedException();
 	}
 
@@ -332,12 +346,12 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitIsEmptyPredicate(IsEmptyPredicate predicate) {
+	public Object visitIsEmptyPredicate(EmptinessPredicate predicate) {
 		return null;
 	}
 
 	@Override
-	public Object visitIsNullPredicate(IsNullPredicate predicate) {
+	public Object visitIsNullPredicate(NullnessPredicate predicate) {
 		return null;
 	}
 
@@ -397,11 +411,6 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitFromElementReferenceExpression(FromElementReferenceExpression expression) {
-		return null;
-	}
-
-	@Override
 	public Object visitFunctionExpression(FunctionExpression expression) {
 		return null;
 	}
@@ -433,6 +442,51 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 
 	@Override
 	public Object visitSumFunction(SumFunction expression) {
+		return null;
+	}
+
+	@Override
+	public Object visitCollectionSizeFunction(CollectionSizeFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitCollectionValueFunction(CollectionValueFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitCollectionIndexFunction(CollectionIndexFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitMapKeyFunction(MapKeyFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitMapEntryFunction(MapEntryFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitMaxElementFunction(MaxElementFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitMinElementFunction(MinElementFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitMaxIndexFunction(MaxIndexFunction function) {
+		return null;
+	}
+
+	@Override
+	public Object visitMinIndexFunction(MinIndexFunction function) {
 		return null;
 	}
 

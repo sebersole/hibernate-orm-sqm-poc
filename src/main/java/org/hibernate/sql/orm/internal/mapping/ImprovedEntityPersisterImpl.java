@@ -56,6 +56,11 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		// 		design goal of having SQM be completely independent from ORM.  It basically means we will end
 		// 		up needing to expose more model and mapping information in the org.hibernate.sqm.domain.ModelMetadata
 		// 		contracts
+		//
+		// Another option would be to have exposed methods on TableSpecificationGroup to "register"
+		//		path dereferences as we interpret SQM.  The idea being that we'd capture the need for
+		//		certain subclasses as we interpret the SQM into SQL-AST via this registration.  However
+		//		since
 
 		final EntityTableSpecificationGroup group = new EntityTableSpecificationGroup(
 				tableSpace,

@@ -37,7 +37,7 @@ public class SqlAliasBaseManager {
 	}
 
 	private String generateAliasBase(FromElement fromElement) {
-		final String entityName = fromElement.getTypeDescriptor().getTypeName();
+		final String entityName = fromElement.getBoundModelType().asManagedType().getTypeName();
 		final String acronym = determineAcronym( entityName );
 
 		Integer acronymCount = acronymCountMap.get( acronym );

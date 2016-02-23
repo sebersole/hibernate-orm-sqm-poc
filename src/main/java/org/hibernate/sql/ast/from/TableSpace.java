@@ -15,7 +15,7 @@ import org.hibernate.AssertionFailure;
 import org.jboss.logging.Logger;
 
 /**
- * Represents a groups of joined tables.  Roughly equivalent to what ANSI SQL (92)
+ * Represents a groups of joined tables.  Roughly equivalent to what ANSI SQL
  * calls a {@code <table reference>}.
  * <p/>
  * We further group the individual TableSpecification references into groups to be able to

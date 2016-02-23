@@ -11,8 +11,8 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.query.parser.SemanticQueryInterpreter;
 import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
+import org.hibernate.sqm.parser.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.Statement;
 
 import org.junit.After;

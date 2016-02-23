@@ -6,13 +6,14 @@
  */
 package org.hibernate.sql.orm.internal.sqm.model;
 
-import org.hibernate.sqm.domain.TypeDescriptor;
+import org.hibernate.sqm.domain.ManagedType;
+import org.hibernate.sqm.domain.Type;
 
 /**
  * @author Steve Ebersole
  */
-class PseudoIdAttributeDescriptor extends AttributeDescriptorImpl {
-	public PseudoIdAttributeDescriptor(TypeDescriptor declaringType, TypeDescriptor type) {
-		super( declaringType, "id", type );
+class PseudoIdAttributeImpl extends SingularAttributeImpl {
+	public PseudoIdAttributeImpl(ManagedType declaringType, Type type, Classification classification) {
+		super( declaringType, "id", classification, type );
 	}
 }

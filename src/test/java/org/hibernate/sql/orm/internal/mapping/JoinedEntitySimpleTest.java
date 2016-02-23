@@ -20,7 +20,7 @@ import org.hibernate.sql.ast.from.PhysicalTableSpecification;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sql.orm.internal.sqm.model.EntityTypeDescriptorImpl;
+import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
@@ -38,8 +38,8 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpaceBase() {
 		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityBase" );
 
-		final EntityTypeDescriptorImpl entityTypeDescriptor =
-				(EntityTypeDescriptorImpl) getConsumerContext().resolveEntityReference( "JoinedEntityBase" );
+		final EntityTypeImpl entityTypeDescriptor =
+				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBase" );
 		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
@@ -86,8 +86,8 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpaceBranch() {
 		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityBranch" );
 
-		final EntityTypeDescriptorImpl entityTypeDescriptor =
-				(EntityTypeDescriptorImpl) getConsumerContext().resolveEntityReference( "JoinedEntityBranch" );
+		final EntityTypeImpl entityTypeDescriptor =
+				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBranch" );
 		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
@@ -134,8 +134,8 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpaceLeaf() {
 		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityLeaf" );
 
-		final EntityTypeDescriptorImpl entityTypeDescriptor =
-				(EntityTypeDescriptorImpl) getConsumerContext().resolveEntityReference( "JoinedEntityLeaf" );
+		final EntityTypeImpl entityTypeDescriptor =
+				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityLeaf" );
 		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 

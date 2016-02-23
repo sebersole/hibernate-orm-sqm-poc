@@ -2,6 +2,23 @@ Design Guide
 ============
 :toc:
 
+== General Design
+
+Ultimately the idea here is to redefine how Hibernate generates and executes SQL .  Part of this is the 
+SQM parser for handling semantic interpretation of HQL, JPQL and criteria queries.  Part is building 
+an "SQL AST" from various sources:
+
+* SQM and options
+* get & load handling (single and multi id) 
+* persister-driven DML handling (save, persist, merge, etc)
+
+Building SQM is defined by the hibernate-semantic-query project.
+
+question - does SQM incorporate entity-graphs?  seems better to have the thing that interprets SQM to apply
+entity-graphs.
+
+
+
 == Parameters
 
 There are multiple "parts" to parameter handling...
@@ -99,3 +116,5 @@ This is more of an esoteric concept at this point, but ultimately the idea is th
 parameter value to JDBC.  It would be best to drive the binding of parameter values from "nodes 
 embedded in the query AST".  This could be a case where the implementation of ParameterSpec 
 additionally implements this "binding contract" as well.
+
+

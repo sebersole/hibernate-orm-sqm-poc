@@ -9,9 +9,9 @@ package org.hibernate.sql.gen.sqm;
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.query.parser.ConsumerContext;
-import org.hibernate.sql.orm.internal.sqm.model.ModelMetadataImpl;
-import org.hibernate.sqm.domain.EntityTypeDescriptor;
+import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
+import org.hibernate.sqm.domain.DomainMetamodel;
+import org.hibernate.sqm.parser.ConsumerContext;
 
 /**
  * Ultimately ConsumerContext could be implemented by SessionFactoryImpl.  And persisters, etc
@@ -24,17 +24,17 @@ import org.hibernate.sqm.domain.EntityTypeDescriptor;
 public class ConsumerContextImpl implements ConsumerContext {
 	private final SessionFactoryImplementor sessionFactory;
 	private final ClassLoaderService classLoaderService;
-	private final ModelMetadataImpl modelMetadata;
+	private final DomainMetamodelImpl domainMetamodel;
 
 	public ConsumerContextImpl(SessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
 		this.classLoaderService = sessionFactory.getServiceRegistry().getService( ClassLoaderService.class );
-		this.modelMetadata = new ModelMetadataImpl( sessionFactory );
+		this.domainMetamodel = new DomainMetamodelImpl( sessionFactory );
 	}
 
 	@Override
-	public EntityTypeDescriptor resolveEntityReference(String reference) {
-		return modelMetadata.resolveEntityReference( reference );
+	public DomainMetamodel getDomainMetamodel() {
+		return domainMetamodel;
 	}
 
 	@Override

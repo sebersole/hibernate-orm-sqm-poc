@@ -18,7 +18,7 @@ import org.hibernate.sql.ast.from.PhysicalTableSpecification;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sql.orm.internal.sqm.model.EntityTypeDescriptorImpl;
+import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
@@ -39,8 +39,8 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpace() {
 		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableEntity" );
 
-		final EntityTypeDescriptorImpl entityTypeDescriptor =
-				(EntityTypeDescriptorImpl) getConsumerContext().resolveEntityReference( "SingleTableEntity" );
+		final EntityTypeImpl entityTypeDescriptor =
+				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableEntity" );
 		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( SingleTableEntityPersister.class ) );
 
@@ -70,8 +70,8 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 	public void testTwoSpaces() {
 		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableEntity, SingleTableEntity" );
 
-		final EntityTypeDescriptorImpl entityTypeDescriptor =
-				(EntityTypeDescriptorImpl) getConsumerContext().resolveEntityReference( "SingleTableEntity" );
+		final EntityTypeImpl entityTypeDescriptor =
+				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableEntity" );
 		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( SingleTableEntityPersister.class ) );
 
