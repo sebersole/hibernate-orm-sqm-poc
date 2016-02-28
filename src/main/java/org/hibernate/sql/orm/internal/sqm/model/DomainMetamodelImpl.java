@@ -6,13 +6,12 @@
  */
 package org.hibernate.sql.orm.internal.sqm.model;
 
+import javax.persistence.TemporalType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.persistence.TemporalType;
 
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -37,7 +36,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 
 	private final Map<Class, BasicType> basicTypeMap;
 
-	private final Map<EntityPersister,EntityTypeImpl> entityTypeDescriptorMap;
+	private final Map<EntityPersister, EntityTypeImpl> entityTypeDescriptorMap = new HashMap<EntityPersister, EntityTypeImpl>();
 	private Map<String,PolymorphicEntityTypeImpl> polymorphicEntityTypeDescriptorMap;
 
 	public DomainMetamodelImpl(SessionFactoryImplementor sessionFactory) {
@@ -46,7 +45,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		this.basicTypeMap = buildBasicTypeMaps();
 
 		// todo : better account for inheritance
-		this.entityTypeDescriptorMap = buildEntityTypeDescriptorMap();
+		buildEntityTypeDescriptorMap();
 	}
 
 	public SessionFactoryImplementor getSessionFactory() {
@@ -72,10 +71,9 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		return map;
 	}
 
-	private Map<EntityPersister, EntityTypeImpl> buildEntityTypeDescriptorMap() {
-		final Map<EntityPersister, EntityTypeImpl> map = new HashMap<EntityPersister, EntityTypeImpl>();
+	private void buildEntityTypeDescriptorMap() {
 		for ( EntityPersister entityPersister : sessionFactory.getEntityPersisters().values() ) {
-			map.put(
+			entityTypeDescriptorMap.put(
 					entityPersister,
 					new EntityTypeImpl(
 							this,
@@ -83,7 +81,6 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 					)
 			);
 		}
-		return map;
 	}
 
 	@Override
@@ -153,6 +150,9 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	}
 
 	public org.hibernate.sqm.domain.Type toSqmType(Type ormType) {
+		if(ormType == null){
+			return null;
+		}
 		if ( ormType.isAnyType() ) {
 			return toSqmType( (AnyType) ormType );
 		}
@@ -172,10 +172,14 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	}
 
 	public org.hibernate.sqm.domain.BasicType toSqmType(org.hibernate.type.BasicType ormBasicType) {
-		org.hibernate.sqm.domain.BasicType descriptor = basicTypeMap.get( ormBasicType.getReturnedClass() );
-		if ( descriptor == null ) {
-			descriptor = new BasicTypeImpl( ormBasicType );
-			basicTypeMap.put( ormBasicType.getReturnedClass(), descriptor );
+		org.hibernate.sqm.domain.BasicType descriptor = null;
+		if ( ormBasicType != null ) {
+			descriptor = basicTypeMap.get( ormBasicType.getReturnedClass() );
+
+			if ( descriptor == null ) {
+				descriptor = new BasicTypeImpl( ormBasicType );
+				basicTypeMap.put( ormBasicType.getReturnedClass(), descriptor );
+			}
 		}
 		return descriptor;
 	}
@@ -192,7 +196,18 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	}
 
 	public EntityTypeImpl toSqmType(EntityPersister persister) {
-		return entityTypeDescriptorMap.get( persister );
+		EntityTypeImpl entityType = entityTypeDescriptorMap.get( persister );
+		if ( entityType == null ) {
+			entityType = new EntityTypeImpl(
+					this,
+					new ImprovedEntityPersisterImpl( persister )
+			);
+			entityTypeDescriptorMap.put(
+					persister,
+					entityType
+			);
+		}
+		return entityType;
 	}
 
 	public org.hibernate.sqm.domain.Type toSqmType(CompositeType ormType) {

@@ -10,8 +10,8 @@ import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
+import org.hibernate.sqm.ConsumerContext;
 import org.hibernate.sqm.domain.DomainMetamodel;
-import org.hibernate.sqm.parser.ConsumerContext;
 
 /**
  * Ultimately ConsumerContext could be implemented by SessionFactoryImpl.  And persisters, etc

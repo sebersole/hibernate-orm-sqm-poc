@@ -28,7 +28,7 @@ public class EntityTypeImpl implements EntityType {
 	private final DomainMetamodelImpl modelMetadata;
 	private final ImprovedEntityPersister persister;
 
-	private final Map<String,AbstractAttributeImpl> attributeDescriptorMap = new HashMap<String, AbstractAttributeImpl>();
+	private final Map<String, AbstractAttributeImpl> attributeDescriptorMap = new HashMap<String, AbstractAttributeImpl>();
 
 	public EntityTypeImpl(DomainMetamodelImpl modelMetadata, ImprovedEntityPersister persister) {
 		this.modelMetadata = modelMetadata;
@@ -50,7 +50,7 @@ public class EntityTypeImpl implements EntityType {
 						collectionMetadata.getElementClassification(),
 						modelMetadata.toSqmType( collectionMetadata.getCollectionIdType() ),
 						modelMetadata.toSqmType( collectionMetadata.getIndexType() ),
-						modelMetadata.toSqmType( collectionMetadata.getElementType() )
+						this
 				);
 			}
 			else {

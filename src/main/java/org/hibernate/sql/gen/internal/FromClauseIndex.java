@@ -30,7 +30,10 @@ public class FromClauseIndex {
 			new HashMap<FromElement, TableSpecificationGroup>();
 
 	public void pushFromClause(FromClause fromClause) {
-		final FromClauseStackNode parent = fromClauseStackNodes.peek();
+		FromClauseStackNode parent = null;
+		if ( fromClauseStackNodes.size() > 0 ) {
+			parent = fromClauseStackNodes.peek();
+		}
 		FromClauseStackNode node = new FromClauseStackNode( parent, fromClause );
 		fromClauseStackNodes.push( node );
 	}
