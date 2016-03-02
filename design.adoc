@@ -17,6 +17,111 @@ Building SQM is defined by the hibernate-semantic-query project.
 question - does SQM incorporate entity-graphs?  seems better to have the thing that interprets SQM to apply
 entity-graphs.
 
+question - better for persister to incorporate the model descriptor?  Or for persister to simply hold 
+reference to model descriptor?  The latter seems best (certainly least disruptive), however that makes querying
+MappedSuperclasses more difficult.  This really comes down to a decision of whether to model MappedSuperclass
+in the EntityPersister hierarchy.  As a follow-on to this... we should incorporate a representation of
+MappedSuperclass into the SQM domain model.  Seems that the spec does not allow querying MappedSuperclasses; verify!
+
+
+== Tables and Groups and Spaces (oh my)
+
+Modeling the from-clause is central to SQM and its translation.  In translating SQM into an SQL AST 
+we build the following types:
+
+TableSpecification:: Models an singular table reference.  This could be either a real table reference 
+(PhysicalTableSpecification) or an inline-view (DerivedTableSpecification).
+
+TableSpecificationGroup:: Represents a related group of TableSpecification instances.  Specifically it models
+the TableSpecification originating from a given entity/collection persister (see the "improved" persister contracts).
+
+TableSpecificationGroupJoin:: Represents a TableSpecificationGroup along with the type of join and any predicate.
+used to represent joins between "persister references".
+
+TableSpace:: Models what ANSI SQL calls a "table reference".  Easiest way to think of this is the comma separated groups
+of "from elements".
+
+FromClause:: groups one or more TableSpaces.
+
+Let's look at some examples to make this more clear...
+
+[source]
+.select e from Entity e (basic)
+----
+FromClause
+    TableSpace
+        root=TableSpecificationGroup(com.acme.Entity, "e")
+            root=PhysicalTableSpecification("t_entity", "e0")
+            joins={}
+        joins={}
+----
+  
+[source]
+.select e from Entity e (secondary table)
+----
+FromClause
+    TableSpace
+        root=TableSpecificationGroup(com.acme.Entity, "e")
+            root=PhysicalTableSpecification("t_entity", "e0")
+            joins={
+                TableSpecificationJoin
+                    PhysicalTableSpecification("t_entity_secondary", "e1")
+                    INNER
+                    <join predicate>
+            }
+        joins={}
+----
+  
+[source]
+.select e from Entity e (joined inheritance)
+----
+FromClause
+    TableSpace
+        root=TableSpecificationGroup(com.acme.Entity, "e")
+            root=PhysicalTableSpecification("t_entity", "e0")
+            joins={
+                TableSpecificationJoin
+                    PhysicalTableSpecification("t_entity_secondary", "e1")
+                    INNER
+                    <join predicate>
+            }
+        joins={}
+----
+
+[source]
+.select e from Entity e, SecondEntity se
+----
+FromClause
+    TableSpace
+        root=TableSpecificationGroup(com.acme.Entity, "e")
+            root=PhysicalTableSpecification("t_entity", "e0")
+            joins={}
+        joins={}
+    TableSpace
+        root=TableSpecificationGroup(com.acme.SecondEntity, "se")
+            root=PhysicalTableSpecification("t_second_entity", "se0")
+            joins={}
+        joins={}
+----
+
+[source]
+.select e from Entity e inner join SecondEntity se on ...
+----
+FromClause
+    TableSpace
+        root=TableSpecificationGroup(com.acme.Entity, "e")
+            root=PhysicalTableSpecification("t_entity", "e0")
+            joins={}
+        joins={
+            TableSpecificationGroupJoin
+                EntityTableSpecificationGroup
+                    TableSpecificationGroup(com.acme.SecondEntity, "se")
+                    INNER
+                    <join predicate>
+        }
+----
+
+
 
 
 == Parameters
@@ -32,7 +137,7 @@ Consider:
 
 [source]
 ----
-Query q = session.createQuery( "from Person p where p.name = :name" );
+Query q = session.createQuery( "select p from Person p where p.name = :name" );
 ----
 
 At this point the (Named)ParameterSpec for `":name"` has been parsed.   ParameterSpec needs to understand
