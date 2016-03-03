@@ -45,92 +45,149 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinCollectionValuedFieldTest() {
-		SelectStatement statement = (SelectStatement) interpret( "from Person p join p.addresses" );
+		final TableSpace tableSpace = getTableSpace( "from Person p join p.addresses" );
 
-		SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
-		interpreter.interpret( statement );
+		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
+		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
 
-		SelectQuery selectQuery = interpreter.getSelectQuery();
+		checkTableName( "PERSON", rootTableSpecificationGroup );
 
-		final List<TableSpace> tableSpaces = selectQuery.getQuerySpec().getFromClause().getTableSpaces();
-		assertThat( tableSpaces.size(), is( 1 ) );
-
-		final TableSpace tableSpace = tableSpaces.get( 0 );
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin = tableSpace.getJoinedTableSpecificationGroups()
-				.get( 0 );
+		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
 		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
 		assertThat( joinedGroup, is( instanceOf( CollectionTableSpecificationGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) )
-		;
-		final TableSpecification rootTableSpecification = joinedGroup.getRootTableSpecification();
-		assertThat( rootTableSpecification, is( instanceOf( PhysicalTableSpecification.class ) ) );
+		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
 
-		assertThat( ((PhysicalTableSpecification) rootTableSpecification).getTableName(), is( "PERSON_ADDRESS" ) );
+		checkTableName( "PERSON_ADDRESS", joinedGroup );
 	}
 
 	@Test
 	public void joinCollectionValuedFieldWithJoinColumnTest() {
-		SelectStatement statement = (SelectStatement) interpret( "from Person p join p.pastRoles" );
+		final TableSpace tableSpace = getTableSpace( "from Person p join p.pastRoles" );
 
-		SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
-		interpreter.interpret( statement );
+		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
+		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
 
-		SelectQuery selectQuery = interpreter.getSelectQuery();
+		checkTableName( "PERSON", rootTableSpecificationGroup );
 
-		final List<TableSpace> tableSpaces = selectQuery.getQuerySpec().getFromClause().getTableSpaces();
-		assertThat( tableSpaces.size(), is( 1 ) );
-
-		final TableSpace tableSpace = tableSpaces.get( 0 );
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin = tableSpace.getJoinedTableSpecificationGroups()
-				.get( 0 );
+		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
 		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
 		assertThat( joinedGroup, is( instanceOf( CollectionTableSpecificationGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) )
-		;
-		final TableSpecification rootTableSpecification = joinedGroup.getRootTableSpecification();
-		assertThat( rootTableSpecification, is( instanceOf( PhysicalTableSpecification.class ) ) );
+		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
 
-		assertThat( ((PhysicalTableSpecification) rootTableSpecification).getTableName(), is( "ROLE" ) );
+		checkTableName( "ROLE", joinedGroup );
 	}
 
 	@Test
 	public void joinSingleValuedObjectFieldTest() {
-		SelectStatement statement = (SelectStatement) interpret( "from Person p join p.actualRole" );
+		final TableSpace tableSpace = getTableSpace( "from Person p join p.actualRole" );
 
-		SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
-		interpreter.interpret( statement );
+		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
+		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
 
-		SelectQuery selectQuery = interpreter.getSelectQuery();
+		checkTableName( "PERSON", rootTableSpecificationGroup );
 
-		final List<TableSpace> tableSpaces = selectQuery.getQuerySpec().getFromClause().getTableSpaces();
-		assertThat( tableSpaces.size(), is( 1 ) );
-
-		final TableSpace tableSpace = tableSpaces.get( 0 );
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin = tableSpace.getJoinedTableSpecificationGroups()
-				.get( 0 );
+		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
 		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
 		assertThat( joinedGroup, is( instanceOf( EntityTableSpecificationGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) )
-		;
-		final TableSpecification rootTableSpecification = joinedGroup.getRootTableSpecification();
-		assertThat( rootTableSpecification, is( instanceOf( PhysicalTableSpecification.class ) ) );
+		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
 
-		assertThat( ((PhysicalTableSpecification) rootTableSpecification).getTableName(), is( "ROLE" ) );
+		checkTableName( "ROLE", joinedGroup );
+	}
+
+	@Test
+	public void crossJoinTest() {
+		final TableSpace tableSpace = getTableSpace( "from Person cross join Role" );
+
+		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
+		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
+
+		checkTableName( "PERSON", rootTableSpecificationGroup );
+
+		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
+
+		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
+		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.CROSS ) );
+
+		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( EntityTableSpecificationGroup.class ) ) );
+
+		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
+
+		checkTableName( "ROLE", joinedGroup );
+	}
+
+	@Override
+	protected void applyMetadataSources(MetadataSources metadataSources) {
+		metadataSources.addAnnotatedClass( Person.class );
+		metadataSources.addAnnotatedClass( Address.class );
+		metadataSources.addAnnotatedClass( Role.class );
+	}
+
+	@Entity(name = "Person")
+	@Table(name = "PERSON")
+	public static class Person {
+		@Id
+		@GeneratedValue
+		long id;
+
+		@OneToMany
+		Set<Address> addresses = new HashSet<Address>();
+
+		@OneToMany
+		@JoinColumn(name = "person_id")
+		Set<Role> pastRoles = new HashSet<Role>();
+
+		@OneToOne
+		Role actualRole;
+	}
+
+	@Entity(name = "Address")
+	@Table(name = "ADDRESS")
+	public static class Address {
+		@Id
+		@GeneratedValue
+		long id;
+	}
+
+	@Entity(name = "Role")
+	@Table(name = "ROLE")
+	public static class Role {
+		@Id
+		@GeneratedValue
+		long id;
+	}
+
+	private TableSpace getTableSpace(String query) {
+		final SelectStatement statement = (SelectStatement) interpret( query );
+
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		interpreter.interpret( statement );
+
+		final SelectQuery selectQuery = interpreter.getSelectQuery();
+
+		final List<TableSpace> tableSpaces = selectQuery.getQuerySpec().getFromClause().getTableSpaces();
+		assertThat( tableSpaces.size(), is( 1 ) );
+
+		return tableSpaces.get( 0 );
 	}
 
 	private Callback callBack() {
@@ -186,44 +243,9 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		return SemanticQueryInterpreter.interpret( query, getConsumerContext() );
 	}
 
-	@Override
-	protected void applyMetadataSources(MetadataSources metadataSources) {
-		metadataSources.addAnnotatedClass( Person.class );
-		metadataSources.addAnnotatedClass( Address.class );
-		metadataSources.addAnnotatedClass( Role.class );
-	}
-
-	@Entity(name = "Person")
-	@Table(name = "PERSON")
-	public static class Person {
-		@Id
-		@GeneratedValue
-		long id;
-
-		@OneToMany
-		Set<Address> addresses = new HashSet<Address>();
-
-		@OneToMany
-		@JoinColumn(name = "person_id")
-		Set<Role> pastRoles = new HashSet<Role>();
-
-		@OneToOne
-		Role actualRole;
-	}
-
-	@Entity(name = "Address")
-	@Table(name = "ADDRESS")
-	public static class Address {
-		@Id
-		@GeneratedValue
-		long id;
-	}
-
-	@Entity(name = "Role")
-	@Table(name = "ROLE")
-	public static class Role {
-		@Id
-		@GeneratedValue
-		long id;
+	private void checkTableName(String expectedTableName, TableSpecificationGroup tableSpecificationGroup) {
+		final TableSpecification tableSpecification = tableSpecificationGroup.getRootTableSpecification();
+		assertThat( tableSpecification, is( instanceOf( PhysicalTableSpecification.class ) ) );
+		assertThat( ((PhysicalTableSpecification) tableSpecification).getTableName(), is( expectedTableName ) );
 	}
 }

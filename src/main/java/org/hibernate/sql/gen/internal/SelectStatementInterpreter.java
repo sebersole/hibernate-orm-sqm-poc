@@ -310,7 +310,18 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 
 	@Override
 	public Object visitCrossJoinedFromElement(CrossJoinedFromElement joinedFromElement) {
-		throw new NotYetImplementedException();
+
+		final EntityTypeImpl entityTypeDescriptor = (EntityTypeImpl) joinedFromElement.getIntrinsicSubclassIndicator();
+		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
+		TableSpecificationGroup group = null;
+
+		group = entityPersister.getEntityTableSpecificationGroup(
+				joinedFromElement,
+				tableSpace,
+				sqlAliasBaseManager,
+				fromClauseIndex
+		);
+		return new TableSpecificationGroupJoin( joinedFromElement.getJoinType(), group, null );
 	}
 
 	@Override
