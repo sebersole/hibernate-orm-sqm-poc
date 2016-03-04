@@ -23,4 +23,9 @@ public class NamedQueryParameter extends AbstractQueryParameter implements Query
 	public String getName() {
 		return name;
 	}
+
+	@Override
+	public Type getType() {
+		return null;
+	}
 }
