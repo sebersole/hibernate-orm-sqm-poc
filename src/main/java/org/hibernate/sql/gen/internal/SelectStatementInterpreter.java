@@ -7,7 +7,6 @@ import java.util.List;
 import org.hibernate.AssertionFailure;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.loader.plan.spi.Return;
-import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.EntityTableSpecificationGroup;
 import org.hibernate.sql.ast.from.TableSpace;
@@ -25,9 +24,7 @@ import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersisterImpl;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.SemanticQueryWalker;
-import org.hibernate.sqm.domain.Attribute;
 import org.hibernate.sqm.domain.PluralAttribute;
-import org.hibernate.sqm.parser.internal.hql.path.TreatedFromElement;
 import org.hibernate.sqm.query.DeleteStatement;
 import org.hibernate.sqm.query.InsertSelectStatement;
 import org.hibernate.sqm.query.QuerySpec;
@@ -39,9 +36,10 @@ import org.hibernate.sqm.query.expression.AvgFunction;
 import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
 import org.hibernate.sqm.query.expression.CaseSearchedExpression;
 import org.hibernate.sqm.query.expression.CaseSimpleExpression;
+import org.hibernate.sqm.query.expression.CoalesceExpression;
 import org.hibernate.sqm.query.expression.CollectionIndexFunction;
 import org.hibernate.sqm.query.expression.CollectionSizeFunction;
-import org.hibernate.sqm.query.expression.CollectionValueFunction;
+import org.hibernate.sqm.query.expression.CollectionValuePathExpression;
 import org.hibernate.sqm.query.expression.ConcatExpression;
 import org.hibernate.sqm.query.expression.ConstantEnumExpression;
 import org.hibernate.sqm.query.expression.ConstantFieldExpression;
@@ -61,7 +59,7 @@ import org.hibernate.sqm.query.expression.LiteralNullExpression;
 import org.hibernate.sqm.query.expression.LiteralStringExpression;
 import org.hibernate.sqm.query.expression.LiteralTrueExpression;
 import org.hibernate.sqm.query.expression.MapEntryFunction;
-import org.hibernate.sqm.query.expression.MapKeyFunction;
+import org.hibernate.sqm.query.expression.MapKeyPathExpression;
 import org.hibernate.sqm.query.expression.MaxElementFunction;
 import org.hibernate.sqm.query.expression.MaxFunction;
 import org.hibernate.sqm.query.expression.MaxIndexFunction;
@@ -69,6 +67,7 @@ import org.hibernate.sqm.query.expression.MinElementFunction;
 import org.hibernate.sqm.query.expression.MinFunction;
 import org.hibernate.sqm.query.expression.MinIndexFunction;
 import org.hibernate.sqm.query.expression.NamedParameterExpression;
+import org.hibernate.sqm.query.expression.NullifExpression;
 import org.hibernate.sqm.query.expression.PositionalParameterExpression;
 import org.hibernate.sqm.query.expression.SubQueryExpression;
 import org.hibernate.sqm.query.expression.SumFunction;
@@ -325,11 +324,6 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitTreatedFromElement(TreatedFromElement treatedFromElement) {
-		throw new NotYetImplementedException();
-	}
-
-	@Override
 	public Object visitQualifiedEntityJoinFromElement(QualifiedEntityJoinFromElement joinedFromElement) {
 		throw new NotYetImplementedException();
 	}
@@ -496,7 +490,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitCollectionValueFunction(CollectionValueFunction function) {
+	public Object visitCollectionValueFunction(CollectionValuePathExpression function) {
 		return null;
 	}
 
@@ -506,7 +500,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitMapKeyFunction(MapKeyFunction function) {
+	public Object visitMapKeyFunction(MapKeyPathExpression function) {
 		return null;
 	}
 
@@ -622,6 +616,16 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 
 	@Override
 	public Object visitSearchedCaseExpression(CaseSearchedExpression expression) {
+		return null;
+	}
+
+	@Override
+	public Object visitCoalesceExpression(CoalesceExpression expression) {
+		return null;
+	}
+
+	@Override
+	public Object visitNullifExpression(NullifExpression expression) {
 		return null;
 	}
 
