@@ -20,7 +20,7 @@ import org.hibernate.sql.gen.QueryOptionBinder;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
-import org.hibernate.sqm.SemanticQueryWalker;
+import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.query.DeleteStatement;
 import org.hibernate.sqm.query.InsertSelectStatement;
@@ -92,8 +92,6 @@ import org.hibernate.sqm.query.predicate.OrPredicate;
 import org.hibernate.sqm.query.predicate.RelationalPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.select.DynamicInstantiation;
-import org.hibernate.sqm.query.select.SelectClause;
-import org.hibernate.sqm.query.select.Selection;
 import org.hibernate.sqm.query.set.Assignment;
 import org.hibernate.sqm.query.set.SetClause;
 
@@ -101,7 +99,7 @@ import org.hibernate.sqm.query.set.SetClause;
  * @author Steve Ebersole
  * @author John O'Hara
  */
-public class SelectStatementInterpreter implements SemanticQueryWalker {
+public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	public static JdbcSelectPlan interpret(SelectStatement statement, QueryOptions queryOptions, Callback callback) {
 		final SelectStatementInterpreter walker = new SelectStatementInterpreter( queryOptions, callback );
@@ -335,15 +333,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		return null;
 	}
 
-	@Override
-	public Object visitSelectClause(SelectClause selectClause) {
-		return null;
-	}
 
-	@Override
-	public Object visitSelection(Selection selection) {
-		return null;
-	}
 
 	@Override
 	public Object visitDynamicInstantiation(DynamicInstantiation dynamicInstantiation) {
