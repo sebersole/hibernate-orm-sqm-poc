@@ -11,6 +11,7 @@ import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
+import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.query.from.FromElement;
 
 /**
@@ -20,7 +21,7 @@ import org.hibernate.sqm.query.from.FromElement;
  *
  * @author Steve Ebersole
  */
-public interface ImprovedEntityPersister {
+public interface ImprovedEntityPersister extends EntityType {
 	/**
 	 * In integrating this upstream, the methods here would all be part of EntityPersister
 	 * but here we cannot do that and therefore still need access to EntityPersister
