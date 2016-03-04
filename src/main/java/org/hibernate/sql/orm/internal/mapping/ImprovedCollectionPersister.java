@@ -11,15 +11,16 @@ import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
+import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.query.from.JoinedFromElement;
 
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedCollectionPersister {
+public interface ImprovedCollectionPersister extends PluralAttribute {
 	CollectionPersister getPersister();
 
-	CollectionTableGroup getCollectionTableSpecificationGroup(
+	CollectionTableGroup getCollectionTableGroup(
 			JoinedFromElement joinedFromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,

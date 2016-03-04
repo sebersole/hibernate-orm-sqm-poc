@@ -5,13 +5,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.AssertionFailure;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
+import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.gen.Callback;
 import org.hibernate.sql.gen.JdbcSelectPlan;
@@ -20,7 +19,6 @@ import org.hibernate.sql.gen.ParameterBinder;
 import org.hibernate.sql.gen.QueryOptionBinder;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
-import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersisterImpl;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.SemanticQueryWalker;
@@ -263,7 +261,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		final EntityTypeImpl entityTypeDescriptor = (EntityTypeImpl) rootEntityFromElement.getBoundModelType();
 		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
 
-		final EntityTableGroup group = entityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup group = entityPersister.getEntityTableGroup(
 				rootEntityFromElement,
 				tableSpace,
 				sqlAliasBaseManager,
@@ -282,11 +280,8 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		TableGroup group = null;
 
 		if ( joinedFromElement.getBoundAttribute() instanceof PluralAttribute ) {
-
-			group = getImprovedCollectionPersister(
-					joinedFromElement,
-					entityPersister.getEntityPersister().getFactory()
-			).getCollectionTableSpecificationGroup(
+			final ImprovedCollectionPersister improvedCollectionPersister = (ImprovedCollectionPersister) joinedFromElement.getBoundAttribute();
+			group = improvedCollectionPersister.getCollectionTableGroup(
 					joinedFromElement,
 					tableSpace,
 					sqlAliasBaseManager,
@@ -294,7 +289,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 			);
 		}
 		else {
-			group = entityPersister.getEntityTableSpecificationGroup(
+			group = entityPersister.getEntityTableGroup(
 					joinedFromElement,
 					tableSpace,
 					sqlAliasBaseManager,
@@ -314,7 +309,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
 		TableGroup group = null;
 
-		group = entityPersister.getEntityTableSpecificationGroup(
+		group = entityPersister.getEntityTableGroup(
 				joinedFromElement,
 				tableSpace,
 				sqlAliasBaseManager,
@@ -627,17 +622,5 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 	@Override
 	public Object visitNullifExpression(NullifExpression expression) {
 		return null;
-	}
-
-	private ImprovedCollectionPersister getImprovedCollectionPersister(
-			QualifiedAttributeJoinFromElement joinedFromElement,
-			SessionFactoryImplementor sessionFactory) {
-		return new ImprovedCollectionPersisterImpl(
-				sessionFactory.getCollectionPersister( getCollectionRole( joinedFromElement ) ) );
-	}
-
-	private String getCollectionRole(QualifiedAttributeJoinFromElement joinedFromElement) {
-		return joinedFromElement.getSubclassIndicator()
-				.getName() + "." + joinedFromElement.getBoundAttribute().getName();
 	}
 }

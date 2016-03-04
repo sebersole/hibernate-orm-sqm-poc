@@ -29,7 +29,7 @@ public interface ImprovedEntityPersister {
 	 */
 	EntityPersister getEntityPersister();
 
-	EntityTableGroup getEntityTableSpecificationGroup(
+	EntityTableGroup getEntityTableGroup(
 			FromElement fromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,

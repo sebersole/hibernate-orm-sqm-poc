@@ -12,7 +12,7 @@ import org.hibernate.sqm.domain.Type;
 /**
  * @author Steve Ebersole
  */
-class PseudoIdAttributeImpl extends SingularAttributeImpl {
+public class PseudoIdAttributeImpl extends SingularAttributeImpl {
 	public PseudoIdAttributeImpl(ManagedType declaringType, Type type, Classification classification) {
 		super( declaringType, "id", classification, type );
 	}

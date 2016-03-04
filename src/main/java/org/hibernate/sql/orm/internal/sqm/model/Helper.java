@@ -117,7 +117,7 @@ public class Helper {
 		);
 	}
 
-	private static CollectionClassification interpretCollectionClassification(CollectionType collectionType) {
+	public static CollectionClassification interpretCollectionClassification(CollectionType collectionType) {
 		if ( collectionType instanceof BagType
 				|| collectionType instanceof IdentifierBagType ) {
 			return CollectionClassification.BAG;

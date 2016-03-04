@@ -16,7 +16,6 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.PhysicalTable;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -51,7 +50,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -61,19 +60,19 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( result.getAliasBase(), equalTo( "s1" ) );
 
 		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable();
-		assertThat( tableSpec.getTableName(), equalTo( "stwst_primary" ) );
-		assertThat( tableSpec.getCorrelationName(), equalTo( "s1_0" ) );
+		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
+		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "stwst_primary" ) );
+		assertThat( tableSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable(),
+				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable secondaryTable = (PhysicalTable) result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( secondaryTable.getTableName(), equalTo( "stwst_secondary" ) );
-		assertThat( secondaryTable.getCorrelationName(), equalTo( "s1_1" ) );
+		final org.hibernate.sql.ast.from.Table secondaryTable = result.getTableJoins().get( 0 ).getJoinedTable();
+		assertThat( secondaryTable.getTableReference().getTableExpression(), equalTo( "stwst_secondary" ) );
+		assertThat( secondaryTable.getIdentificationVariable(), equalTo( "s1_1" ) );
 
 	}
 	@Test
@@ -93,7 +92,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
 		// the first space
-		final EntityTableGroup firstSpace = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup firstSpace = improvedEntityPersister.getEntityTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -103,22 +102,22 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( firstSpace.getAliasBase(), equalTo( "s1" ) );
 
 		assertThat( firstSpace.getRootTable(), notNullValue() );
-		assertThat( firstSpace.getRootTable(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable firstSpaceTableSpec = (PhysicalTable) firstSpace.getRootTable();
-		assertThat( firstSpaceTableSpec.getTableName(), equalTo( "stwst_primary" ) );
-		assertThat( firstSpaceTableSpec.getCorrelationName(), equalTo( "s1_0" ) );
+		assertThat( firstSpace.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		final org.hibernate.sql.ast.from.Table firstSpaceTableSpec = firstSpace.getRootTable();
+		assertThat( firstSpaceTableSpec.getTableReference().getTableExpression(), equalTo( "stwst_primary" ) );
+		assertThat( firstSpaceTableSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 		assertThat( firstSpace.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
-				firstSpace.getTableJoins().get( 0 ).getJoinedTable(),
+				firstSpace.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable firstSpaceSecondaryTable = (PhysicalTable) firstSpace.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSpaceSecondaryTable.getTableName(), equalTo( "stwst_secondary" ) );
-		assertThat( firstSpaceSecondaryTable.getCorrelationName(), equalTo( "s1_1" ) );
+		final org.hibernate.sql.ast.from.Table firstSpaceSecondaryTable = firstSpace.getTableJoins().get( 0 ).getJoinedTable();
+		assertThat( firstSpaceSecondaryTable.getTableReference().getTableExpression(), equalTo( "stwst_secondary" ) );
+		assertThat( firstSpaceSecondaryTable.getIdentificationVariable(), equalTo( "s1_1" ) );
 
 		// the second space
-		final EntityTableGroup secondSpace = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup secondSpace = improvedEntityPersister.getEntityTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 1 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -128,19 +127,19 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( secondSpace.getAliasBase(), equalTo( "s2" ) );
 
 		assertThat( secondSpace.getRootTable(), notNullValue() );
-		assertThat( secondSpace.getRootTable(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable secondSpaceTableSpec = (PhysicalTable) secondSpace.getRootTable();
-		assertThat( secondSpaceTableSpec.getTableName(), equalTo( "stwst_primary" ) );
-		assertThat( secondSpaceTableSpec.getCorrelationName(), equalTo( "s2_0" ) );
+		assertThat( secondSpace.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		final org.hibernate.sql.ast.from.Table secondSpaceTableSpec = secondSpace.getRootTable();
+		assertThat( secondSpaceTableSpec.getTableReference().getTableExpression(), equalTo( "stwst_primary" ) );
+		assertThat( secondSpaceTableSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
 
 		assertThat( secondSpace.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
-				secondSpace.getTableJoins().get( 0 ).getJoinedTable(),
+				secondSpace.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable secondSpaceSecondaryTable = (PhysicalTable) secondSpace.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( secondSpaceSecondaryTable.getTableName(), equalTo( "stwst_secondary" ) );
-		assertThat( secondSpaceSecondaryTable.getCorrelationName(), equalTo( "s2_1" ) );
+		final org.hibernate.sql.ast.from.Table secondSpaceSecondaryTable = secondSpace.getTableJoins().get( 0 ).getJoinedTable();
+		assertThat( secondSpaceSecondaryTable.getTableReference().getTableExpression(), equalTo( "stwst_secondary" ) );
+		assertThat( secondSpaceSecondaryTable.getIdentificationVariable(), equalTo( "s2_1" ) );
 	}
 
 	@Override

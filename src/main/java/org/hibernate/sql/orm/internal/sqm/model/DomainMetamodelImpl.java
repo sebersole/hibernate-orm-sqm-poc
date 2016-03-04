@@ -18,6 +18,7 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.gen.NotYetImplementedException;
+import org.hibernate.sql.orm.internal.mapping.DatabaseModel;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersisterImpl;
 import org.hibernate.sqm.domain.BasicType;
 import org.hibernate.sqm.domain.DomainMetamodel;
@@ -32,6 +33,7 @@ import org.hibernate.type.Type;
  * @author Steve Ebersole
  */
 public class DomainMetamodelImpl implements DomainMetamodel {
+	private final DatabaseModel databaseModel  = new DatabaseModel();
 	private final SessionFactoryImplementor sessionFactory;
 
 	private final Map<Class, BasicType> basicTypeMap;
@@ -77,7 +79,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 					entityPersister,
 					new EntityTypeImpl(
 							this,
-							new ImprovedEntityPersisterImpl( entityPersister )
+							new ImprovedEntityPersisterImpl( databaseModel, this, entityPersister )
 					)
 			);
 		}
@@ -200,7 +202,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		if ( entityType == null ) {
 			entityType = new EntityTypeImpl(
 					this,
-					new ImprovedEntityPersisterImpl( persister )
+					new ImprovedEntityPersisterImpl( databaseModel, this, persister )
 			);
 			entityTypeDescriptorMap.put(
 					persister,

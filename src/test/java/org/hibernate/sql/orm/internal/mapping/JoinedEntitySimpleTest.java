@@ -16,7 +16,6 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.entity.JoinedSubclassEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.PhysicalTable;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -48,7 +47,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -58,28 +57,28 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result.getAliasBase(), equalTo( "j1" ) );
 
 		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable();
+		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable().getTableReference();
 		assertThat( tableSpec.getTableName(), equalTo( "joined_entity_base" ) );
-		assertThat( tableSpec.getCorrelationName(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTable().getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable(),
+				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable firstSubclassTable = (PhysicalTable) result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSubclassTable.getTableName(), equalTo( "joined_entity_branch" ) );
-		assertThat( firstSubclassTable.getCorrelationName(), equalTo( "j1_1" ) );
+		final org.hibernate.sql.ast.from.Table firstSubclassTable = result.getTableJoins().get( 0 ).getJoinedTable();
+		assertThat( firstSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_branch" ) );
+		assertThat( firstSubclassTable.getIdentificationVariable(), equalTo( "j1_1" ) );
 
 		assertThat(
-				result.getTableJoins().get( 1 ).getJoinedTable(),
+				result.getTableJoins().get( 1 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable secondSubclassTable = (PhysicalTable) result.getTableJoins().get( 1 ).getJoinedTable();
-		assertThat( secondSubclassTable.getTableName(), equalTo( "joined_entity_leaf" ) );
-		assertThat( secondSubclassTable.getCorrelationName(), equalTo( "j1_2" ) );
+		final org.hibernate.sql.ast.from.Table secondSubclassTable = result.getTableJoins().get( 1 ).getJoinedTable();
+		assertThat( secondSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_leaf" ) );
+		assertThat( secondSubclassTable.getIdentificationVariable(), equalTo( "j1_2" ) );
 	}
 
 	@Test
@@ -96,7 +95,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -106,28 +105,28 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result.getAliasBase(), equalTo( "j1" ) );
 
 		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable();
-		assertThat( tableSpec.getTableName(), equalTo( "joined_entity_branch" ) );
-		assertThat( tableSpec.getCorrelationName(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
+		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "joined_entity_branch" ) );
+		assertThat( tableSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable(),
+				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable firstSubclassTable = (PhysicalTable) result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSubclassTable.getTableName(), equalTo( "joined_entity_base" ) );
-		assertThat( firstSubclassTable.getCorrelationName(), equalTo( "j1_1" ) );
+		final org.hibernate.sql.ast.from.Table firstSubclassTable = result.getTableJoins().get( 0 ).getJoinedTable();
+		assertThat( firstSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_base" ) );
+		assertThat( firstSubclassTable.getIdentificationVariable(), equalTo( "j1_1" ) );
 
 		assertThat(
-				result.getTableJoins().get( 1 ).getJoinedTable(),
+				result.getTableJoins().get( 1 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable secondSubclassTable = (PhysicalTable) result.getTableJoins().get( 1 ).getJoinedTable();
-		assertThat( secondSubclassTable.getTableName(), equalTo( "joined_entity_leaf" ) );
-		assertThat( secondSubclassTable.getCorrelationName(), equalTo( "j1_2" ) );
+		final org.hibernate.sql.ast.from.Table secondSubclassTable = result.getTableJoins().get( 1 ).getJoinedTable();
+		assertThat( secondSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_leaf" ) );
+		assertThat( secondSubclassTable.getIdentificationVariable(), equalTo( "j1_2" ) );
 	}
 
 	@Test
@@ -144,7 +143,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -154,28 +153,28 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result.getAliasBase(), equalTo( "j1" ) );
 
 		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable();
-		assertThat( tableSpec.getTableName(), equalTo( "joined_entity_leaf" ) );
-		assertThat( tableSpec.getCorrelationName(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
+		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "joined_entity_leaf" ) );
+		assertThat( tableSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable(),
+				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable firstSubclassTable = (PhysicalTable) result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSubclassTable.getTableName(), equalTo( "joined_entity_branch" ) );
-		assertThat( firstSubclassTable.getCorrelationName(), equalTo( "j1_1" ) );
+		final org.hibernate.sql.ast.from.Table firstSubclassTable = result.getTableJoins().get( 0 ).getJoinedTable();
+		assertThat( firstSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_branch" ) );
+		assertThat( firstSubclassTable.getIdentificationVariable(), equalTo( "j1_1" ) );
 
 		assertThat(
-				result.getTableJoins().get( 1 ).getJoinedTable(),
+				result.getTableJoins().get( 1 ).getJoinedTable().getTableReference(),
 				instanceOf( PhysicalTable.class )
 		);
-		final PhysicalTable secondSubclassTable = (PhysicalTable) result.getTableJoins().get( 1 ).getJoinedTable();
-		assertThat( secondSubclassTable.getTableName(), equalTo( "joined_entity_base" ) );
-		assertThat( secondSubclassTable.getCorrelationName(), equalTo( "j1_2" ) );
+		final org.hibernate.sql.ast.from.Table secondSubclassTable = result.getTableJoins().get( 1 ).getJoinedTable();
+		assertThat( secondSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_base" ) );
+		assertThat( secondSubclassTable.getIdentificationVariable(), equalTo( "j1_2" ) );
 	}
 
 

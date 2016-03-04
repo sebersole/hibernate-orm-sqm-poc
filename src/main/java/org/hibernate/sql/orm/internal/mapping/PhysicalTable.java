@@ -1,21 +1,20 @@
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
- * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
- * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.sql.ast.from;
+package org.hibernate.sql.orm.internal.mapping;
 
 /**
  * Represents a TableSpecification naming a physical table (or view)m, as opposed to a DerivedTableSpecification
  *
  * @author Steve Ebersole
  */
-public class PhysicalTable extends AbstractTable implements Table {
+public class PhysicalTable extends AbstractTable implements TableReference {
 	private final String tableName;
 
-	public PhysicalTable(String tableName, String alias) {
-		super( alias );
+	public PhysicalTable(String tableName) {
 		this.tableName = tableName;
 	}
 

@@ -17,7 +17,7 @@ import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.PhysicalTable;
+import org.hibernate.sql.orm.internal.mapping.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.from.Table;
 import org.hibernate.sql.ast.from.TableGroup;
@@ -244,7 +244,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	private void checkTableName(String expectedTableName, TableGroup tableGroup) {
 		final Table table = tableGroup.getRootTable();
-		assertThat( table, is( instanceOf( PhysicalTable.class ) ) );
-		assertThat( ((PhysicalTable) table ).getTableName(), is( expectedTableName ) );
+		assertThat( table.getTableReference(), is( instanceOf( PhysicalTable.class ) ) );
+		assertThat( ((PhysicalTable) table.getTableReference() ).getTableName(), is( expectedTableName ) );
 	}
 }
