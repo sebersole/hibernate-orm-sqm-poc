@@ -1,5 +1,6 @@
 buildscript {
 	repositories {
+		mavenLocal()
 		mavenCentral()
 		jcenter()
 		maven {
@@ -28,6 +29,7 @@ apply plugin: 'idea'
 
 repositories {
 	mavenCentral()
+	mavenLocal()
 	jcenter()
 	maven {
 		name "jboss-snapshots"
