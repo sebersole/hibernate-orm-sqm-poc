@@ -9,13 +9,13 @@ package org.hibernate.sql.ast.from;
 import java.util.List;
 
 /**
- * Group together related TableSpecifications (generally related by EntityPersister or CollectionPersister),
+ * Group together related {@link Table} references (generally related by EntityPersister or CollectionPersister),
  *
  * @author Steve Ebersole
  */
-public interface TableSpecificationGroup {
+public interface TableGroup {
 	TableSpace getTableSpace();
 	String getAliasBase();
-	TableSpecification getRootTableSpecification();
-	List<TableSpecificationJoin> getTableSpecificationJoins();
+	Table getRootTable();
+	List<TableJoin> getTableJoins();
 }

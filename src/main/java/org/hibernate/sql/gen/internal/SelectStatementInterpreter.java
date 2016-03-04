@@ -8,10 +8,10 @@ import org.hibernate.AssertionFailure;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.from.EntityTableSpecificationGroup;
+import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.TableSpecificationGroup;
-import org.hibernate.sql.ast.from.TableSpecificationGroupJoin;
+import org.hibernate.sql.ast.from.TableGroup;
+import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.gen.Callback;
 import org.hibernate.sql.gen.JdbcSelectPlan;
@@ -248,7 +248,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		try {
 			visitRootEntityFromElement( fromElementSpace.getRoot() );
 			for ( JoinedFromElement joinedFromElement : fromElementSpace.getJoins() ) {
-				tableSpace.addJoinedTableSpecificationGroup( (TableSpecificationGroupJoin) joinedFromElement.accept(
+				tableSpace.addJoinedTableSpecificationGroup( (TableGroupJoin) joinedFromElement.accept(
 						this ) );
 			}
 			return tableSpace;
@@ -263,23 +263,23 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		final EntityTypeImpl entityTypeDescriptor = (EntityTypeImpl) rootEntityFromElement.getBoundModelType();
 		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
 
-		final EntityTableSpecificationGroup group = entityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup group = entityPersister.getEntityTableSpecificationGroup(
 				rootEntityFromElement,
 				tableSpace,
 				sqlAliasBaseManager,
 				fromClauseIndex
 		);
 
-		tableSpace.setRootTableSpecificationGroup( group );
+		tableSpace.setRootTableGroup( group );
 
 		return null;
 	}
 
 	@Override
-	public TableSpecificationGroupJoin visitQualifiedAttributeJoinFromElement(QualifiedAttributeJoinFromElement joinedFromElement) {
+	public TableGroupJoin visitQualifiedAttributeJoinFromElement(QualifiedAttributeJoinFromElement joinedFromElement) {
 		final EntityTypeImpl entityTypeDescriptor = (EntityTypeImpl) joinedFromElement.getIntrinsicSubclassIndicator();
 		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
-		TableSpecificationGroup group = null;
+		TableGroup group = null;
 
 		if ( joinedFromElement.getBoundAttribute() instanceof PluralAttribute ) {
 
@@ -304,7 +304,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 		// todo : determine the Predicate
 		final Predicate predicate = new Predicate() {
 		};
-		return new TableSpecificationGroupJoin( joinedFromElement.getJoinType(), group, predicate );
+		return new TableGroupJoin( joinedFromElement.getJoinType(), group, predicate );
 	}
 
 	@Override
@@ -312,7 +312,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 
 		final EntityTypeImpl entityTypeDescriptor = (EntityTypeImpl) joinedFromElement.getIntrinsicSubclassIndicator();
 		final ImprovedEntityPersister entityPersister = entityTypeDescriptor.getPersister();
-		TableSpecificationGroup group = null;
+		TableGroup group = null;
 
 		group = entityPersister.getEntityTableSpecificationGroup(
 				joinedFromElement,
@@ -320,7 +320,7 @@ public class SelectStatementInterpreter implements SemanticQueryWalker {
 				sqlAliasBaseManager,
 				fromClauseIndex
 		);
-		return new TableSpecificationGroupJoin( joinedFromElement.getJoinType(), group, null );
+		return new TableGroupJoin( joinedFromElement.getJoinType(), group, null );
 	}
 
 	@Override

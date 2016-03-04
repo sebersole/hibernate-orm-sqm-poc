@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.ast.from.TableSpecification;
+import org.hibernate.sql.ast.from.Table;
 
 /**
  * Models a reference to a column in the query.  Roughly equivalent to what ANSI SQL (92)
@@ -17,6 +17,6 @@ import org.hibernate.sql.ast.from.TableSpecification;
  * @author Steve Ebersole
  */
 public interface ColumnReference extends Expression {
-	TableSpecification getTable();
+	Table getTable();
 	String getName();
 }

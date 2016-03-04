@@ -13,10 +13,10 @@ import org.hibernate.persister.collection.CollectionPersister;
  *
  * @author Steve Ebersole
  */
-public class CollectionTableSpecificationGroup extends AbstractTableSpecificationGroup {
+public class CollectionTableGroup extends AbstractTableGroup {
 	private final CollectionPersister persister;
 
-	public CollectionTableSpecificationGroup(
+	public CollectionTableGroup(
 			TableSpace tableSpace,
 			String aliasBase,
 			CollectionPersister persister) {

@@ -13,8 +13,8 @@ import javax.persistence.Table;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
-import org.hibernate.sql.ast.from.EntityTableSpecificationGroup;
-import org.hibernate.sql.ast.from.PhysicalTableSpecification;
+import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.PhysicalTable;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -49,7 +49,7 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableSpecificationGroup result = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup result = improvedEntityPersister.getEntityTableSpecificationGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -58,11 +58,11 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		assertThat( result, notNullValue() );
 		assertThat( result.getAliasBase(), equalTo( "s1" ) );
 
-		assertThat( result.getRootTableSpecification(), notNullValue() );
-		assertThat( result.getTableSpecificationJoins().size(), equalTo( 0 ) );
-		assertThat( result.getRootTableSpecification(), instanceOf( PhysicalTableSpecification.class ) );
+		assertThat( result.getRootTable(), notNullValue() );
+		assertThat( result.getTableJoins().size(), equalTo( 0 ) );
+		assertThat( result.getRootTable(), instanceOf( PhysicalTable.class ) );
 
-		final PhysicalTableSpecification tableSpec = (PhysicalTableSpecification) result.getRootTableSpecification();
+		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable();
 		assertThat( tableSpec.getTableName(), equalTo( "single_table_entity" ) );
 		assertThat( tableSpec.getCorrelationName(), equalTo( "s1_0" ) );
 	}
@@ -83,7 +83,7 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
 		// the first space
-		final EntityTableSpecificationGroup firstSpace = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup firstSpace = improvedEntityPersister.getEntityTableSpecificationGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -92,16 +92,16 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		assertThat( firstSpace, notNullValue() );
 		assertThat( firstSpace.getAliasBase(), equalTo( "s1" ) );
 
-		assertThat( firstSpace.getRootTableSpecification(), notNullValue() );
-		assertThat( firstSpace.getTableSpecificationJoins().size(), equalTo( 0 ) );
-		assertThat( firstSpace.getRootTableSpecification(), instanceOf( PhysicalTableSpecification.class ) );
+		assertThat( firstSpace.getRootTable(), notNullValue() );
+		assertThat( firstSpace.getTableJoins().size(), equalTo( 0 ) );
+		assertThat( firstSpace.getRootTable(), instanceOf( PhysicalTable.class ) );
 
-		final PhysicalTableSpecification firstSpaceTableSpec = (PhysicalTableSpecification) firstSpace.getRootTableSpecification();
+		final PhysicalTable firstSpaceTableSpec = (PhysicalTable) firstSpace.getRootTable();
 		assertThat( firstSpaceTableSpec.getTableName(), equalTo( "single_table_entity" ) );
 		assertThat( firstSpaceTableSpec.getCorrelationName(), equalTo( "s1_0" ) );
 
 		// the second space
-		final EntityTableSpecificationGroup secondSpace = improvedEntityPersister.getEntityTableSpecificationGroup(
+		final EntityTableGroup secondSpace = improvedEntityPersister.getEntityTableSpecificationGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 1 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -110,11 +110,11 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		assertThat( secondSpace, notNullValue() );
 		assertThat( secondSpace.getAliasBase(), equalTo( "s2" ) );
 
-		assertThat( secondSpace.getRootTableSpecification(), notNullValue() );
-		assertThat( secondSpace.getTableSpecificationJoins().size(), equalTo( 0 ) );
-		assertThat( secondSpace.getRootTableSpecification(), instanceOf( PhysicalTableSpecification.class ) );
+		assertThat( secondSpace.getRootTable(), notNullValue() );
+		assertThat( secondSpace.getTableJoins().size(), equalTo( 0 ) );
+		assertThat( secondSpace.getRootTable(), instanceOf( PhysicalTable.class ) );
 
-		final PhysicalTableSpecification secondSpaceTableSpec = (PhysicalTableSpecification) secondSpace.getRootTableSpecification();
+		final PhysicalTable secondSpaceTableSpec = (PhysicalTable) secondSpace.getRootTable();
 		assertThat( secondSpaceTableSpec.getTableName(), equalTo( "single_table_entity" ) );
 		assertThat( secondSpaceTableSpec.getCorrelationName(), equalTo( "s2_0" ) );
 	}

@@ -14,12 +14,12 @@ import org.hibernate.sql.ast.expression.ColumnReference;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractTableSpecification implements TableSpecification {
+public abstract class AbstractTable implements Table {
 	private final String alias;
 
 	private Map<String,ColumnReferenceImpl> columnReferenceMap;
 
-	public AbstractTableSpecification(String alias) {
+	public AbstractTable(String alias) {
 		this.alias = alias;
 	}
 

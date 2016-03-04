@@ -12,16 +12,16 @@ import org.hibernate.sql.ast.expression.ColumnReference;
  * @author Steve Ebersole
  */
 public class ColumnReferenceImpl implements ColumnReference {
-	private final TableSpecification table;
+	private final Table table;
 	private final String name;
 
-	public ColumnReferenceImpl(TableSpecification table, String name) {
+	public ColumnReferenceImpl(Table table, String name) {
 		this.table = table;
 		this.name = name;
 	}
 
 	@Override
-	public TableSpecification getTable() {
+	public Table getTable() {
 		return table;
 	}
 

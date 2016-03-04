@@ -8,12 +8,12 @@ package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.Queryable;
-import org.hibernate.sql.ast.from.DerivedTableSpecification;
-import org.hibernate.sql.ast.from.EntityTableSpecificationGroup;
-import org.hibernate.sql.ast.from.PhysicalTableSpecification;
+import org.hibernate.sql.ast.from.DerivedTable;
+import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.TableSpecification;
-import org.hibernate.sql.ast.from.TableSpecificationJoin;
+import org.hibernate.sql.ast.from.Table;
+import org.hibernate.sql.ast.from.TableJoin;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.query.JoinType;
@@ -39,7 +39,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	}
 
 	@Override
-	public EntityTableSpecificationGroup getEntityTableSpecificationGroup(
+	public EntityTableGroup getEntityTableSpecificationGroup(
 			FromElement fromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
@@ -62,7 +62,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		//		certain subclasses as we interpret the SQM into SQL-AST via this registration.  However
 		//		since
 
-		final EntityTableSpecificationGroup group = new EntityTableSpecificationGroup(
+		final EntityTableGroup group = new EntityTableGroup(
 				tableSpace,
 				sqlAliasBaseManager.getSqlAliasBase( fromElement ),
 				persister
@@ -70,39 +70,39 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 		fromClauseIndex.crossReference( fromElement, group );
 
-		final TableSpecification drivingTable = makeTableSpecification(
+		final Table drivingTable = makeTableSpecification(
 				queryable.getSubclassTableName( 0 ),
 				group.getAliasBase() + '_' + 0
 		);
-		group.setRootTableSpecification( drivingTable );
+		group.setRootTable( drivingTable );
 
 		// todo : determine proper join type
 		JoinType joinType = JoinType.LEFT;
 
 		for ( int i = 1; i < subclassTableCount; i++ ) {
-			final TableSpecification tableSpecification = makeTableSpecification(
+			final Table table = makeTableSpecification(
 					queryable.getSubclassTableName( i ),
 					group.getAliasBase() + '_' + i
 			);
 
-			group.addTableSpecificationJoin( new TableSpecificationJoin( joinType, tableSpecification, null ) );
+			group.addTableSpecificationJoin( new TableJoin( joinType, table, null ) );
 		}
 
 		return group;
 	}
 
-	private TableSpecification makeTableSpecification(
+	private Table makeTableSpecification(
 			String tableExpression,
 			String alias) {
-		final TableSpecification tableSpecification;
+		final Table table;
 		if ( tableExpression.startsWith( "(" ) && tableExpression.endsWith( ")" ) ) {
-			tableSpecification = new DerivedTableSpecification( tableExpression, alias );
+			table = new DerivedTable( tableExpression, alias );
 		}
 		else {
-			tableSpecification = new PhysicalTableSpecification( tableExpression, alias );
+			table = new PhysicalTable( tableExpression, alias );
 		}
 
-		return tableSpecification;
+		return table;
 	}
 
 }

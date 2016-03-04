@@ -12,14 +12,14 @@ import org.hibernate.sqm.query.JoinType;
 /**
  * @author Steve Ebersole
  */
-public class TableSpecificationGroupJoin {
+public class TableGroupJoin {
 	private final JoinType joinType;
-	private final TableSpecificationGroup joinedGroup;
+	private final TableGroup joinedGroup;
 	private final Predicate predicate;
 
-	public TableSpecificationGroupJoin(
+	public TableGroupJoin(
 			JoinType joinType,
-			TableSpecificationGroup joinedGroup,
+			TableGroup joinedGroup,
 			Predicate predicate) {
 		this.joinType = joinType;
 		this.joinedGroup = joinedGroup;
@@ -30,7 +30,7 @@ public class TableSpecificationGroupJoin {
 		return joinType;
 	}
 
-	public TableSpecificationGroup getJoinedGroup() {
+	public TableGroup getJoinedGroup() {
 		return joinedGroup;
 	}
 

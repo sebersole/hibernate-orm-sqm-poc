@@ -13,10 +13,10 @@ import org.hibernate.persister.entity.EntityPersister;
  *
  * @author Steve Ebersole
  */
-public class EntityTableSpecificationGroup extends AbstractTableSpecificationGroup {
+public class EntityTableGroup extends AbstractTableGroup {
 	private final EntityPersister persister;
 
-	public EntityTableSpecificationGroup(TableSpace tableSpace, String aliasBase, EntityPersister persister) {
+	public EntityTableGroup(TableSpace tableSpace, String aliasBase, EntityPersister persister) {
 		super( tableSpace, aliasBase );
 		this.persister = persister;
 	}

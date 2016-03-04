@@ -9,11 +9,12 @@ package org.hibernate.sql.ast.from;
 import org.hibernate.sql.ast.expression.ColumnReference;
 
 /**
- * Represents an individual part of a TableSpace
+ * Represents an individual part of a TableSpace.  Might be a {@link PhysicalTable}
+ * or a {@link DerivedTable} (in-line view).
  *
  * @author Steve Ebersole
  */
-public interface TableSpecification {
+public interface Table {
 	String getTableExpression();
 	String getCorrelationName();
 

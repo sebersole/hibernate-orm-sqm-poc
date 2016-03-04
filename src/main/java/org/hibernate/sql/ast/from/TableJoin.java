@@ -11,16 +11,16 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sqm.query.JoinType;
 
 /**
- * Represents a join between TableSpecifications; roughly equivalent to a SQL join.
+ * Represents a join to a {@link Table}; roughly equivalent to a SQL join.
  *
  * @author Steve Ebersole
  */
-public class TableSpecificationJoin {
+public class TableJoin {
 	private final JoinType joinType;
-	private final TableSpecification joinedTable;
+	private final Table joinedTable;
 	private final Predicate predicate;
 
-	public TableSpecificationJoin(JoinType joinType, TableSpecification joinedTable, Predicate predicate) {
+	public TableJoin(JoinType joinType, Table joinedTable, Predicate predicate) {
 		this.joinType = joinType;
 		this.joinedTable = joinedTable;
 		this.predicate = predicate;
@@ -36,7 +36,7 @@ public class TableSpecificationJoin {
 		return joinType;
 	}
 
-	public TableSpecification getJoinedTable() {
+	public Table getJoinedTable() {
 		return joinedTable;
 	}
 

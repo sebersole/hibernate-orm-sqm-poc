@@ -6,8 +6,11 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.type.Type;
+
 /**
  * @author Steve Ebersole
  */
 public interface Expression {
+	Type getType();
 }

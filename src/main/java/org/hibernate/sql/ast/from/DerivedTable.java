@@ -11,10 +11,10 @@ package org.hibernate.sql.ast.from;
  *
  * @author Steve Ebersole
  */
-public class DerivedTableSpecification extends AbstractTableSpecification implements TableSpecification {
+public class DerivedTable extends AbstractTable implements Table {
 	private final String query;
 
-	public DerivedTableSpecification(String query, String alias) {
+	public DerivedTable(String query, String alias) {
 		super( alias );
 		this.query = query;
 	}

@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.gen.internal;
 
-import org.hibernate.sql.ast.from.TableSpecification;
+import org.hibernate.sql.ast.from.Table;
 import org.hibernate.sqm.query.JoinType;
 
 /**
@@ -17,5 +17,5 @@ public interface JoinAppender {
 		void appendJoinPredicate();
 	}
 
-	JoinPredicateAppender appendJoin(TableSpecification tableSpecification, JoinType joinType);
+	JoinPredicateAppender appendJoin(Table table, JoinType joinType);
 }

@@ -8,11 +8,11 @@
 /**
  * Models the concepts in the SQL {@code <from clause>}.
  * <p/>
- * The lowest level of this modeling is the {@link org.hibernate.sql.ast.from.TableSpecification}
+ * The lowest level of this modeling is the {@link org.hibernate.sql.ast.from.Table}
  * contract which models a table as known to the Hibernate persisters.  This might be a physical table
  * or a derived table (Hibernate subselect mapping).
  * <p/>
- * TableSpecifications are grouped into a {@link org.hibernate.sql.ast.from.TableSpecificationGroup} representing
+ * TableSpecifications are grouped into a {@link org.hibernate.sql.ast.from.TableGroup} representing
  * all of the TableSpecifications originating from a particular persister reference.  Think of this piece as the
  * bridge between persister references in a query and the tables represented by that persister reference.
  * <p/>

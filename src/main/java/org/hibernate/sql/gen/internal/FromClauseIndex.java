@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.hibernate.sql.ast.from.FromClause;
-import org.hibernate.sql.ast.from.TableSpecificationGroup;
+import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sqm.query.from.FromElement;
 
 import org.jboss.logging.Logger;
@@ -26,8 +26,8 @@ public class FromClauseIndex {
 
 	private final Stack<FromClauseStackNode> fromClauseStackNodes = new Stack<FromClauseStackNode>();
 
-	private final Map<FromElement, TableSpecificationGroup> fromElementTableSpecificationGroupXref =
-			new HashMap<FromElement, TableSpecificationGroup>();
+	private final Map<FromElement, TableGroup> fromElementTableSpecificationGroupXref =
+			new HashMap<FromElement, TableGroup>();
 
 	public void pushFromClause(FromClause fromClause) {
 		FromClauseStackNode parent = null;
@@ -58,14 +58,14 @@ public class FromClauseIndex {
 		}
 	}
 
-	public void crossReference(FromElement fromElement, TableSpecificationGroup tableSpecificationGroup) {
-		TableSpecificationGroup old = fromElementTableSpecificationGroupXref.put( fromElement, tableSpecificationGroup );
+	public void crossReference(FromElement fromElement, TableGroup tableGroup) {
+		TableGroup old = fromElementTableSpecificationGroupXref.put( fromElement, tableGroup );
 		if ( old != null ) {
 			log.debugf(
 					"FromElement [%s] was already cross-referenced to TableSpecificationGroup - old : [%s]; new : [%s]",
 					fromElement,
 					old,
-					tableSpecificationGroup
+					tableGroup
 			);
 		}
 	}

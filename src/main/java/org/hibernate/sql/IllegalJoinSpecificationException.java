@@ -6,10 +6,10 @@
  */
 package org.hibernate.sql;
 
-import org.hibernate.sql.ast.from.TableSpecificationJoin;
+import org.hibernate.sql.ast.from.TableJoin;
 
 /**
- * Indicates a problem in the definition of a {@link TableSpecificationJoin}
+ * Indicates a problem in the definition of a {@link TableJoin}
  *
  * @author Steve Ebersole
  */

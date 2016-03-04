@@ -6,7 +6,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
-import javax.persistence.Table;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,13 +15,13 @@ import org.hibernate.ScrollMode;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.from.CollectionTableSpecificationGroup;
-import org.hibernate.sql.ast.from.EntityTableSpecificationGroup;
-import org.hibernate.sql.ast.from.PhysicalTableSpecification;
+import org.hibernate.sql.ast.from.CollectionTableGroup;
+import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.TableSpecification;
-import org.hibernate.sql.ast.from.TableSpecificationGroup;
-import org.hibernate.sql.ast.from.TableSpecificationGroupJoin;
+import org.hibernate.sql.ast.from.Table;
+import org.hibernate.sql.ast.from.TableGroup;
+import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.Callback;
 import org.hibernate.sql.orm.QueryOptions;
@@ -47,21 +46,21 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void joinCollectionValuedFieldTest() {
 		final TableSpace tableSpace = getTableSpace( "from Person p join p.addresses" );
 
-		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
-		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableSpecificationGroup );
+		checkTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+		final TableGroupJoin tableGroupJoin =
 				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
-		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.INNER ) );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
-		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
-		assertThat( joinedGroup, is( instanceOf( CollectionTableSpecificationGroup.class ) ) );
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( CollectionTableGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
 		checkTableName( "PERSON_ADDRESS", joinedGroup );
 	}
@@ -70,21 +69,21 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void joinCollectionValuedFieldWithJoinColumnTest() {
 		final TableSpace tableSpace = getTableSpace( "from Person p join p.pastRoles" );
 
-		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
-		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableSpecificationGroup );
+		checkTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+		final TableGroupJoin tableGroupJoin =
 				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
-		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.INNER ) );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
-		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
-		assertThat( joinedGroup, is( instanceOf( CollectionTableSpecificationGroup.class ) ) );
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( CollectionTableGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
 		checkTableName( "ROLE", joinedGroup );
 	}
@@ -93,21 +92,21 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void joinSingleValuedObjectFieldTest() {
 		final TableSpace tableSpace = getTableSpace( "from Person p join p.actualRole" );
 
-		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
-		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableSpecificationGroup );
+		checkTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+		final TableGroupJoin tableGroupJoin =
 				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
-		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.INNER ) );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
-		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
-		assertThat( joinedGroup, is( instanceOf( EntityTableSpecificationGroup.class ) ) );
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( EntityTableGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
 		checkTableName( "ROLE", joinedGroup );
 	}
@@ -116,21 +115,21 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void crossJoinTest() {
 		final TableSpace tableSpace = getTableSpace( "from Person cross join Role" );
 
-		final TableSpecificationGroup rootTableSpecificationGroup = tableSpace.getRootTableSpecificationGroup();
-		assertThat( rootTableSpecificationGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableSpecificationGroup );
+		checkTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
-		final TableSpecificationGroupJoin tableSpecificationGroupJoin =
+		final TableGroupJoin tableGroupJoin =
 				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
-		assertThat( tableSpecificationGroupJoin.getJoinType(), is( JoinType.CROSS ) );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.CROSS ) );
 
-		final TableSpecificationGroup joinedGroup = tableSpecificationGroupJoin.getJoinedGroup();
-		assertThat( joinedGroup, is( instanceOf( EntityTableSpecificationGroup.class ) ) );
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( EntityTableGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableSpecificationJoins().size(), is( 0 ) );
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
 		checkTableName( "ROLE", joinedGroup );
 	}
@@ -143,7 +142,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	}
 
 	@Entity(name = "Person")
-	@Table(name = "PERSON")
+	@javax.persistence.Table(name = "PERSON")
 	public static class Person {
 		@Id
 		@GeneratedValue
@@ -161,7 +160,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	}
 
 	@Entity(name = "Address")
-	@Table(name = "ADDRESS")
+	@javax.persistence.Table(name = "ADDRESS")
 	public static class Address {
 		@Id
 		@GeneratedValue
@@ -169,7 +168,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	}
 
 	@Entity(name = "Role")
-	@Table(name = "ROLE")
+	@javax.persistence.Table(name = "ROLE")
 	public static class Role {
 		@Id
 		@GeneratedValue
@@ -243,9 +242,9 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		return SemanticQueryInterpreter.interpret( query, getConsumerContext() );
 	}
 
-	private void checkTableName(String expectedTableName, TableSpecificationGroup tableSpecificationGroup) {
-		final TableSpecification tableSpecification = tableSpecificationGroup.getRootTableSpecification();
-		assertThat( tableSpecification, is( instanceOf( PhysicalTableSpecification.class ) ) );
-		assertThat( ((PhysicalTableSpecification) tableSpecification).getTableName(), is( expectedTableName ) );
+	private void checkTableName(String expectedTableName, TableGroup tableGroup) {
+		final Table table = tableGroup.getRootTable();
+		assertThat( table, is( instanceOf( PhysicalTable.class ) ) );
+		assertThat( ((PhysicalTable) table ).getTableName(), is( expectedTableName ) );
 	}
 }

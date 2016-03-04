@@ -29,8 +29,8 @@ public class TableSpace {
 
 	private final FromClause fromClause;
 
-	private TableSpecificationGroup rootTableSpecificationGroup;
-	private List<TableSpecificationGroupJoin> joinedTableSpecificationGroups;
+	private TableGroup rootTableGroup;
+	private List<TableGroupJoin> joinedTableSpecificationGroups;
 
 	public TableSpace(FromClause fromClause) {
 		if ( fromClause == null ) {
@@ -43,21 +43,21 @@ public class TableSpace {
 		return fromClause;
 	}
 
-	public TableSpecificationGroup getRootTableSpecificationGroup() {
-		return rootTableSpecificationGroup;
+	public TableGroup getRootTableGroup() {
+		return rootTableGroup;
 	}
 
-	public void setRootTableSpecificationGroup(TableSpecificationGroup rootTableSpecificationGroup) {
+	public void setRootTableGroup(TableGroup rootTableGroup) {
 		log.tracef(
 				"Setting root TableSpecificationGroup [%s] for space [%s] - was %s",
-				rootTableSpecificationGroup,
+				rootTableGroup,
 				this,
-				this.rootTableSpecificationGroup == null ? "<null>" : this.rootTableSpecificationGroup
+				this.rootTableGroup == null ? "<null>" : this.rootTableGroup
 		);
-		this.rootTableSpecificationGroup = rootTableSpecificationGroup;
+		this.rootTableGroup = rootTableGroup;
 	}
 
-	public List<TableSpecificationGroupJoin> getJoinedTableSpecificationGroups() {
+	public List<TableGroupJoin> getJoinedTableSpecificationGroups() {
 		if ( joinedTableSpecificationGroups == null ) {
 			return Collections.emptyList();
 		}
@@ -66,10 +66,10 @@ public class TableSpace {
 		}
 	}
 
-	public void addJoinedTableSpecificationGroup(TableSpecificationGroupJoin join) {
+	public void addJoinedTableSpecificationGroup(TableGroupJoin join) {
 		log.tracef( "Adding TableSpecificationGroup join [%s] to space [%s]", join, this );
 		if ( joinedTableSpecificationGroups == null ) {
-			joinedTableSpecificationGroups = new ArrayList<TableSpecificationGroupJoin>();
+			joinedTableSpecificationGroups = new ArrayList<TableGroupJoin>();
 		}
 		joinedTableSpecificationGroups.add( join );
 	}

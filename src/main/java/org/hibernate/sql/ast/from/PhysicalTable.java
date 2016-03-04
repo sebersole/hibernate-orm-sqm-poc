@@ -11,10 +11,10 @@ package org.hibernate.sql.ast.from;
  *
  * @author Steve Ebersole
  */
-public class PhysicalTableSpecification extends AbstractTableSpecification implements TableSpecification {
+public class PhysicalTable extends AbstractTable implements Table {
 	private final String tableName;
 
-	public PhysicalTableSpecification(String tableName, String alias) {
+	public PhysicalTable(String tableName, String alias) {
 		super( alias );
 		this.tableName = tableName;
 	}

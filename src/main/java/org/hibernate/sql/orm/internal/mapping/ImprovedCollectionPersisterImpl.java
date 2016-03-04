@@ -8,13 +8,11 @@ package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
-import org.hibernate.persister.entity.Queryable;
-import org.hibernate.sql.ast.from.CollectionTableSpecificationGroup;
-import org.hibernate.sql.ast.from.DerivedTableSpecification;
-import org.hibernate.sql.ast.from.EntityTableSpecificationGroup;
-import org.hibernate.sql.ast.from.PhysicalTableSpecification;
+import org.hibernate.sql.ast.from.CollectionTableGroup;
+import org.hibernate.sql.ast.from.DerivedTable;
+import org.hibernate.sql.ast.from.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.TableSpecification;
+import org.hibernate.sql.ast.from.Table;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.query.from.JoinedFromElement;
@@ -35,37 +33,37 @@ public class ImprovedCollectionPersisterImpl implements ImprovedCollectionPersis
 	}
 
 	@Override
-	public CollectionTableSpecificationGroup getCollectionTableSpecificationGroup(
+	public CollectionTableGroup getCollectionTableSpecificationGroup(
 			JoinedFromElement joinedFromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex) {
-		final CollectionTableSpecificationGroup group = new CollectionTableSpecificationGroup(
+		final CollectionTableGroup group = new CollectionTableGroup(
 				tableSpace, sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ), persister
 		);
 
 		fromClauseIndex.crossReference( joinedFromElement, group );
 
-		final TableSpecification drivingTable = makeTableSpecification(
+		final Table drivingTable = makeTableSpecification(
 				persister.getTableName(),
 				group.getAliasBase() + '_' + 0
 		);
-		group.setRootTableSpecification( drivingTable );
+		group.setRootTable( drivingTable );
 
 		return group;
 	}
 
-	private TableSpecification makeTableSpecification(
+	private Table makeTableSpecification(
 			String tableExpression,
 			String alias) {
-		final TableSpecification tableSpecification;
+		final Table table;
 		if ( tableExpression.startsWith( "(" ) && tableExpression.endsWith( ")" ) ) {
-			tableSpecification = new DerivedTableSpecification( tableExpression, alias );
+			table = new DerivedTable( tableExpression, alias );
 		}
 		else {
-			tableSpecification = new PhysicalTableSpecification( tableExpression, alias );
+			table = new PhysicalTable( tableExpression, alias );
 		}
 
-		return tableSpecification;
+		return table;
 	}
 }
