@@ -26,49 +26,7 @@ import org.hibernate.sqm.query.DeleteStatement;
 import org.hibernate.sqm.query.InsertSelectStatement;
 import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
-import org.hibernate.sqm.query.Statement;
 import org.hibernate.sqm.query.UpdateStatement;
-import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
-import org.hibernate.sqm.query.expression.AvgFunction;
-import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
-import org.hibernate.sqm.query.expression.CaseSearchedExpression;
-import org.hibernate.sqm.query.expression.CaseSimpleExpression;
-import org.hibernate.sqm.query.expression.CoalesceExpression;
-import org.hibernate.sqm.query.expression.CollectionIndexFunction;
-import org.hibernate.sqm.query.expression.CollectionSizeFunction;
-import org.hibernate.sqm.query.expression.CollectionValuePathExpression;
-import org.hibernate.sqm.query.expression.ConcatExpression;
-import org.hibernate.sqm.query.expression.ConstantEnumExpression;
-import org.hibernate.sqm.query.expression.ConstantFieldExpression;
-import org.hibernate.sqm.query.expression.CountFunction;
-import org.hibernate.sqm.query.expression.CountStarFunction;
-import org.hibernate.sqm.query.expression.EntityTypeExpression;
-import org.hibernate.sqm.query.expression.FunctionExpression;
-import org.hibernate.sqm.query.expression.LiteralBigDecimalExpression;
-import org.hibernate.sqm.query.expression.LiteralBigIntegerExpression;
-import org.hibernate.sqm.query.expression.LiteralCharacterExpression;
-import org.hibernate.sqm.query.expression.LiteralDoubleExpression;
-import org.hibernate.sqm.query.expression.LiteralFalseExpression;
-import org.hibernate.sqm.query.expression.LiteralFloatExpression;
-import org.hibernate.sqm.query.expression.LiteralIntegerExpression;
-import org.hibernate.sqm.query.expression.LiteralLongExpression;
-import org.hibernate.sqm.query.expression.LiteralNullExpression;
-import org.hibernate.sqm.query.expression.LiteralStringExpression;
-import org.hibernate.sqm.query.expression.LiteralTrueExpression;
-import org.hibernate.sqm.query.expression.MapEntryFunction;
-import org.hibernate.sqm.query.expression.MapKeyPathExpression;
-import org.hibernate.sqm.query.expression.MaxElementFunction;
-import org.hibernate.sqm.query.expression.MaxFunction;
-import org.hibernate.sqm.query.expression.MaxIndexFunction;
-import org.hibernate.sqm.query.expression.MinElementFunction;
-import org.hibernate.sqm.query.expression.MinFunction;
-import org.hibernate.sqm.query.expression.MinIndexFunction;
-import org.hibernate.sqm.query.expression.NamedParameterExpression;
-import org.hibernate.sqm.query.expression.NullifExpression;
-import org.hibernate.sqm.query.expression.PositionalParameterExpression;
-import org.hibernate.sqm.query.expression.SubQueryExpression;
-import org.hibernate.sqm.query.expression.SumFunction;
-import org.hibernate.sqm.query.expression.UnaryOperationExpression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElementSpace;
@@ -78,22 +36,8 @@ import org.hibernate.sqm.query.from.QualifiedEntityJoinFromElement;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 import org.hibernate.sqm.query.order.OrderByClause;
 import org.hibernate.sqm.query.order.SortSpecification;
-import org.hibernate.sqm.query.predicate.AndPredicate;
-import org.hibernate.sqm.query.predicate.BetweenPredicate;
-import org.hibernate.sqm.query.predicate.EmptinessPredicate;
-import org.hibernate.sqm.query.predicate.GroupedPredicate;
-import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
-import org.hibernate.sqm.query.predicate.InTupleListPredicate;
-import org.hibernate.sqm.query.predicate.LikePredicate;
-import org.hibernate.sqm.query.predicate.MemberOfPredicate;
-import org.hibernate.sqm.query.predicate.NegatedPredicate;
-import org.hibernate.sqm.query.predicate.NullnessPredicate;
-import org.hibernate.sqm.query.predicate.OrPredicate;
-import org.hibernate.sqm.query.predicate.RelationalPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
-import org.hibernate.sqm.query.select.DynamicInstantiation;
-import org.hibernate.sqm.query.set.Assignment;
-import org.hibernate.sqm.query.set.SetClause;
+import org.hibernate.sqm.query.select.SelectClause;
 
 /**
  * @author Steve Ebersole
@@ -208,21 +152,28 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	@Override
 	public org.hibernate.sql.ast.QuerySpec visitQuerySpec(QuerySpec querySpec) {
-		final org.hibernate.sql.ast.QuerySpec _querySpec = new org.hibernate.sql.ast.QuerySpec();
+		final org.hibernate.sql.ast.QuerySpec astQuerySpec = new org.hibernate.sql.ast.QuerySpec();
 
-		fromClauseIndex.pushFromClause( _querySpec.getFromClause() );
+		fromClauseIndex.pushFromClause( astQuerySpec.getFromClause() );
 
 		try {
 			// we want to visit the from-clause first
 			visitFromClause( querySpec.getFromClause() );
 
-			visitSelectClause( querySpec.getSelectClause() );
-			visitWhereClause( querySpec.getWhereClause() );
+			final SelectClause selectClause = querySpec.getSelectClause();
+			if ( getSelectQuery() != null ) {
+				visitSelectClause( selectClause );
+			}
 
-			return _querySpec;
+			final WhereClause whereClause = querySpec.getWhereClause();
+			if ( whereClause != null ) {
+				visitWhereClause( whereClause );
+			}
+
+			return astQuerySpec;
 		}
 		finally {
-			assert fromClauseIndex.popFromClause() == _querySpec.getFromClause();
+			assert fromClauseIndex.popFromClause() == astQuerySpec.getFromClause();
 		}
 	}
 
@@ -256,6 +207,9 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	@Override
 	public Void visitRootEntityFromElement(RootEntityFromElement rootEntityFromElement) {
 		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) rootEntityFromElement.getBoundModelType();
+		if ( fromClauseIndex.isResolved( rootEntityFromElement ) ) {
+			return null;
+		}
 
 		final EntityTableGroup group = entityPersister.buildTableGroup(
 				rootEntityFromElement,
@@ -317,296 +271,4 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		throw new NotYetImplementedException();
 	}
 
-	@Override
-	public Object visitStatement(Statement statement) {
-		return null;
-	}
-
-
-	@Override
-	public Object visitSetClause(SetClause setClause) {
-		return null;
-	}
-
-	@Override
-	public Object visitAssignment(Assignment assignment) {
-		return null;
-	}
-
-
-
-	@Override
-	public Object visitDynamicInstantiation(DynamicInstantiation dynamicInstantiation) {
-		return null;
-	}
-
-	@Override
-	public Object visitWhereClause(WhereClause whereClause) {
-		return null;
-	}
-
-	@Override
-	public Object visitGroupedPredicate(GroupedPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitAndPredicate(AndPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitOrPredicate(OrPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitRelationalPredicate(RelationalPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitIsEmptyPredicate(EmptinessPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitIsNullPredicate(NullnessPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitBetweenPredicate(BetweenPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitLikePredicate(LikePredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitMemberOfPredicate(MemberOfPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitNegatedPredicate(NegatedPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitInTupleListPredicate(InTupleListPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitInSubQueryPredicate(InSubQueryPredicate predicate) {
-		return null;
-	}
-
-	@Override
-	public Object visitPositionalParameterExpression(PositionalParameterExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitNamedParameterExpression(NamedParameterExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitEntityTypeExpression(EntityTypeExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitUnaryOperationExpression(UnaryOperationExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitAttributeReferenceExpression(AttributeReferenceExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitFunctionExpression(FunctionExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitAvgFunction(AvgFunction expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitCountStarFunction(CountStarFunction expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitCountFunction(CountFunction expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitMaxFunction(MaxFunction expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitMinFunction(MinFunction expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitSumFunction(SumFunction expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitCollectionSizeFunction(CollectionSizeFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitCollectionValueFunction(CollectionValuePathExpression function) {
-		return null;
-	}
-
-	@Override
-	public Object visitCollectionIndexFunction(CollectionIndexFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitMapKeyFunction(MapKeyPathExpression function) {
-		return null;
-	}
-
-	@Override
-	public Object visitMapEntryFunction(MapEntryFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitMaxElementFunction(MaxElementFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitMinElementFunction(MinElementFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitMaxIndexFunction(MaxIndexFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitMinIndexFunction(MinIndexFunction function) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralStringExpression(LiteralStringExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralCharacterExpression(LiteralCharacterExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralDoubleExpression(LiteralDoubleExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralIntegerExpression(LiteralIntegerExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralBigIntegerExpression(LiteralBigIntegerExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralBigDecimalExpression(LiteralBigDecimalExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralFloatExpression(LiteralFloatExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralLongExpression(LiteralLongExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralTrueExpression(LiteralTrueExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralFalseExpression(LiteralFalseExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitLiteralNullExpression(LiteralNullExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitConcatExpression(ConcatExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitConstantEnumExpression(ConstantEnumExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitConstantFieldExpression(ConstantFieldExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitBinaryArithmeticExpression(BinaryArithmeticExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitSubQueryExpression(SubQueryExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitSimpleCaseExpression(CaseSimpleExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitSearchedCaseExpression(CaseSearchedExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitCoalesceExpression(CoalesceExpression expression) {
-		return null;
-	}
-
-	@Override
-	public Object visitNullifExpression(NullifExpression expression) {
-		return null;
-	}
 }

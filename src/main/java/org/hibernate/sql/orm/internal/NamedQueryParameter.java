@@ -24,8 +24,4 @@ public class NamedQueryParameter extends AbstractQueryParameter implements Query
 		return name;
 	}
 
-	@Override
-	public Type getType() {
-		return null;
-	}
 }

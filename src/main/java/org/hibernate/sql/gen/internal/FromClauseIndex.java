@@ -13,6 +13,7 @@ import java.util.Stack;
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sqm.query.from.FromElement;
+import org.hibernate.sqm.query.from.RootEntityFromElement;
 
 import org.jboss.logging.Logger;
 
@@ -68,6 +69,10 @@ public class FromClauseIndex {
 					tableGroup
 			);
 		}
+	}
+
+	public boolean isResolved(FromElement fromElement) {
+		return fromElementTableSpecificationGroupXref.containsKey( fromElement );
 	}
 
 	public static class FromClauseStackNode {
