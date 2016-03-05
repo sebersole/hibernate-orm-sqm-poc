@@ -14,6 +14,7 @@ import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.PluralAttribute.CollectionClassification;
+import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.type.CollectionType;
 import org.hibernate.type.Type;
 
@@ -124,6 +125,24 @@ public class Helper {
 					"Unable to access AbstractEntityPersister#getSubclassPropertyTableNumber [" + persister.toString() + "]",
 					e
 			);
+		}
+	}
+
+	public static SingularAttribute.Classification interpretSingularAttributeClassification(Type attributeType) {
+		assert !attributeType.isCollectionType();
+
+		if ( attributeType.isAnyType() ) {
+			return SingularAttribute.Classification.ANY;
+		}
+		else if ( attributeType.isEntityType() ) {
+			// todo : we don't really know if this is a many-to-one or one-to-one
+			return SingularAttribute.Classification.MANY_TO_ONE;
+		}
+		else if ( attributeType.isComponentType() ) {
+			return SingularAttribute.Classification.EMBEDDED;
+		}
+		else {
+			return SingularAttribute.Classification.BASIC;
 		}
 	}
 

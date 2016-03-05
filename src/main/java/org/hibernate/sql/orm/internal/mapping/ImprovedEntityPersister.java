@@ -7,11 +7,13 @@
 package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.domain.EntityType;
+import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.FromElement;
 
 /**
@@ -30,9 +32,14 @@ public interface ImprovedEntityPersister extends EntityType {
 	 */
 	EntityPersister getEntityPersister();
 
-	EntityTableGroup getEntityTableGroup(
+	AbstractTable getRootTable();
+
+	EntityTableGroup buildTableGroup(
 			FromElement fromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex);
+
+	void addTableJoins(AbstractTableGroup group, JoinType joinType);
+
 }

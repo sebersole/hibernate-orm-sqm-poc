@@ -19,7 +19,6 @@ import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
@@ -37,9 +36,8 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpaceBase() {
 		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityBase" );
 
-		final EntityTypeImpl entityTypeDescriptor =
-				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBase" );
-		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
+		final ImprovedEntityPersister improvedEntityPersister =
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBase" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
 		// interpreter set up
@@ -47,7 +45,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
+		final EntityTableGroup result = improvedEntityPersister.buildTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -85,9 +83,8 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpaceBranch() {
 		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityBranch" );
 
-		final EntityTypeImpl entityTypeDescriptor =
-				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBranch" );
-		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
+		final ImprovedEntityPersister improvedEntityPersister =
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBranch" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
 		// interpreter set up
@@ -95,7 +92,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
+		final EntityTableGroup result = improvedEntityPersister.buildTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -133,9 +130,8 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 	public void testSingleSpaceLeaf() {
 		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityLeaf" );
 
-		final EntityTypeImpl entityTypeDescriptor =
-				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityLeaf" );
-		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
+		final ImprovedEntityPersister improvedEntityPersister =
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityLeaf" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
 		// interpreter set up
@@ -143,7 +139,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
+		final EntityTableGroup result = improvedEntityPersister.buildTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,

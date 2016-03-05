@@ -49,7 +49,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableGroup );
+		checkRootTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
@@ -60,9 +60,13 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
 		assertThat( joinedGroup, is( instanceOf( CollectionTableGroup.class ) ) );
 
-		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
+		checkRootTableName( "PERSON_ADDRESS", joinedGroup );
+		assertThat( joinedGroup.getRootTable().getIdentificationVariable(), is( "a1_0" ) );
 
-		checkTableName( "PERSON_ADDRESS", joinedGroup );
+		assertThat( joinedGroup.getTableJoins().size(), is( 1 ) );
+		final Table joinedTable = joinedGroup.getTableJoins().get( 0 ).getJoinedTable();
+		checkTableName( "ADDRESS", joinedTable );
+		assertThat( joinedTable.getIdentificationVariable(), is( "a1_1" ) );
 	}
 
 	@Test
@@ -72,7 +76,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableGroup );
+		checkRootTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
@@ -85,7 +89,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "ROLE", joinedGroup );
+		checkRootTableName( "ROLE", joinedGroup );
 	}
 
 	@Test
@@ -95,7 +99,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableGroup );
+		checkRootTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
@@ -108,7 +112,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "ROLE", joinedGroup );
+		checkRootTableName( "ROLE", joinedGroup );
 	}
 
 	@Test
@@ -118,7 +122,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "PERSON", rootTableGroup );
+		checkRootTableName( "PERSON", rootTableGroup );
 
 		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
 
@@ -131,7 +135,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
-		checkTableName( "ROLE", joinedGroup );
+		checkRootTableName( "ROLE", joinedGroup );
 	}
 
 	@Override
@@ -242,8 +246,12 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		return SemanticQueryInterpreter.interpret( query, getConsumerContext() );
 	}
 
-	private void checkTableName(String expectedTableName, TableGroup tableGroup) {
+	private void checkRootTableName(String expectedTableName, TableGroup tableGroup) {
 		final Table table = tableGroup.getRootTable();
+		checkTableName( expectedTableName, table );
+	}
+
+	private void checkTableName(String expectedTableName, Table table) {
 		assertThat( table.getTableReference(), is( instanceOf( PhysicalTable.class ) ) );
 		assertThat( ((PhysicalTable) table.getTableReference() ).getTableName(), is( expectedTableName ) );
 	}

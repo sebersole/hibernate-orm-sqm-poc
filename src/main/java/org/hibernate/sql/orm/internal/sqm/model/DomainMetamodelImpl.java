@@ -38,7 +38,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 
 	private final Map<Class, BasicType> basicTypeMap;
 
-	private final Map<EntityPersister, EntityTypeImpl> entityTypeDescriptorMap = new HashMap<EntityPersister, EntityTypeImpl>();
+	private final Map<EntityPersister, ImprovedEntityPersisterImpl> entityTypeDescriptorMap = new HashMap<EntityPersister, ImprovedEntityPersisterImpl>();
 	private Map<String,PolymorphicEntityTypeImpl> polymorphicEntityTypeDescriptorMap;
 
 	public DomainMetamodelImpl(SessionFactoryImplementor sessionFactory) {
@@ -77,10 +77,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		for ( EntityPersister entityPersister : sessionFactory.getEntityPersisters().values() ) {
 			entityTypeDescriptorMap.put(
 					entityPersister,
-					new EntityTypeImpl(
-							this,
-							new ImprovedEntityPersisterImpl( databaseModel, this, entityPersister )
-					)
+					new ImprovedEntityPersisterImpl( databaseModel, this, entityPersister )
 			);
 		}
 	}
@@ -193,21 +190,15 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		);
 	}
 
-	public EntityTypeImpl toSqmType(EntityType entityType) {
+	public ImprovedEntityPersisterImpl toSqmType(EntityType entityType) {
 		return toSqmType( (EntityPersister) entityType.getAssociatedJoinable( sessionFactory ) );
 	}
 
-	public EntityTypeImpl toSqmType(EntityPersister persister) {
-		EntityTypeImpl entityType = entityTypeDescriptorMap.get( persister );
+	public ImprovedEntityPersisterImpl toSqmType(EntityPersister persister) {
+		ImprovedEntityPersisterImpl entityType = entityTypeDescriptorMap.get( persister );
 		if ( entityType == null ) {
-			entityType = new EntityTypeImpl(
-					this,
-					new ImprovedEntityPersisterImpl( databaseModel, this, persister )
-			);
-			entityTypeDescriptorMap.put(
-					persister,
-					entityType
-			);
+			entityType = new ImprovedEntityPersisterImpl( databaseModel, this, persister );
+			entityTypeDescriptorMap.put( persister, entityType );
 		}
 		return entityType;
 	}

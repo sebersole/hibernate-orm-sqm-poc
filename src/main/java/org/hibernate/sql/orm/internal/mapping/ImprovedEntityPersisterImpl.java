@@ -13,10 +13,12 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
+import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.from.Table;
+import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableJoin;
+import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -33,10 +35,14 @@ import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.type.CollectionType;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author Steve Ebersole
  */
 public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, EntityType {
+	private static final Logger log = Logger.getLogger( ImprovedEntityPersisterImpl.class );
+
 	private final DatabaseModel databaseModel;
 	private final DomainMetamodelImpl domainMetamodel;
 	private final EntityPersister persister;
@@ -76,6 +82,9 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 		final int fullAttributeCount = ( ojlPersister ).countSubclassProperties();
 		for ( int attributeNumber = 0; attributeNumber < fullAttributeCount; attributeNumber++ ) {
+			final String attributeName = ojlPersister.getSubclassPropertyName( attributeNumber );
+			log.tracef( "Starting building of Entity attribute : %s#%s", persister.getEntityName(), attributeName );
+
 			final org.hibernate.type.Type attributeType = ojlPersister.getSubclassPropertyType( attributeNumber );
 
 			final AbstractTable containingTable = tables[ Helper.INSTANCE.getSubclassPropertyTableNumber( persister, attributeNumber ) ];
@@ -88,14 +97,29 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 				attribute = buildPluralAttribute(
 						databaseModel,
 						domainMetamodel,
-						ojlPersister.getSubclassPropertyName( attributeNumber ),
+						attributeName,
 						attributeType,
 						values
 				);
 			}
 			else {
-
+				final SingularAttribute.Classification classification = Helper.interpretSingularAttributeClassification( attributeType );
+				final Type type;
+				if ( classification == SingularAttribute.Classification.EMBEDDED ) {
+					throw new NotYetImplementedException();
+				}
+				else {
+					type = domainMetamodel.toSqmType( attributeType );
+				}
+				attribute = new SingularAttributeImpl(
+						this,
+						attributeName,
+						classification,
+						type
+				);
 			}
+
+			attributeMap.put( attributeName, attribute );
 		}
 	}
 
@@ -134,7 +158,12 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	}
 
 	@Override
-	public EntityTableGroup getEntityTableGroup(
+	public AbstractTable getRootTable() {
+		return tables[0];
+	}
+
+	@Override
+	public EntityTableGroup buildTableGroup(
 			FromElement fromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
@@ -165,20 +194,30 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 		fromClauseIndex.crossReference( fromElement, group );
 
-		final Table drivingTable = new Table( tables[0], group.getAliasBase() + '_' + 0 );
-		group.setRootTable( drivingTable );
-
 		// todo : determine proper join type
 		JoinType joinType = JoinType.LEFT;
+
+		addTableJoins( group, joinType );
+
+		return group;
+	}
+
+
+	public void addTableJoins(AbstractTableGroup group, JoinType joinType) {
+		if ( group.getRootTable() == null ) {
+			final Table drivingTable = new Table( tables[0], group.getAliasBase() + '_' + 0 );
+			group.setRootTable( drivingTable );
+		}
+		else {
+			final Table drivingTable = new Table( tables[0], group.getAliasBase() + '_' + 1 );
+			group.addTableSpecificationJoin( new TableJoin( joinType, drivingTable, null ) );
+		}
 
 		for ( int i = 1; i < tables.length; i++ ) {
 			final Table table = new Table( tables[i], group.getAliasBase() + '_' + i );
 			group.addTableSpecificationJoin( new TableJoin( joinType, table, null ) );
 		}
-
-		return group;
 	}
-
 
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

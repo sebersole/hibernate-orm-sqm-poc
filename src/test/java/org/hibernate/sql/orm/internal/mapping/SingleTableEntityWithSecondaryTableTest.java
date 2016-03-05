@@ -19,7 +19,6 @@ import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sql.orm.internal.sqm.model.EntityTypeImpl;
 import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
@@ -40,9 +39,8 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 	public void testSingleSpace() {
 		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableWithSecondaryTableEntity" );
 
-		final EntityTypeImpl entityTypeDescriptor =
-				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableWithSecondaryTableEntity" );
-		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
+		final ImprovedEntityPersister improvedEntityPersister =
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableWithSecondaryTableEntity" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( SingleTableEntityPersister.class ) );
 
 		// interpreter set up
@@ -50,7 +48,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		final SqlAliasBaseManager aliasBaseManager = new SqlAliasBaseManager();
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
-		final EntityTableGroup result = improvedEntityPersister.getEntityTableGroup(
+		final EntityTableGroup result = improvedEntityPersister.buildTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -79,9 +77,8 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 	public void testTwoSpaces() {
 		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableWithSecondaryTableEntity, SingleTableWithSecondaryTableEntity" );
 
-		final EntityTypeImpl entityTypeDescriptor =
-				(EntityTypeImpl) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableWithSecondaryTableEntity" );
-		final ImprovedEntityPersister improvedEntityPersister = entityTypeDescriptor.getPersister();
+		final ImprovedEntityPersister improvedEntityPersister =
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableWithSecondaryTableEntity" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( SingleTableEntityPersister.class ) );
 
 		assertThat( sqm.getQuerySpec().getFromClause().getFromElementSpaces().size(), equalTo( 2 ) );
@@ -92,7 +89,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 
 		// the first space
-		final EntityTableGroup firstSpace = improvedEntityPersister.getEntityTableGroup(
+		final EntityTableGroup firstSpace = improvedEntityPersister.buildTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 0 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,
@@ -117,7 +114,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( firstSpaceSecondaryTable.getIdentificationVariable(), equalTo( "s1_1" ) );
 
 		// the second space
-		final EntityTableGroup secondSpace = improvedEntityPersister.getEntityTableGroup(
+		final EntityTableGroup secondSpace = improvedEntityPersister.buildTableGroup(
 				sqm.getQuerySpec().getFromClause().getFromElementSpaces().get( 1 ).getRoot(),
 				querySpec.getFromClause().makeTableSpace(),
 				aliasBaseManager,

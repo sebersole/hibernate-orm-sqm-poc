@@ -19,7 +19,9 @@ import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.Type;
 import org.hibernate.sqm.parser.NotYetImplementedException;
 import org.hibernate.sqm.query.from.JoinedFromElement;
+import org.hibernate.type.AnyType;
 import org.hibernate.type.BasicType;
+import org.hibernate.type.EntityType;
 
 /**
  * @author Steve Ebersole
@@ -32,6 +34,8 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 	private final PluralAttributeId idDescriptor;
 	private final PluralAttributeElement elementDescriptor;
 	private final PluralAttributeIndex indexDescriptor;
+
+	private final AbstractTable separateCollectionTable;
 
 	public ImprovedCollectionPersisterImpl(
 			DatabaseModel databaseModel,
@@ -64,12 +68,12 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 
 		final AbstractTable collectionTable;
 		if ( persister.isOneToMany() ) {
-			// look up the element's EntityPersister table
-			// todo : do
-			collectionTable = null;
+			collectionTable = domainMetamodel.toSqmType( this.persister.getElementPersister() ).getRootTable();
+			this.separateCollectionTable = null;
 		}
 		else {
 			collectionTable = makeTableReference( databaseModel, this.persister.getTableName() );
+			this.separateCollectionTable = collectionTable;
 		}
 
 		if ( !persister.hasIndex() ) {
@@ -97,13 +101,20 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			DomainMetamodelImpl domainMetamodel) {
 		final org.hibernate.type.Type elementType = persister.getElementType();
 		if ( elementType.isAnyType() ) {
-			throw new NotYetImplementedException();
+			return new PluralAttributeElementAny(
+					(AnyType) elementType,
+					domainMetamodel.toSqmType( (AnyType) elementType )
+			);
 		}
 		else if ( elementType.isComponentType() ) {
 			throw new NotYetImplementedException();
 		}
 		else if ( elementType.isEntityType() ) {
-			throw new NotYetImplementedException();
+			return new PluralAttributeElementEntity(
+					persister.isManyToMany() ? ElementClassification.MANY_TO_MANY : ElementClassification.ONE_TO_MANY,
+					(EntityType) elementType,
+					domainMetamodel.toSqmType( (EntityType) elementType )
+			);
 		}
 		else {
 			return new PluralAttributeElementBasic(
@@ -171,7 +182,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 	}
 
 	@Override
-	public CollectionTableGroup getCollectionTableGroup(
+	public CollectionTableGroup buildTableGroup(
 			JoinedFromElement joinedFromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
@@ -182,12 +193,16 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 
 		fromClauseIndex.crossReference( joinedFromElement, group );
 
-		// todo : not sure this is right.  depends how we plan to render "element entity table"
-//		final AbstractTable drivingTable = makeTableSpecification(
-//				persister.getTableName(),
-//				group.getAliasBase() + '_' + 0
-//		);
-//		group.setRootTable( drivingTable );
+		if ( separateCollectionTable != null ) {
+			group.setRootTable(
+					new Table( separateCollectionTable, group.getAliasBase() + '_' + 0 )
+			);
+		}
+
+		if ( getElementDescriptor() instanceof PluralAttributeElementEntity ) {
+			final ImprovedEntityPersister elementPersister = (ImprovedEntityPersister) getElementDescriptor().getSqmType();
+			elementPersister.addTableJoins( group, joinedFromElement.getJoinType() );
+		}
 
 		return group;
 	}
