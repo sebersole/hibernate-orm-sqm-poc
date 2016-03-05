@@ -3,10 +3,12 @@ package org.hibernate.sql.gen.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 
 import org.hibernate.AssertionFailure;
 import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
+import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
@@ -21,9 +23,7 @@ import org.hibernate.sql.gen.QueryOptionBinder;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
-import org.hibernate.sql.orm.internal.mapping.SingularAttributeBasic;
-import org.hibernate.sql.orm.internal.mapping.SingularAttributeEntity;
-import org.hibernate.sql.orm.internal.mapping.Column;
+import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.SingularAttribute;
@@ -33,6 +33,7 @@ import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
+import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElement;
@@ -45,6 +46,7 @@ import org.hibernate.sqm.query.order.OrderByClause;
 import org.hibernate.sqm.query.order.SortSpecification;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.select.SelectClause;
+import org.hibernate.sqm.query.select.Selection;
 
 /**
  * @author Steve Ebersole
@@ -57,7 +59,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return walker.interpret( statement );
 	}
 
-	protected JdbcSelectPlan interpret(SelectStatement statement) {
+	public JdbcSelectPlan interpret(SelectStatement statement) {
 		visitSelectStatement( statement );
 		return null;
 	}
@@ -75,7 +77,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	private final SqlAliasBaseManager sqlAliasBaseManager = new SqlAliasBaseManager();
 
-	protected SelectStatementInterpreter(QueryOptions queryOptions, Callback callback) {
+	public SelectStatementInterpreter(QueryOptions queryOptions, Callback callback) {
 		this.queryOptions = queryOptions;
 		this.callback = callback;
 	}
@@ -157,9 +159,12 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		);
 	}
 
+	private Stack<org.hibernate.sql.ast.QuerySpec> querySpecStack = new Stack<org.hibernate.sql.ast.QuerySpec>();
+
 	@Override
 	public org.hibernate.sql.ast.QuerySpec visitQuerySpec(QuerySpec querySpec) {
 		final org.hibernate.sql.ast.QuerySpec astQuerySpec = new org.hibernate.sql.ast.QuerySpec();
+		querySpecStack.push( astQuerySpec );
 
 		fromClauseIndex.pushFromClause( astQuerySpec.getFromClause() );
 
@@ -180,6 +185,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			return astQuerySpec;
 		}
 		finally {
+			assert querySpecStack.pop() == astQuerySpec;
 			assert fromClauseIndex.popFromClause() == astQuerySpec.getFromClause();
 		}
 	}
@@ -213,18 +219,17 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	@Override
 	public Void visitRootEntityFromElement(RootEntityFromElement rootEntityFromElement) {
-		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) rootEntityFromElement.getBoundModelType();
 		if ( fromClauseIndex.isResolved( rootEntityFromElement ) ) {
 			return null;
 		}
 
+		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) rootEntityFromElement.getBoundModelType();
 		final EntityTableGroup group = entityPersister.buildTableGroup(
 				rootEntityFromElement,
 				tableSpace,
 				sqlAliasBaseManager,
 				fromClauseIndex
 		);
-
 		tableSpace.setRootTableGroup( group );
 
 		return null;
@@ -232,7 +237,10 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	@Override
 	public TableGroupJoin visitQualifiedAttributeJoinFromElement(QualifiedAttributeJoinFromElement joinedFromElement) {
-		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) joinedFromElement.getIntrinsicSubclassIndicator();
+		if ( fromClauseIndex.isResolved( joinedFromElement ) ) {
+			return null;
+		}
+
 		TableGroup group = null;
 
 		if ( joinedFromElement.getBoundAttribute() instanceof PluralAttribute ) {
@@ -245,16 +253,27 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			);
 		}
 		else {
-			group = entityPersister.buildTableGroup(
-					joinedFromElement,
-					tableSpace,
-					sqlAliasBaseManager,
-					fromClauseIndex
-			);
+			final SingularAttributeImplementor singularAttribute = (SingularAttributeImplementor) joinedFromElement.getBoundAttribute();
+			if ( singularAttribute.getAttributeTypeClassification() == SingularAttribute.Classification.EMBEDDED ) {
+				group = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBindingSource() );
+			}
+			else {
+				final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) joinedFromElement.getIntrinsicSubclassIndicator();
+				group = entityPersister.buildTableGroup(
+						joinedFromElement,
+						tableSpace,
+						sqlAliasBaseManager,
+						fromClauseIndex
+				);
+			}
 		}
+
+		fromClauseIndex.crossReference( joinedFromElement, group );
+
 		// todo : determine the Predicate
 		final Predicate predicate = new Predicate() {
 		};
+
 		return new TableGroupJoin( joinedFromElement.getJoinType(), group, predicate );
 	}
 
@@ -279,17 +298,39 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
+	public Object visitSelectClause(SelectClause selectClause) {
+		super.visitSelectClause( selectClause );
+		currentQuerySpec().getSelectClause().makeDistinct( selectClause.isDistinct() );
+		return currentQuerySpec().getSelectClause();
+	}
+
+	private org.hibernate.sql.ast.QuerySpec currentQuerySpec() {
+		return querySpecStack.peek();
+	}
+
+	@Override
+	public Object visitSelection(Selection selection) {
+		org.hibernate.sql.ast.select.Selection ormSelection = new org.hibernate.sql.ast.select.Selection(
+				(org.hibernate.sql.ast.expression.Expression) selection.getExpression().accept( this ),
+				selection.getAlias()
+		);
+
+		currentQuerySpec().getSelectClause().selection( ormSelection );
+
+		return selection;
+	}
+
+	@Override
 	public Object visitAttributeReferenceExpression(AttributeReferenceExpression expression) {
-		// WARNING : lots of faulty assumptions just to get a basic example running
-		// todo : fixme
+		// WARNING : works on the assumption that the referenced attribute is always singular.
+		// I believe that is valid, but we will need to test
+		// todo : verify if this is a valid assumption
+		final SingularAttributeImplementor attribute = (SingularAttributeImplementor) expression.getBoundAttribute();
 
-		final FromElement fromElement = expression.getAttributeBindingSource().getFromElement();
-		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( fromElement );
+		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( expression.getAttributeBindingSource() );
 
-		final SingularAttribute attribute = (SingularAttribute) expression.getBoundAttribute();
+		final ColumnBinding[] columnBindings = tableGroup.resolveBindings( attribute );
 
-		final ColumnBinding[] columnBindings = tableGroup.resolveAttribute( attribute );
-
-		return null;
+		return new AttributeReference( attribute, columnBindings );
 	}
 }

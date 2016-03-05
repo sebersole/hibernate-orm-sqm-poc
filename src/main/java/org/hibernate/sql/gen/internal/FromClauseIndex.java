@@ -12,6 +12,7 @@ import java.util.Stack;
 
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableGroup;
+import org.hibernate.sqm.path.AttributeBindingSource;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 
@@ -29,6 +30,9 @@ public class FromClauseIndex {
 
 	private final Map<FromElement, TableGroup> fromElementTableSpecificationGroupXref =
 			new HashMap<FromElement, TableGroup>();
+
+	private final Map<AttributeBindingSource,TableGroup> attributeBindingSourceTableGroupXref =
+			new HashMap<AttributeBindingSource, TableGroup>();
 
 	public void pushFromClause(FromClause fromClause) {
 		FromClauseStackNode parent = null;
@@ -69,10 +73,19 @@ public class FromClauseIndex {
 					tableGroup
 			);
 		}
+		crossReference( (AttributeBindingSource) fromElement, tableGroup );
 	}
 
 	public TableGroup findResolvedTableGroup(FromElement fromElement) {
 		return fromElementTableSpecificationGroupXref.get( fromElement );
+	}
+
+	public void crossReference(AttributeBindingSource attributeBindingSource, TableGroup group) {
+		attributeBindingSourceTableGroupXref.put( attributeBindingSource, group );
+	}
+
+	public TableGroup findResolvedTableGroup(AttributeBindingSource attributeBindingSource) {
+		return attributeBindingSourceTableGroupXref.get( attributeBindingSource );
 	}
 
 	public boolean isResolved(FromElement fromElement) {

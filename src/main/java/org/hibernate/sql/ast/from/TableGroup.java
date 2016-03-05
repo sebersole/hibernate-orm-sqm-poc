@@ -21,5 +21,5 @@ public interface TableGroup {
 	TableBinding getRootTableBinding();
 	List<TableJoin> getTableJoins();
 
-	ColumnBinding[] resolveAttribute(SingularAttribute attribute);
+	ColumnBinding[] resolveBindings(SingularAttribute attribute);
 }

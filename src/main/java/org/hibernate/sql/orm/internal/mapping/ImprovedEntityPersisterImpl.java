@@ -34,6 +34,7 @@ import org.hibernate.sqm.domain.Type;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.type.CollectionType;
+import org.hibernate.type.ComponentType;
 
 import org.jboss.logging.Logger;
 
@@ -94,18 +95,20 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 			final AbstractAttributeImpl attribute;
 			if ( attributeType.isCollectionType() ) {
-				attribute = buildPluralAttribute(
+				attribute = Helper.INSTANCE.buildPluralAttribute(
 						databaseModel,
 						domainMetamodel,
+						this,
 						attributeName,
 						attributeType,
 						values
 				);
 			}
 			else {
-				attribute = buildSingularAttribute(
+				attribute = Helper.INSTANCE.buildSingularAttribute(
 						databaseModel,
 						domainMetamodel,
+						this,
 						attributeName,
 						attributeType,
 						values
@@ -124,60 +127,6 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		else {
 			return databaseModel.findOrCreatePhysicalTable( tableExpression );
 		}
-	}
-
-	private AbstractAttributeImpl buildSingularAttribute(
-			DatabaseModel databaseModel,
-			DomainMetamodelImpl domainMetamodel,
-			String attributeName,
-			org.hibernate.type.Type attributeType,
-			Column[] columns) {
-		final SingularAttribute.Classification classification = Helper.interpretSingularAttributeClassification( attributeType );
-		final Type type;
-		if ( classification == SingularAttribute.Classification.ANY ) {
-			throw new NotYetImplementedException();
-		}
-		else if ( classification == SingularAttribute.Classification.EMBEDDED ) {
-			throw new NotYetImplementedException();
-		}
-		else if ( classification == SingularAttribute.Classification.BASIC ) {
-			return new SingularAttributeBasic(
-					this,
-					attributeName,
-					attributeType,
-					(BasicType) domainMetamodel.toSqmType( attributeType ),
-					columns
-			);
-		}
-		else {
-			return new SingularAttributeEntity(
-					this,
-					attributeName,
-					SingularAttribute.Classification.MANY_TO_ONE,
-					(org.hibernate.type.EntityType) attributeType,
-					domainMetamodel.toSqmType( (org.hibernate.type.EntityType) attributeType ),
-					columns
-			);
-		}
-	}
-
-	private AbstractAttributeImpl buildPluralAttribute(
-			DatabaseModel databaseModel,
-			DomainMetamodelImpl domainMetamodel,
-			String subclassPropertyName,
-			org.hibernate.type.Type attributeType,
-			Column[] columns) {
-		final CollectionType collectionType = (CollectionType) attributeType;
-		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getCollectionPersister( collectionType.getRole() );
-
-		return new ImprovedCollectionPersisterImpl(
-				databaseModel,
-				domainMetamodel,
-				this,
-				subclassPropertyName,
-				collectionPersister,
-				columns
-		);
 	}
 
 	@Override
@@ -313,5 +262,10 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	@Override
 	public String getTypeName() {
 		return persister.getEntityName();
+	}
+
+	@Override
+	public String toString() {
+		return "ImprovedEntityPersister(" + getTypeName() + ")";
 	}
 }

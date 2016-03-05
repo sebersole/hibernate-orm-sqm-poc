@@ -6,7 +6,6 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
-import org.hibernate.sqm.domain.Attribute;
 import org.hibernate.sqm.domain.ManagedType;
 
 /**
@@ -14,7 +13,7 @@ import org.hibernate.sqm.domain.ManagedType;
  *
  * @author Steve Ebersole
  */
-public abstract class AbstractAttributeImpl implements Attribute {
+public abstract class AbstractAttributeImpl implements AttributeImplementor {
 	private final ManagedType declaringType;
 	private final String name;
 

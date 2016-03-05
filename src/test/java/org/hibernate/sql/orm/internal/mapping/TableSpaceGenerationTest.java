@@ -1,5 +1,13 @@
-package org.hibernate.sql.gen.internal;
+/*
+ * Hibernate, Relational Persistence for Idiomatic Java
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
+ */
+package org.hibernate.sql.orm.internal.mapping;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -15,8 +23,11 @@ import org.hibernate.ScrollMode;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.sql.ast.SelectQuery;
+import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.select.SelectClause;
+import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
 import org.hibernate.sql.orm.internal.mapping.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.from.TableBinding;
@@ -33,6 +44,9 @@ import org.hibernate.sqm.query.Statement;
 
 import org.junit.Test;
 
+import org.hamcrest.CoreMatchers;
+
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
@@ -145,8 +159,54 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
 		interpreter.interpret( statement );
 
-		final SelectQuery selectQuery = interpreter.getSelectQuery();
+		final SelectClause selectClause = interpreter.getSelectQuery().getQuerySpec().getSelectClause();
 
+		assertThat( selectClause.getSelections().size(), is(1) );
+		assertThat( selectClause.getSelections().get( 0 ).getResultVariable(), startsWith( "<gen:" ) );
+		assertThat( selectClause.getSelections().get( 0 ).getSelectExpression(), instanceOf( AttributeReference.class ) );
+	}
+
+	@Test
+	public void testSimpleEmbeddedDereference() {
+		final SelectStatement statement = (SelectStatement) interpret( "select p.name.first from Person p" );
+
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		interpreter.interpret( statement );
+
+		final SelectClause selectClause = interpreter.getSelectQuery().getQuerySpec().getSelectClause();
+
+		assertThat( selectClause.getSelections().size(), is(1) );
+		assertThat( selectClause.getSelections().get( 0 ).getResultVariable(), startsWith( "<gen:" ) );
+		assertThat( selectClause.getSelections().get( 0 ).getSelectExpression(), instanceOf( AttributeReference.class ) );
+		final AttributeReference attributeReference = (AttributeReference) selectClause.getSelections().get( 0 ).getSelectExpression();
+		assertThat( attributeReference.getReferencedAttribute().getName(), is("first") );
+		assertThat( attributeReference.getColumnBindings().length, is(1) );
+		assertThat( attributeReference.getColumnBindings()[0].getColumn(), CoreMatchers.instanceOf( PhysicalColumn.class ) );
+		final PhysicalColumn column = (PhysicalColumn) attributeReference.getColumnBindings()[0].getColumn();
+		assertThat( column.getName(), is( "first" ) );
+	}
+
+	@Test
+	public void testSelectEmbedded() {
+		final SelectStatement statement = (SelectStatement) interpret( "select p.name from Person p" );
+
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		interpreter.interpret( statement );
+
+		final SelectClause selectClause = interpreter.getSelectQuery().getQuerySpec().getSelectClause();
+
+		assertThat( selectClause.getSelections().size(), is(1) );
+		assertThat( selectClause.getSelections().get( 0 ).getResultVariable(), startsWith( "<gen:" ) );
+		assertThat( selectClause.getSelections().get( 0 ).getSelectExpression(), instanceOf( AttributeReference.class ) );
+		final AttributeReference attributeReference = (AttributeReference) selectClause.getSelections().get( 0 ).getSelectExpression();
+		assertThat( attributeReference.getReferencedAttribute().getName(), is("name") );
+		assertThat( attributeReference.getColumnBindings().length, is(2) );
+		assertThat( attributeReference.getColumnBindings()[0].getColumn(), CoreMatchers.instanceOf( PhysicalColumn.class ) );
+		PhysicalColumn column = (PhysicalColumn) attributeReference.getColumnBindings()[0].getColumn();
+		assertThat( column.getName(), is( "first" ) );
+		assertThat( attributeReference.getColumnBindings()[1].getColumn(), CoreMatchers.instanceOf( PhysicalColumn.class ) );
+		column = (PhysicalColumn) attributeReference.getColumnBindings()[1].getColumn();
+		assertThat( column.getName(), is( "last" ) );
 	}
 
 	@Override
@@ -163,6 +223,9 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		@GeneratedValue
 		long id;
 
+		@Embedded
+		Name name;
+
 		String email;
 
 		@OneToMany
@@ -174,6 +237,12 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		@OneToOne
 		Role actualRole;
+	}
+
+	@Embeddable
+	public static class Name {
+		String first;
+		String last;
 	}
 
 	@Entity(name = "Address")

@@ -6,33 +6,26 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
-import org.hibernate.sqm.domain.BasicType;
+import org.hibernate.sqm.domain.EmbeddableType;
 import org.hibernate.sqm.domain.ManagedType;
+import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
-public class SingularAttributeBasic
-		extends AbstractSingularAttribute<org.hibernate.type.BasicType, BasicType> {
-	private final Column[] columns;
+public class SingularAttributeEmbedded
+		extends AbstractSingularAttribute<CompositeType, EmbeddableType> {
 
-	public SingularAttributeBasic(
+	public SingularAttributeEmbedded(
 			ManagedType declaringType,
-			String name,
-			org.hibernate.type.BasicType ormType,
-			BasicType sqmType,
-			Column[] columns) {
-		super( declaringType, name, ormType, sqmType );
-		this.columns = columns;
+			String attributeName,
+			EmbeddablePersister embeddablePersister) {
+		super( declaringType, attributeName, embeddablePersister.getOrmType(), embeddablePersister );
 	}
 
 	@Override
 	public Classification getAttributeTypeClassification() {
-		return Classification.BASIC;
-	}
-
-	public Column[] getColumns() {
-		return columns;
+		return Classification.EMBEDDED;
 	}
 
 	@Override
@@ -46,7 +39,7 @@ public class SingularAttributeBasic
 	}
 
 	@Override
-	public ManagedType asManagedType() {
-		return null;
+	public EmbeddablePersister asManagedType() {
+		return (EmbeddablePersister) getBoundType();
 	}
 }

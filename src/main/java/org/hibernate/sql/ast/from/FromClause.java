@@ -10,21 +10,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hibernate.sql.ast.QuerySpec;
-
 /**
  * @author Steve Ebersole
  */
 public class FromClause {
-	private final QuerySpec querySpec;
 	private final List<TableSpace> tableSpaces = new ArrayList<TableSpace>();
 
-	public FromClause(QuerySpec querySpec) {
-		this.querySpec = querySpec;
-	}
-
-	public QuerySpec getQuerySpec() {
-		return querySpec;
+	public FromClause() {
 	}
 
 	public List<TableSpace> getTableSpaces() {

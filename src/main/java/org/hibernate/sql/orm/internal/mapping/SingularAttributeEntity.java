@@ -8,29 +8,24 @@ package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.domain.ManagedType;
-import org.hibernate.sqm.domain.SingularAttribute;
-import org.hibernate.sqm.domain.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class SingularAttributeEntity extends AbstractAttributeImpl implements SingularAttribute {
+public class SingularAttributeEntity
+		extends AbstractSingularAttribute<org.hibernate.type.EntityType, EntityType> {
 	private final Classification classification;
-	private final org.hibernate.type.EntityType type;
-	private final EntityType sqmType;
 	private final Column[] columns;
 
 	public SingularAttributeEntity(
 			ManagedType declaringType,
 			String name,
 			Classification classification,
-			org.hibernate.type.EntityType type,
+			org.hibernate.type.EntityType ormType,
 			EntityType sqmType,
 			Column[] columns) {
-		super( declaringType, name );
+		super( declaringType, name, ormType, sqmType );
 		this.classification = classification;
-		this.type = type;
-		this.sqmType = sqmType;
 		this.columns = columns;
 	}
 
@@ -44,11 +39,6 @@ public class SingularAttributeEntity extends AbstractAttributeImpl implements Si
 	}
 
 	@Override
-	public Type getType() {
-		return sqmType;
-	}
-
-	@Override
 	public boolean isId() {
 		return false;
 	}
@@ -59,12 +49,7 @@ public class SingularAttributeEntity extends AbstractAttributeImpl implements Si
 	}
 
 	@Override
-	public Type getBoundType() {
-		return sqmType;
-	}
-
-	@Override
-	public ManagedType asManagedType() {
-		return sqmType;
+	public EntityType asManagedType() {
+		return getBoundType();
 	}
 }

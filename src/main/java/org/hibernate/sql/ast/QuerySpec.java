@@ -7,16 +7,22 @@
 package org.hibernate.sql.ast;
 
 import org.hibernate.sql.ast.from.FromClause;
+import org.hibernate.sql.ast.select.SelectClause;
 
 /**
  * @author Steve Ebersole
  */
 public class QuerySpec {
-	private final FromClause fromClause = new FromClause( this );
-	// select clause
-	// where clause
+	private final FromClause fromClause = new FromClause();
+	private final SelectClause selectClause = new SelectClause();
+
+	// where clause, etc
 
 	public FromClause getFromClause() {
 		return fromClause;
+	}
+
+	public SelectClause getSelectClause() {
+		return selectClause;
 	}
 }

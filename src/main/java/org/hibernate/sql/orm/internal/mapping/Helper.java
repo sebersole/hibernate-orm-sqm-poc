@@ -10,11 +10,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.hibernate.HibernateException;
+import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.sql.gen.NotYetImplementedException;
+import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
+import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.sqm.domain.PluralAttribute.CollectionClassification;
 import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.type.CollectionType;
+import org.hibernate.type.ComponentType;
 import org.hibernate.type.Type;
 
 /**
@@ -166,5 +171,106 @@ public class Helper {
 		}
 
 		return values;
+	}
+
+	public AbstractAttributeImpl buildAttribute(
+			DatabaseModel databaseModel,
+			DomainMetamodelImpl domainMetamodel,
+			ManagedType source,
+			String propertyName,
+			Type propertyType,
+			Column[] columns) {
+		if ( propertyType.isCollectionType() ) {
+			return buildPluralAttribute(
+					databaseModel,
+					domainMetamodel,
+					source,
+					propertyName,
+					propertyType,
+					columns
+			);
+		}
+		else {
+			return buildSingularAttribute(
+					databaseModel,
+					domainMetamodel,
+					source,
+					propertyName,
+					propertyType,
+					columns
+			);
+		}
+	}
+
+	public AbstractAttributeImpl buildSingularAttribute(
+			DatabaseModel databaseModel,
+			DomainMetamodelImpl domainMetamodel,
+			ManagedType source,
+			String attributeName,
+			org.hibernate.type.Type attributeType,
+			Column[] columns) {
+		final SingularAttribute.Classification classification = interpretSingularAttributeClassification( attributeType );
+		final org.hibernate.sqm.domain.Type type;
+		if ( classification == SingularAttribute.Classification.ANY ) {
+			throw new NotYetImplementedException();
+		}
+		else if ( classification == SingularAttribute.Classification.EMBEDDED ) {
+			return new SingularAttributeEmbedded(
+					source,
+					attributeName,
+					new EmbeddablePersister(
+							extractEmbeddableName( attributeType ),
+							source.getTypeName() + '.' + attributeName,
+							(ComponentType) attributeType,
+							databaseModel,
+							domainMetamodel,
+							columns
+					)
+			);
+		}
+		else if ( classification == SingularAttribute.Classification.BASIC ) {
+			return new SingularAttributeBasic(
+					source,
+					attributeName,
+					(org.hibernate.type.BasicType) attributeType,
+					domainMetamodel.toSqmType( (org.hibernate.type.BasicType) attributeType ),
+					columns
+			);
+		}
+		else {
+			return new SingularAttributeEntity(
+					source,
+					attributeName,
+					SingularAttribute.Classification.MANY_TO_ONE,
+					(org.hibernate.type.EntityType) attributeType,
+					domainMetamodel.toSqmType( (org.hibernate.type.EntityType) attributeType ),
+					columns
+			);
+		}
+	}
+
+	private static String extractEmbeddableName(org.hibernate.type.Type attributeType) {
+		// todo : fixme
+		return attributeType.getName();
+	}
+
+	public AbstractAttributeImpl buildPluralAttribute(
+			DatabaseModel databaseModel,
+			DomainMetamodelImpl domainMetamodel,
+			ManagedType source,
+			String subclassPropertyName,
+			org.hibernate.type.Type attributeType,
+			Column[] columns) {
+		final CollectionType collectionType = (CollectionType) attributeType;
+		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getCollectionPersister( collectionType.getRole() );
+
+		return new ImprovedCollectionPersisterImpl(
+				databaseModel,
+				domainMetamodel,
+				source,
+				subclassPropertyName,
+				collectionPersister,
+				columns
+		);
 	}
 }

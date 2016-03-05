@@ -13,6 +13,7 @@ import java.util.List;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.orm.internal.mapping.Column;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeBasic;
+import org.hibernate.sql.orm.internal.mapping.SingularAttributeEmbedded;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeEntity;
 import org.hibernate.sql.orm.internal.mapping.Table;
 import org.hibernate.sqm.domain.SingularAttribute;
@@ -70,13 +71,16 @@ public abstract class AbstractTableGroup implements TableGroup {
 	}
 
 	@Override
-	public ColumnBinding[] resolveAttribute(SingularAttribute attribute) {
+	public ColumnBinding[] resolveBindings(SingularAttribute attribute) {
 		final Column[] columns;
 		if ( attribute instanceof SingularAttributeBasic ) {
 			columns = ( (SingularAttributeBasic) attribute ).getColumns();
 		}
 		else if ( attribute instanceof SingularAttributeEntity ) {
 			columns = ( (SingularAttributeEntity) attribute ).getColumns();
+		}
+		else if ( attribute instanceof SingularAttributeEmbedded ) {
+			columns = ( (SingularAttributeEmbedded) attribute ).asManagedType().collectColumns();
 		}
 		else {
 			throw new NotYetImplementedException();

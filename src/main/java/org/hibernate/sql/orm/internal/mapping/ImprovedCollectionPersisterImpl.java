@@ -219,4 +219,9 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		}
 		return table;
 	}
+
+	@Override
+	public String toString() {
+		return "ImprovedCollectionPersister(" + persister.getRole() + ")";
+	}
 }
