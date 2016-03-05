@@ -15,15 +15,15 @@ public class PluralAttributeIndex {
 	// for now just model simple indexes/keys
 	private final org.hibernate.type.Type type;
 	private final Type sqmType;
-	private final Value[] values;
+	private final Column[] columns;
 
 	public PluralAttributeIndex(
 			org.hibernate.type.Type type,
 			Type sqmType,
-			Value[] values) {
+			Column[] columns) {
 		this.type = type;
 		this.sqmType = sqmType;
-		this.values = values;
+		this.columns = columns;
 	}
 
 	public org.hibernate.type.Type getType() {
@@ -34,7 +34,7 @@ public class PluralAttributeIndex {
 		return sqmType;
 	}
 
-	public Value[] getValues() {
-		return values;
+	public Column[] getColumns() {
+		return columns;
 	}
 }

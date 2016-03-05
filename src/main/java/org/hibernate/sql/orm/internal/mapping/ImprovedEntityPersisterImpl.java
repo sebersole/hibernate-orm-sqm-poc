@@ -15,8 +15,7 @@ import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.Table;
-import org.hibernate.sql.ast.from.TableGroup;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableJoin;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.NotYetImplementedException;
@@ -25,6 +24,7 @@ import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
 import org.hibernate.sql.orm.internal.sqm.model.PseudoIdAttributeImpl;
 import org.hibernate.sqm.domain.Attribute;
+import org.hibernate.sqm.domain.BasicType;
 import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.domain.IdentifiableType;
 import org.hibernate.sqm.domain.IdentifierDescriptor;
@@ -90,7 +90,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			final AbstractTable containingTable = tables[ Helper.INSTANCE.getSubclassPropertyTableNumber( persister, attributeNumber ) ];
 			final String [] columns = Helper.INSTANCE.getSubclassPropertyColumnExpressions( persister, attributeNumber );
 			final String [] formulas = Helper.INSTANCE.getSubclassPropertyFormulaExpressions( persister, attributeNumber );
-			final Value[] values = Helper.makeValues( containingTable, attributeType, columns, formulas );
+			final Column[] values = Helper.makeValues( containingTable, attributeType, columns, formulas );
 
 			final AbstractAttributeImpl attribute;
 			if ( attributeType.isCollectionType() ) {
@@ -103,19 +103,12 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 				);
 			}
 			else {
-				final SingularAttribute.Classification classification = Helper.interpretSingularAttributeClassification( attributeType );
-				final Type type;
-				if ( classification == SingularAttribute.Classification.EMBEDDED ) {
-					throw new NotYetImplementedException();
-				}
-				else {
-					type = domainMetamodel.toSqmType( attributeType );
-				}
-				attribute = new SingularAttributeImpl(
-						this,
+				attribute = buildSingularAttribute(
+						databaseModel,
+						domainMetamodel,
 						attributeName,
-						classification,
-						type
+						attributeType,
+						values
 				);
 			}
 
@@ -133,12 +126,47 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		}
 	}
 
+	private AbstractAttributeImpl buildSingularAttribute(
+			DatabaseModel databaseModel,
+			DomainMetamodelImpl domainMetamodel,
+			String attributeName,
+			org.hibernate.type.Type attributeType,
+			Column[] columns) {
+		final SingularAttribute.Classification classification = Helper.interpretSingularAttributeClassification( attributeType );
+		final Type type;
+		if ( classification == SingularAttribute.Classification.ANY ) {
+			throw new NotYetImplementedException();
+		}
+		else if ( classification == SingularAttribute.Classification.EMBEDDED ) {
+			throw new NotYetImplementedException();
+		}
+		else if ( classification == SingularAttribute.Classification.BASIC ) {
+			return new SingularAttributeBasic(
+					this,
+					attributeName,
+					attributeType,
+					(BasicType) domainMetamodel.toSqmType( attributeType ),
+					columns
+			);
+		}
+		else {
+			return new SingularAttributeEntity(
+					this,
+					attributeName,
+					SingularAttribute.Classification.MANY_TO_ONE,
+					(org.hibernate.type.EntityType) attributeType,
+					domainMetamodel.toSqmType( (org.hibernate.type.EntityType) attributeType ),
+					columns
+			);
+		}
+	}
+
 	private AbstractAttributeImpl buildPluralAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
 			String subclassPropertyName,
 			org.hibernate.type.Type attributeType,
-			Value[] values) {
+			Column[] columns) {
 		final CollectionType collectionType = (CollectionType) attributeType;
 		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getCollectionPersister( collectionType.getRole() );
 
@@ -148,7 +176,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 				this,
 				subclassPropertyName,
 				collectionPersister,
-				values
+				columns
 		);
 	}
 
@@ -204,18 +232,18 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 
 	public void addTableJoins(AbstractTableGroup group, JoinType joinType) {
-		if ( group.getRootTable() == null ) {
-			final Table drivingTable = new Table( tables[0], group.getAliasBase() + '_' + 0 );
-			group.setRootTable( drivingTable );
+		if ( group.getRootTableBinding() == null ) {
+			final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
+			group.setRootTableBinding( drivingTableBinding );
 		}
 		else {
-			final Table drivingTable = new Table( tables[0], group.getAliasBase() + '_' + 1 );
-			group.addTableSpecificationJoin( new TableJoin( joinType, drivingTable, null ) );
+			final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 1 );
+			group.addTableSpecificationJoin( new TableJoin( joinType, drivingTableBinding, null ) );
 		}
 
 		for ( int i = 1; i < tables.length; i++ ) {
-			final Table table = new Table( tables[i], group.getAliasBase() + '_' + i );
-			group.addTableSpecificationJoin( new TableJoin( joinType, table, null ) );
+			final TableBinding tableBinding = new TableBinding( tables[i], group.getAliasBase() + '_' + i );
+			group.addTableSpecificationJoin( new TableJoin( joinType, tableBinding, null ) );
 		}
 	}
 

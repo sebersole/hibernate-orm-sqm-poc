@@ -14,16 +14,16 @@ import org.hibernate.type.Type;
 public class PluralAttributeKey {
 	private final Type type;
 	private final org.hibernate.sqm.domain.Type sqmType;
-	private final Value[] foreignKeyValues;
+	private final Column[] foreignKeyColumns;
 	// todo : referenced values?
 
 	public PluralAttributeKey(
 			Type type,
 			org.hibernate.sqm.domain.Type sqmType,
-			Value[] foreignKeyValues) {
+			Column[] foreignKeyValues) {
 		this.type = type;
 		this.sqmType = sqmType;
-		this.foreignKeyValues = foreignKeyValues;
+		this.foreignKeyColumns = foreignKeyValues;
 	}
 
 	public Type getType() {
@@ -34,7 +34,7 @@ public class PluralAttributeKey {
 		return sqmType;
 	}
 
-	public Value[] getForeignKeyValues() {
-		return foreignKeyValues;
+	public Column[] getForeignKeyColumns() {
+		return foreignKeyColumns;
 	}
 }

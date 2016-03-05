@@ -19,7 +19,7 @@ import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.orm.internal.mapping.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.Table;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.gen.BaseUnitTest;
@@ -61,12 +61,12 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		assertThat( joinedGroup, is( instanceOf( CollectionTableGroup.class ) ) );
 
 		checkRootTableName( "PERSON_ADDRESS", joinedGroup );
-		assertThat( joinedGroup.getRootTable().getIdentificationVariable(), is( "a1_0" ) );
+		assertThat( joinedGroup.getRootTableBinding().getIdentificationVariable(), is( "a1_0" ) );
 
 		assertThat( joinedGroup.getTableJoins().size(), is( 1 ) );
-		final Table joinedTable = joinedGroup.getTableJoins().get( 0 ).getJoinedTable();
-		checkTableName( "ADDRESS", joinedTable );
-		assertThat( joinedTable.getIdentificationVariable(), is( "a1_1" ) );
+		final TableBinding joinedTableBinding = joinedGroup.getTableJoins().get( 0 ).getJoinedTableBinding();
+		checkTableName( "ADDRESS", joinedTableBinding );
+		assertThat( joinedTableBinding.getIdentificationVariable(), is( "a1_1" ) );
 	}
 
 	@Test
@@ -138,6 +138,17 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		checkRootTableName( "ROLE", joinedGroup );
 	}
 
+	@Test
+	public void testSimpleAttributeReference() {
+		final SelectStatement statement = (SelectStatement) interpret( "select p.email from Person p" );
+
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		interpreter.interpret( statement );
+
+		final SelectQuery selectQuery = interpreter.getSelectQuery();
+
+	}
+
 	@Override
 	protected void applyMetadataSources(MetadataSources metadataSources) {
 		metadataSources.addAnnotatedClass( Person.class );
@@ -151,6 +162,8 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		@Id
 		@GeneratedValue
 		long id;
+
+		String email;
 
 		@OneToMany
 		Set<Address> addresses = new HashSet<Address>();
@@ -247,12 +260,12 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	}
 
 	private void checkRootTableName(String expectedTableName, TableGroup tableGroup) {
-		final Table table = tableGroup.getRootTable();
-		checkTableName( expectedTableName, table );
+		final TableBinding tableBinding = tableGroup.getRootTableBinding();
+		checkTableName( expectedTableName, tableBinding );
 	}
 
-	private void checkTableName(String expectedTableName, Table table) {
-		assertThat( table.getTableReference(), is( instanceOf( PhysicalTable.class ) ) );
-		assertThat( ((PhysicalTable) table.getTableReference() ).getTableName(), is( expectedTableName ) );
+	private void checkTableName(String expectedTableName, TableBinding tableBinding) {
+		assertThat( tableBinding.getTable(), is( instanceOf( PhysicalTable.class ) ) );
+		assertThat( ((PhysicalTable) tableBinding.getTable() ).getTableName(), is( expectedTableName ) );
 	}
 }

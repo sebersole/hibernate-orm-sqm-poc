@@ -9,12 +9,12 @@ package org.hibernate.sql.orm.internal.mapping;
 /**
  * @author Steve Ebersole
  */
-public class Formula implements Value {
+public class DerivedColumn implements Column {
 	private final AbstractTable table;
 	private final String expression;
 	private final int jdbcType;
 
-	public Formula(AbstractTable table, String expression, int jdbcType) {
+	public DerivedColumn(AbstractTable table, String expression, int jdbcType) {
 		this.table = table;
 		this.expression = expression;
 		this.jdbcType = jdbcType;
@@ -25,7 +25,7 @@ public class Formula implements Value {
 	}
 
 	@Override
-	public TableReference getSourceTable() {
+	public Table getSourceTable() {
 		return table;
 	}
 

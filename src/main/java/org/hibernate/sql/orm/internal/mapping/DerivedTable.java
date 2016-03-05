@@ -11,7 +11,7 @@ package org.hibernate.sql.orm.internal.mapping;
  *
  * @author Steve Ebersole
  */
-public class DerivedTable extends AbstractTable implements TableReference {
+public class DerivedTable extends AbstractTable implements Table {
 	private final String expression;
 
 	public DerivedTable(String expression) {
@@ -21,5 +21,10 @@ public class DerivedTable extends AbstractTable implements TableReference {
 	@Override
 	public String getTableExpression() {
 		return expression;
+	}
+
+	@Override
+	public String toString() {
+		return "DeridedTable(" + expression + ")";
 	}
 }

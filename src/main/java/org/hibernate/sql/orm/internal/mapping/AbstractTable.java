@@ -14,40 +14,40 @@ import org.hibernate.MappingException;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractTable implements TableReference {
-	private final Map<String,Value> valueMap = new TreeMap<String, Value>( String.CASE_INSENSITIVE_ORDER );
+public abstract class AbstractTable implements Table {
+	private final Map<String,Column> valueMap = new TreeMap<String, Column>( String.CASE_INSENSITIVE_ORDER );
 
-	public Column makeColumn(String name, int jdbcType) {
+	public PhysicalColumn makeColumn(String name, int jdbcType) {
 		if ( valueMap.containsKey( name ) ) {
 			// assume it is a Column
-			@SuppressWarnings("UnnecessaryLocalVariable") final Column existing = (Column) valueMap.get( name );
+			@SuppressWarnings("UnnecessaryLocalVariable") final PhysicalColumn existing = (PhysicalColumn) valueMap.get( name );
 			// todo : "type compatibility" checks would be nice
 			return existing;
 		}
-		final Column column = new Column( this, name, jdbcType );
+		final PhysicalColumn column = new PhysicalColumn( this, name, jdbcType );
 		valueMap.put( name, column );
 		return column;
 	}
 
-	public Formula makeFormula(String expression, int jdbcType) {
+	public DerivedColumn makeFormula(String expression, int jdbcType) {
 		// for now, we use expression as registration key but that allows reuse of formula mappings, we may want to
 		// force separate expressions in this case...
 		final String registrationKey = expression;
 
 		if ( valueMap.containsKey( registrationKey ) ) {
 			// assume it is a Formula
-			@SuppressWarnings("UnnecessaryLocalVariable") final Formula existing = (Formula) valueMap.get( registrationKey );
+			@SuppressWarnings("UnnecessaryLocalVariable") final DerivedColumn existing = (DerivedColumn) valueMap.get( registrationKey );
 			// todo : "type compatibility" checks would be nice
 			return existing;
 		}
-		final Formula formula = new Formula( this, expression, jdbcType );
-		valueMap.put( registrationKey, formula );
-		return formula;
+		final DerivedColumn derivedColumn = new DerivedColumn( this, expression, jdbcType );
+		valueMap.put( registrationKey, derivedColumn );
+		return derivedColumn;
 	}
 
 	@Override
-	public Value getValue(String name) {
-		final Value match = valueMap.get( name );
+	public Column getColumn(String name) {
+		final Column match = valueMap.get( name );
 		if ( match == null ) {
 			throw new MappingException( "Could not locate value : " + name );
 		}

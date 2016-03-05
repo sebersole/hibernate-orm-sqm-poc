@@ -7,13 +7,14 @@
 package org.hibernate.sql.orm.internal.mapping;
 
 /**
- * Represents the commonality between {@link Column} and {@link Formula}
+ * Represents a table in the mapping.  The name "table reference" comes from ANSI SQL
+ * to describe the fact that the "table" might be a derived table (in-line view) or
+ * a physical table reference.
  *
  * @author Steve Ebersole
  */
-public interface Value {
-	TableReference getSourceTable();
-	// todo : SqlTypeDescriptor would be better, along with nullable, etc information
-	int getJdbcType();
-	String toLoggableString();
+public interface Table {
+	String getTableExpression();
+
+	Column getColumn(String name);
 }

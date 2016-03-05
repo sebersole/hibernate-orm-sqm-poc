@@ -11,18 +11,18 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sqm.query.JoinType;
 
 /**
- * Represents a join to a {@link Table}; roughly equivalent to a SQL join.
+ * Represents a join to a {@link TableBinding}; roughly equivalent to a SQL join.
  *
  * @author Steve Ebersole
  */
 public class TableJoin {
 	private final JoinType joinType;
-	private final Table joinedTable;
+	private final TableBinding joinedTableBinding;
 	private final Predicate predicate;
 
-	public TableJoin(JoinType joinType, Table joinedTable, Predicate predicate) {
+	public TableJoin(JoinType joinType, TableBinding joinedTableBinding, Predicate predicate) {
 		this.joinType = joinType;
-		this.joinedTable = joinedTable;
+		this.joinedTableBinding = joinedTableBinding;
 		this.predicate = predicate;
 
 		if ( joinType == JoinType.CROSS ) {
@@ -36,8 +36,8 @@ public class TableJoin {
 		return joinType;
 	}
 
-	public Table getJoinedTable() {
-		return joinedTable;
+	public TableBinding getJoinedTableBinding() {
+		return joinedTableBinding;
 	}
 
 	public Predicate getJoinPredicate() {

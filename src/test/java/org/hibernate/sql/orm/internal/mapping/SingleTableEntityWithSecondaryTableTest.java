@@ -16,6 +16,7 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -57,20 +58,20 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( result, notNullValue() );
 		assertThat( result.getAliasBase(), equalTo( "s1" ) );
 
-		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
-		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
-		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "stwst_primary" ) );
-		assertThat( tableSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		assertThat( result.getRootTableBinding(), notNullValue() );
+		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
+		final TableBinding tableBindingSpec = result.getRootTableBinding();
+		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "stwst_primary" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 0 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table secondaryTable = result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( secondaryTable.getTableReference().getTableExpression(), equalTo( "stwst_secondary" ) );
-		assertThat( secondaryTable.getIdentificationVariable(), equalTo( "s1_1" ) );
+		final TableBinding secondaryTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
+		assertThat( secondaryTableBinding.getTable().getTableExpression(), equalTo( "stwst_secondary" ) );
+		assertThat( secondaryTableBinding.getIdentificationVariable(), equalTo( "s1_1" ) );
 
 	}
 	@Test
@@ -98,20 +99,20 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( firstSpace, notNullValue() );
 		assertThat( firstSpace.getAliasBase(), equalTo( "s1" ) );
 
-		assertThat( firstSpace.getRootTable(), notNullValue() );
-		assertThat( firstSpace.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
-		final org.hibernate.sql.ast.from.Table firstSpaceTableSpec = firstSpace.getRootTable();
-		assertThat( firstSpaceTableSpec.getTableReference().getTableExpression(), equalTo( "stwst_primary" ) );
-		assertThat( firstSpaceTableSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		assertThat( firstSpace.getRootTableBinding(), notNullValue() );
+		assertThat( firstSpace.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
+		final TableBinding firstSpaceTableBindingSpec = firstSpace.getRootTableBinding();
+		assertThat( firstSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "stwst_primary" ) );
+		assertThat( firstSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 		assertThat( firstSpace.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
-				firstSpace.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
+				firstSpace.getTableJoins().get( 0 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table firstSpaceSecondaryTable = firstSpace.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSpaceSecondaryTable.getTableReference().getTableExpression(), equalTo( "stwst_secondary" ) );
-		assertThat( firstSpaceSecondaryTable.getIdentificationVariable(), equalTo( "s1_1" ) );
+		final TableBinding firstSpaceSecondaryTableBinding = firstSpace.getTableJoins().get( 0 ).getJoinedTableBinding();
+		assertThat( firstSpaceSecondaryTableBinding.getTable().getTableExpression(), equalTo( "stwst_secondary" ) );
+		assertThat( firstSpaceSecondaryTableBinding.getIdentificationVariable(), equalTo( "s1_1" ) );
 
 		// the second space
 		final EntityTableGroup secondSpace = improvedEntityPersister.buildTableGroup(
@@ -123,20 +124,20 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( secondSpace, notNullValue() );
 		assertThat( secondSpace.getAliasBase(), equalTo( "s2" ) );
 
-		assertThat( secondSpace.getRootTable(), notNullValue() );
-		assertThat( secondSpace.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
-		final org.hibernate.sql.ast.from.Table secondSpaceTableSpec = secondSpace.getRootTable();
-		assertThat( secondSpaceTableSpec.getTableReference().getTableExpression(), equalTo( "stwst_primary" ) );
-		assertThat( secondSpaceTableSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
+		assertThat( secondSpace.getRootTableBinding(), notNullValue() );
+		assertThat( secondSpace.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
+		final TableBinding secondSpaceTableBindingSpec = secondSpace.getRootTableBinding();
+		assertThat( secondSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "stwst_primary" ) );
+		assertThat( secondSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
 
 		assertThat( secondSpace.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
-				secondSpace.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
+				secondSpace.getTableJoins().get( 0 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table secondSpaceSecondaryTable = secondSpace.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( secondSpaceSecondaryTable.getTableReference().getTableExpression(), equalTo( "stwst_secondary" ) );
-		assertThat( secondSpaceSecondaryTable.getIdentificationVariable(), equalTo( "s2_1" ) );
+		final TableBinding secondSpaceSecondaryTableBinding = secondSpace.getTableJoins().get( 0 ).getJoinedTableBinding();
+		assertThat( secondSpaceSecondaryTableBinding.getTable().getTableExpression(), equalTo( "stwst_secondary" ) );
+		assertThat( secondSpaceSecondaryTableBinding.getIdentificationVariable(), equalTo( "s2_1" ) );
 	}
 
 	@Override

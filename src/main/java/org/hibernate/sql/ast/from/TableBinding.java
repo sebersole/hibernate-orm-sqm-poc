@@ -6,24 +6,24 @@
  */
 package org.hibernate.sql.ast.from;
 
-import org.hibernate.sql.orm.internal.mapping.TableReference;
+import org.hibernate.sql.orm.internal.mapping.Table;
 
 /**
- * Represents a reference to a mapped "table reference".
+ * Represents a binding of a table (derived or physical) into a from-clause.
  *
  * @author Steve Ebersole
  */
-public class Table {
-	private final TableReference tableReference;
+public class TableBinding {
+	private final Table table;
 	private final String identificationVariable;
 
-	public Table(TableReference tableReference, String identificationVariable) {
-		this.tableReference = tableReference;
+	public TableBinding(Table table, String identificationVariable) {
+		this.table = table;
 		this.identificationVariable = identificationVariable;
 	}
 
-	public TableReference getTableReference() {
-		return tableReference;
+	public Table getTable() {
+		return table;
 	}
 
 	public String getIdentificationVariable() {

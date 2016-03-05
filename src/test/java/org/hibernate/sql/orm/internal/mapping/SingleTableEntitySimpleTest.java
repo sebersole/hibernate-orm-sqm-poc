@@ -14,6 +14,7 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -55,13 +56,13 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		assertThat( result, notNullValue() );
 		assertThat( result.getAliasBase(), equalTo( "s1" ) );
 
-		assertThat( result.getRootTable(), notNullValue() );
+		assertThat( result.getRootTableBinding(), notNullValue() );
 		assertThat( result.getTableJoins().size(), equalTo( 0 ) );
-		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 
-		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
-		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "single_table_entity" ) );
-		assertThat( tableSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		final TableBinding tableBindingSpec = result.getRootTableBinding();
+		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "single_table_entity" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
 	}
 	@Test
 	public void testTwoSpaces() {
@@ -88,13 +89,13 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		assertThat( firstSpace, notNullValue() );
 		assertThat( firstSpace.getAliasBase(), equalTo( "s1" ) );
 
-		assertThat( firstSpace.getRootTable(), notNullValue() );
+		assertThat( firstSpace.getRootTableBinding(), notNullValue() );
 		assertThat( firstSpace.getTableJoins().size(), equalTo( 0 ) );
-		assertThat( firstSpace.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		assertThat( firstSpace.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 
-		final org.hibernate.sql.ast.from.Table firstSpaceTableSpec = firstSpace.getRootTable();
-		assertThat( firstSpaceTableSpec.getTableReference().getTableExpression(), equalTo( "single_table_entity" ) );
-		assertThat( firstSpaceTableSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		final TableBinding firstSpaceTableBindingSpec = firstSpace.getRootTableBinding();
+		assertThat( firstSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "single_table_entity" ) );
+		assertThat( firstSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 		// the second space
 		final EntityTableGroup secondSpace = improvedEntityPersister.buildTableGroup(
@@ -106,13 +107,13 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 		assertThat( secondSpace, notNullValue() );
 		assertThat( secondSpace.getAliasBase(), equalTo( "s2" ) );
 
-		assertThat( secondSpace.getRootTable(), notNullValue() );
+		assertThat( secondSpace.getRootTableBinding(), notNullValue() );
 		assertThat( secondSpace.getTableJoins().size(), equalTo( 0 ) );
-		assertThat( secondSpace.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
+		assertThat( secondSpace.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 
-		final org.hibernate.sql.ast.from.Table secondSpaceTableSpec = secondSpace.getRootTable();
-		assertThat( secondSpaceTableSpec.getTableReference().getTableExpression(), equalTo( "single_table_entity" ) );
-		assertThat( secondSpaceTableSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
+		final TableBinding secondSpaceTableBindingSpec = secondSpace.getRootTableBinding();
+		assertThat( secondSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "single_table_entity" ) );
+		assertThat( secondSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
 	}
 
 	@Override

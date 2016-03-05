@@ -11,7 +11,7 @@ package org.hibernate.sql.orm.internal.mapping;
  *
  * @author Steve Ebersole
  */
-public class PhysicalTable extends AbstractTable implements TableReference {
+public class PhysicalTable extends AbstractTable implements Table {
 	private final String tableName;
 
 	public PhysicalTable(String tableName) {
@@ -25,5 +25,10 @@ public class PhysicalTable extends AbstractTable implements TableReference {
 	@Override
 	public String getTableExpression() {
 		return getTableName();
+	}
+
+	@Override
+	public String toString() {
+		return "PhysicalTable(" + tableName + ")";
 	}
 }

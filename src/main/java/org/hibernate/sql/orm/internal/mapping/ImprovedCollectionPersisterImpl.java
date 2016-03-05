@@ -10,12 +10,11 @@ import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.Table;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
 import org.hibernate.sqm.domain.ManagedType;
-import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.Type;
 import org.hibernate.sqm.parser.NotYetImplementedException;
 import org.hibernate.sqm.query.from.JoinedFromElement;
@@ -43,7 +42,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			ManagedType declaringType,
 			String attributeName,
 			CollectionPersister persister,
-			Value[] foreignKeyValues) {
+			Column[] foreignKeyColumns) {
 		super( declaringType, attributeName );
 
 		this.persister = (AbstractCollectionPersister) persister;
@@ -52,7 +51,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		this.foreignKeyDescriptor = new PluralAttributeKey(
 				persister.getKeyType(),
 				domainMetamodel.toSqmType( persister.getKeyType() ),
-				foreignKeyValues
+				foreignKeyColumns
 		);
 
 		if ( persister.getIdentifierType() == null ) {
@@ -80,7 +79,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			this.indexDescriptor = null;
 		}
 		else {
-			final Value[] values = Helper.makeValues(
+			final Column[] columns = Helper.makeValues(
 					collectionTable,
 					persister.getIndexType(),
 					this.persister.getIndexColumnNames(),
@@ -89,7 +88,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			this.indexDescriptor = new PluralAttributeIndex(
 					persister.getIndexType(),
 					domainMetamodel.toSqmType( persister.getIndexType() ),
-					values
+					columns
 			);
 		}
 
@@ -194,8 +193,8 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		fromClauseIndex.crossReference( joinedFromElement, group );
 
 		if ( separateCollectionTable != null ) {
-			group.setRootTable(
-					new Table( separateCollectionTable, group.getAliasBase() + '_' + 0 )
+			group.setRootTableBinding(
+					new TableBinding( separateCollectionTable, group.getAliasBase() + '_' + 0 )
 			);
 		}
 

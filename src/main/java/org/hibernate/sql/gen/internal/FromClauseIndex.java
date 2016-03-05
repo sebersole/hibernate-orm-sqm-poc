@@ -71,6 +71,10 @@ public class FromClauseIndex {
 		}
 	}
 
+	public TableGroup findResolvedTableGroup(FromElement fromElement) {
+		return fromElementTableSpecificationGroupXref.get( fromElement );
+	}
+
 	public boolean isResolved(FromElement fromElement) {
 		return fromElementTableSpecificationGroupXref.containsKey( fromElement );
 	}

@@ -7,35 +7,13 @@
 package org.hibernate.sql.orm.internal.mapping;
 
 /**
+ * Represents the commonality between {@link PhysicalColumn} and {@link DerivedColumn}
+ *
  * @author Steve Ebersole
  */
-public class Column implements Value {
-	private final AbstractTable table;
-	private final String name;
-	private final int jdbcType;
-
-	public Column(AbstractTable table, String name, int jdbcType) {
-		this.table = table;
-		this.name = name;
-		this.jdbcType = jdbcType;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public TableReference getSourceTable() {
-		return table;
-	}
-
-	@Override
-	public int getJdbcType() {
-		return jdbcType;
-	}
-
-	@Override
-	public String toLoggableString() {
-		return null;
-	}
+public interface Column {
+	Table getSourceTable();
+	// todo : SqlTypeDescriptor would be better, along with nullable, etc information
+	int getJdbcType();
+	String toLoggableString();
 }

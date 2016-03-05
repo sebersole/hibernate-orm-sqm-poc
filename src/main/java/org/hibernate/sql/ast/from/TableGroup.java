@@ -8,14 +8,18 @@ package org.hibernate.sql.ast.from;
 
 import java.util.List;
 
+import org.hibernate.sqm.domain.SingularAttribute;
+
 /**
- * Group together related {@link Table} references (generally related by EntityPersister or CollectionPersister),
+ * Group together related {@link TableBinding} references (generally related by EntityPersister or CollectionPersister),
  *
  * @author Steve Ebersole
  */
 public interface TableGroup {
 	TableSpace getTableSpace();
 	String getAliasBase();
-	Table getRootTable();
+	TableBinding getRootTableBinding();
 	List<TableJoin> getTableJoins();
+
+	ColumnBinding[] resolveAttribute(SingularAttribute attribute);
 }

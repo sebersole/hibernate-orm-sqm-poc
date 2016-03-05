@@ -7,6 +7,7 @@ import java.util.List;
 import org.hibernate.AssertionFailure;
 import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
+import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
@@ -20,15 +21,21 @@ import org.hibernate.sql.gen.QueryOptionBinder;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
+import org.hibernate.sql.orm.internal.mapping.SingularAttributeBasic;
+import org.hibernate.sql.orm.internal.mapping.SingularAttributeEntity;
+import org.hibernate.sql.orm.internal.mapping.Column;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
+import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.sqm.query.DeleteStatement;
 import org.hibernate.sqm.query.InsertSelectStatement;
 import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
+import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
+import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.FromElementSpace;
 import org.hibernate.sqm.query.from.JoinedFromElement;
 import org.hibernate.sqm.query.from.QualifiedAttributeJoinFromElement;
@@ -161,7 +168,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			visitFromClause( querySpec.getFromClause() );
 
 			final SelectClause selectClause = querySpec.getSelectClause();
-			if ( getSelectQuery() != null ) {
+			if ( selectClause != null ) {
 				visitSelectClause( selectClause );
 			}
 
@@ -271,4 +278,18 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		throw new NotYetImplementedException();
 	}
 
+	@Override
+	public Object visitAttributeReferenceExpression(AttributeReferenceExpression expression) {
+		// WARNING : lots of faulty assumptions just to get a basic example running
+		// todo : fixme
+
+		final FromElement fromElement = expression.getAttributeBindingSource().getFromElement();
+		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( fromElement );
+
+		final SingularAttribute attribute = (SingularAttribute) expression.getBoundAttribute();
+
+		final ColumnBinding[] columnBindings = tableGroup.resolveAttribute( attribute );
+
+		return null;
+	}
 }

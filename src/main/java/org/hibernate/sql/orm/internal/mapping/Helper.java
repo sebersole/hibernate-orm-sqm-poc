@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
 import org.hibernate.HibernateException;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
-import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.PluralAttribute.CollectionClassification;
 import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.type.CollectionType;
@@ -150,10 +149,10 @@ public class Helper {
 		return org.hibernate.sql.orm.internal.sqm.model.Helper.interpretCollectionClassification( collectionType );
 	}
 
-	public static Value[] makeValues(AbstractTable containingTable, Type type, String[] columns, String[] formulas) {
+	public static Column[] makeValues(AbstractTable containingTable, Type type, String[] columns, String[] formulas) {
 		assert columns.length == formulas.length;
 
-		final Value[] values = new Value[columns.length];
+		final Column[] values = new Column[columns.length];
 
 		for ( int i = 0; i < columns.length; i++ ) {
 			final int jdbcType = type.sqlTypes( null )[i];

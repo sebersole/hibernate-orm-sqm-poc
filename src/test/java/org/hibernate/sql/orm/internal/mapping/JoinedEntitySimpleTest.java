@@ -16,6 +16,7 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.entity.JoinedSubclassEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
@@ -54,29 +55,29 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result, notNullValue() );
 		assertThat( result.getAliasBase(), equalTo( "j1" ) );
 
-		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
-		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTable().getTableReference();
+		assertThat( result.getRootTableBinding(), notNullValue() );
+		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
+		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTableBinding().getTable();
 		assertThat( tableSpec.getTableName(), equalTo( "joined_entity_base" ) );
-		assertThat( result.getRootTable().getIdentificationVariable(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTableBinding().getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 0 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table firstSubclassTable = result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_branch" ) );
-		assertThat( firstSubclassTable.getIdentificationVariable(), equalTo( "j1_1" ) );
+		final TableBinding firstSubclassTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
+		assertThat( firstSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_branch" ) );
+		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
 
 		assertThat(
-				result.getTableJoins().get( 1 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 1 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table secondSubclassTable = result.getTableJoins().get( 1 ).getJoinedTable();
-		assertThat( secondSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_leaf" ) );
-		assertThat( secondSubclassTable.getIdentificationVariable(), equalTo( "j1_2" ) );
+		final TableBinding secondSubclassTableBinding = result.getTableJoins().get( 1 ).getJoinedTableBinding();
+		assertThat( secondSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_leaf" ) );
+		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_2" ) );
 	}
 
 	@Test
@@ -101,29 +102,29 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result, notNullValue() );
 		assertThat( result.getAliasBase(), equalTo( "j1" ) );
 
-		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
-		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
-		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "joined_entity_branch" ) );
-		assertThat( tableSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTableBinding(), notNullValue() );
+		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
+		final TableBinding tableBindingSpec = result.getRootTableBinding();
+		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "joined_entity_branch" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 0 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table firstSubclassTable = result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_base" ) );
-		assertThat( firstSubclassTable.getIdentificationVariable(), equalTo( "j1_1" ) );
+		final TableBinding firstSubclassTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
+		assertThat( firstSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_base" ) );
+		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
 
 		assertThat(
-				result.getTableJoins().get( 1 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 1 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table secondSubclassTable = result.getTableJoins().get( 1 ).getJoinedTable();
-		assertThat( secondSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_leaf" ) );
-		assertThat( secondSubclassTable.getIdentificationVariable(), equalTo( "j1_2" ) );
+		final TableBinding secondSubclassTableBinding = result.getTableJoins().get( 1 ).getJoinedTableBinding();
+		assertThat( secondSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_leaf" ) );
+		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_2" ) );
 	}
 
 	@Test
@@ -148,29 +149,29 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result, notNullValue() );
 		assertThat( result.getAliasBase(), equalTo( "j1" ) );
 
-		assertThat( result.getRootTable(), notNullValue() );
-		assertThat( result.getRootTable().getTableReference(), instanceOf( PhysicalTable.class ) );
-		final org.hibernate.sql.ast.from.Table tableSpec = result.getRootTable();
-		assertThat( tableSpec.getTableReference().getTableExpression(), equalTo( "joined_entity_leaf" ) );
-		assertThat( tableSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTableBinding(), notNullValue() );
+		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
+		final TableBinding tableBindingSpec = result.getRootTableBinding();
+		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "joined_entity_leaf" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
 		assertThat(
-				result.getTableJoins().get( 0 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 0 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table firstSubclassTable = result.getTableJoins().get( 0 ).getJoinedTable();
-		assertThat( firstSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_branch" ) );
-		assertThat( firstSubclassTable.getIdentificationVariable(), equalTo( "j1_1" ) );
+		final TableBinding firstSubclassTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
+		assertThat( firstSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_branch" ) );
+		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
 
 		assertThat(
-				result.getTableJoins().get( 1 ).getJoinedTable().getTableReference(),
+				result.getTableJoins().get( 1 ).getJoinedTableBinding().getTable(),
 				instanceOf( PhysicalTable.class )
 		);
-		final org.hibernate.sql.ast.from.Table secondSubclassTable = result.getTableJoins().get( 1 ).getJoinedTable();
-		assertThat( secondSubclassTable.getTableReference().getTableExpression(), equalTo( "joined_entity_base" ) );
-		assertThat( secondSubclassTable.getIdentificationVariable(), equalTo( "j1_2" ) );
+		final TableBinding secondSubclassTableBinding = result.getTableJoins().get( 1 ).getJoinedTableBinding();
+		assertThat( secondSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_base" ) );
+		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_2" ) );
 	}
 
 
