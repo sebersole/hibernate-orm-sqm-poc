@@ -14,4 +14,5 @@ import org.hibernate.type.Type;
  */
 public interface SingularAttributeImplementor extends SingularAttribute {
 	Type getOrmType();
+	Column[] getColumns();
 }

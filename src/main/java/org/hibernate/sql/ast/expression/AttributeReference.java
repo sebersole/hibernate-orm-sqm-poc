@@ -8,7 +8,6 @@ package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
-import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.type.Type;
 
 /**

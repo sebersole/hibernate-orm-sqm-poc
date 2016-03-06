@@ -12,13 +12,15 @@ import org.hibernate.sqm.domain.PluralAttribute.ElementClassification;
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementBasic implements PluralAttributeElement {
+public class PluralAttributeElementBasic implements PluralAttributeElement<org.hibernate.type.BasicType, BasicType> {
 	private final org.hibernate.type.BasicType type;
 	private final BasicType sqmType;
+	private final Column[] columns;
 
-	public PluralAttributeElementBasic(org.hibernate.type.BasicType type, BasicType sqmType) {
+	public PluralAttributeElementBasic(org.hibernate.type.BasicType type, BasicType sqmType, Column[] columns) {
 		this.type = type;
 		this.sqmType = sqmType;
+		this.columns = columns;
 	}
 
 	@Override
@@ -32,7 +34,11 @@ public class PluralAttributeElementBasic implements PluralAttributeElement {
 	}
 
 	@Override
-	public org.hibernate.type.BasicType getType() {
+	public org.hibernate.type.BasicType getOrmType() {
 		return type;
+	}
+
+	public Column[] getColumns() {
+		return columns;
 	}
 }

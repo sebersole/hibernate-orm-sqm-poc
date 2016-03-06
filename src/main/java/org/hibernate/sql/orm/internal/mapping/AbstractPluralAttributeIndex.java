@@ -6,25 +6,20 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
-import org.hibernate.sqm.domain.ManagedType;
-
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractSingularAttribute<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type>
-		extends AbstractAttributeImpl
-		implements SingularAttributeImplementor {
+public abstract class AbstractPluralAttributeIndex<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type>
+		implements PluralAttributeIndex<O,S> {
+
 	private final O ormType;
 	private final S sqmType;
+	private final Column[] columns;
 
-	public AbstractSingularAttribute(
-			ManagedType declaringType,
-			String name,
-			O ormType,
-			S sqmType) {
-		super( declaringType, name );
+	public AbstractPluralAttributeIndex(O ormType, S sqmType, Column[] columns) {
 		this.ormType = ormType;
 		this.sqmType = sqmType;
+		this.columns = columns;
 	}
 
 	@Override
@@ -33,12 +28,12 @@ public abstract class AbstractSingularAttribute<O extends org.hibernate.type.Typ
 	}
 
 	@Override
-	public S getType() {
+	public S getSqmType() {
 		return sqmType;
 	}
 
 	@Override
-	public S getBoundType() {
-		return getType();
+	public Column[] getColumns() {
+		return columns;
 	}
 }

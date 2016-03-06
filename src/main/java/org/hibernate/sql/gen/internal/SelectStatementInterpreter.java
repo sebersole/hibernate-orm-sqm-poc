@@ -281,9 +281,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public Object visitCrossJoinedFromElement(CrossJoinedFromElement joinedFromElement) {
 
 		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) joinedFromElement.getIntrinsicSubclassIndicator();
-		TableGroup group = null;
-
-		group = entityPersister.buildTableGroup(
+		TableGroup group = entityPersister.buildTableGroup(
 				joinedFromElement,
 				tableSpace,
 				sqlAliasBaseManager,

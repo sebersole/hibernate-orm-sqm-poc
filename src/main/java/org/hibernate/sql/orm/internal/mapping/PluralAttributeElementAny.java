@@ -8,18 +8,19 @@ package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.sqm.domain.AnyType;
 import org.hibernate.sqm.domain.PluralAttribute;
-import org.hibernate.sqm.domain.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementAny implements PluralAttributeElement {
+public class PluralAttributeElementAny implements PluralAttributeElement<org.hibernate.type.AnyType, AnyType> {
 	private final org.hibernate.type.AnyType type;
 	private final AnyType sqmType;
+	private final Column[] columns;
 
-	public PluralAttributeElementAny(org.hibernate.type.AnyType type, AnyType sqmType) {
+	public PluralAttributeElementAny(org.hibernate.type.AnyType type, AnyType sqmType, Column[] columns) {
 		this.type = type;
 		this.sqmType = sqmType;
+		this.columns = columns;
 	}
 
 	@Override
@@ -28,12 +29,16 @@ public class PluralAttributeElementAny implements PluralAttributeElement {
 	}
 
 	@Override
-	public Type getSqmType() {
+	public AnyType getSqmType() {
 		return sqmType;
 	}
 
 	@Override
-	public org.hibernate.type.Type getType() {
+	public org.hibernate.type.AnyType getOrmType() {
 		return type;
+	}
+
+	public Column[] getColumns() {
+		return columns;
 	}
 }

@@ -6,13 +6,11 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
+import org.hibernate.sqm.domain.IdentifierDescriptor;
+
 /**
  * @author Steve Ebersole
  */
-public interface PluralAttributeIndex<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type> {
-	O getOrmType();
-
-	S getSqmType();
-
+public interface IdentifierDescriptorImplementor extends IdentifierDescriptor {
 	Column[] getColumns();
 }

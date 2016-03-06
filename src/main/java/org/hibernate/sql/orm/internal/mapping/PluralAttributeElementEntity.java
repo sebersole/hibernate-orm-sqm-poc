@@ -13,18 +13,21 @@ import org.hibernate.sqm.domain.Type;
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementEntity implements PluralAttributeElement {
+public class PluralAttributeElementEntity implements PluralAttributeElement<org.hibernate.type.EntityType, EntityType> {
 	private final ElementClassification classification;
 	private final org.hibernate.type.EntityType type;
 	private final EntityType sqmType;
+	private final Column[] columns;
 
 	public PluralAttributeElementEntity(
 			ElementClassification classification,
 			org.hibernate.type.EntityType type,
-			EntityType sqmType) {
+			EntityType sqmType,
+			Column[] columns) {
 		this.classification = classification;
 		this.type = type;
 		this.sqmType = sqmType;
+		this.columns = columns;
 	}
 
 	@Override
@@ -33,12 +36,16 @@ public class PluralAttributeElementEntity implements PluralAttributeElement {
 	}
 
 	@Override
-	public Type getSqmType() {
+	public EntityType getSqmType() {
 		return sqmType;
 	}
 
 	@Override
-	public org.hibernate.type.Type getType() {
+	public org.hibernate.type.EntityType getOrmType() {
 		return type;
+	}
+
+	public Column[] getColumns() {
+		return columns;
 	}
 }

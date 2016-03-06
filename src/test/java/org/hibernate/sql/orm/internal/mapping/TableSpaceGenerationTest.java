@@ -24,11 +24,14 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.predicate.Junction;
+import org.hibernate.sql.ast.predicate.Predicate;
+import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
-import org.hibernate.sql.orm.internal.mapping.PhysicalTable;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableGroup;
@@ -46,6 +49,7 @@ import org.junit.Test;
 
 import org.hamcrest.CoreMatchers;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -78,6 +82,26 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		assertThat( joinedGroup.getRootTableBinding().getIdentificationVariable(), is( "a1_0" ) );
 
 		assertThat( joinedGroup.getTableJoins().size(), is( 1 ) );
+
+		// Let's check the join predicate which should join PERSON_ADDRESS(addresses_id) -> ADDRESS(id)
+		assertThat( joinedGroup.getTableJoins().get( 0 ).getJoinPredicate(), notNullValue() );
+		final Predicate joinPredicate = joinedGroup.getTableJoins().get( 0 ).getJoinPredicate();
+		assertThat( joinPredicate, instanceOf( Junction.class ) );
+		final Junction junction = (Junction) joinPredicate;
+		assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+		assertThat( junction.getPredicates().size(), is(1) );
+		assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+		final RelationalPredicate singleJoinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+		assertThat( singleJoinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+		final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) singleJoinPredicate.getLeftHandExpression();
+		assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is("a1_0") );
+		assertThat( ( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(), is("addresses_id") );
+
+		assertThat( singleJoinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+		final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) singleJoinPredicate.getRightHandExpression();
+		assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is("a1_1") );
+		assertThat( ( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(), is("id") );
+
 		final TableBinding joinedTableBinding = joinedGroup.getTableJoins().get( 0 ).getJoinedTableBinding();
 		checkTableName( "ADDRESS", joinedTableBinding );
 		assertThat( joinedTableBinding.getIdentificationVariable(), is( "a1_1" ) );

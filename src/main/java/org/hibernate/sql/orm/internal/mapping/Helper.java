@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
@@ -19,7 +20,7 @@ import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.sqm.domain.PluralAttribute.CollectionClassification;
 import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.type.CollectionType;
-import org.hibernate.type.ComponentType;
+import org.hibernate.type.CompositeType;
 import org.hibernate.type.Type;
 
 /**
@@ -154,18 +155,26 @@ public class Helper {
 		return org.hibernate.sql.orm.internal.sqm.model.Helper.interpretCollectionClassification( collectionType );
 	}
 
-	public static Column[] makeValues(AbstractTable containingTable, Type type, String[] columns, String[] formulas) {
-		assert columns.length == formulas.length;
+	public static Column[] makeValues(
+			SessionFactoryImplementor factory,
+			AbstractTable containingTable,
+			Type type,
+			String[] columns,
+			String[] formulas) {
+		assert formulas == null || columns.length == formulas.length;
 
 		final Column[] values = new Column[columns.length];
 
 		for ( int i = 0; i < columns.length; i++ ) {
-			final int jdbcType = type.sqlTypes( null )[i];
+			final int jdbcType = type.sqlTypes( factory )[i];
 
 			if ( columns[i] != null ) {
 				values[i] = containingTable.makeColumn( columns[i], jdbcType );
 			}
 			else {
+				if ( formulas == null ) {
+					throw new IllegalStateException( "Column name was null and no formula information was supplied" );
+				}
 				values[i] = containingTable.makeFormula( formulas[i], jdbcType );
 			}
 		}
@@ -218,12 +227,11 @@ public class Helper {
 			return new SingularAttributeEmbedded(
 					source,
 					attributeName,
-					new EmbeddablePersister(
-							extractEmbeddableName( attributeType ),
-							source.getTypeName() + '.' + attributeName,
-							(ComponentType) attributeType,
+					buildEmbeddablePersister(
 							databaseModel,
 							domainMetamodel,
+							source.getTypeName() + '.' + attributeName,
+							(CompositeType) attributeType,
 							columns
 					)
 			);
@@ -247,6 +255,22 @@ public class Helper {
 					columns
 			);
 		}
+	}
+
+	public EmbeddablePersister buildEmbeddablePersister(
+			DatabaseModel databaseModel,
+			DomainMetamodelImpl domainMetamodel,
+			String role,
+			CompositeType compositeType,
+			Column[] columns) {
+		return new EmbeddablePersister(
+				extractEmbeddableName( compositeType ),
+				role,
+				compositeType,
+				databaseModel,
+				domainMetamodel,
+				columns
+		);
 	}
 
 	private static String extractEmbeddableName(org.hibernate.type.Type attributeType) {

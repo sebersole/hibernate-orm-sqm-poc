@@ -9,32 +9,33 @@ package org.hibernate.sql.orm.internal.mapping;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
+import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
+import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableJoin;
 import org.hibernate.sql.ast.from.TableSpace;
+import org.hibernate.sql.ast.predicate.Junction;
+import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
 import org.hibernate.sql.orm.internal.sqm.model.PseudoIdAttributeImpl;
 import org.hibernate.sqm.domain.Attribute;
-import org.hibernate.sqm.domain.BasicType;
 import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.domain.IdentifiableType;
-import org.hibernate.sqm.domain.IdentifierDescriptor;
 import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.sqm.domain.Type;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.FromElement;
-import org.hibernate.type.CollectionType;
-import org.hibernate.type.ComponentType;
+import org.hibernate.type.BasicType;
+import org.hibernate.type.CompositeType;
 
 import org.jboss.logging.Logger;
 
@@ -50,6 +51,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	private final Queryable queryable;
 
 	private final AbstractTable[] tables;
+
+	private IdentifierDescriptorImplementor identifierDescriptor;
 
 	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<String, AbstractAttributeImpl>();
 
@@ -76,10 +79,53 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	}
 
 	private void afterInit(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
-
-		// todo : deal with ids too
-
 		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
+
+		final Column[] idColumns = Helper.makeValues(
+				domainMetamodel.getSessionFactory(),
+				tables[0],
+				persister.getIdentifierType(),
+				ojlPersister.getIdentifierColumnNames(),
+				null
+		);
+
+		if ( persister.getIdentifierType() instanceof BasicType ) {
+			identifierDescriptor = new IdentifierSimple(
+					this,
+					persister.getIdentifierPropertyName(),
+					(BasicType) persister.getIdentifierType(),
+					domainMetamodel.toSqmType( (BasicType) persister.getIdentifierType() ),
+					idColumns
+			);
+		}
+		else {
+			final CompositeType cidType = (CompositeType) persister.getIdentifierType();
+			// todo : need to pass along that any built sub attributes are part of the id
+			if ( persister.hasIdentifierProperty() ) {
+				identifierDescriptor = new IdentifierCompositeAggregated(
+						this,
+						persister.getIdentifierPropertyName(),
+						Helper.INSTANCE.buildEmbeddablePersister(
+								databaseModel,
+								domainMetamodel,
+								persister.getEntityName() + '.' + persister.getIdentifierPropertyName(),
+								cidType,
+								idColumns
+						)
+				);
+			}
+			else {
+				identifierDescriptor = new IdentifierCompositeNonAggregated(
+						Helper.INSTANCE.buildEmbeddablePersister(
+								databaseModel,
+								domainMetamodel,
+								persister.getEntityName() + ".id",
+								cidType,
+								idColumns
+						)
+				);
+			}
+		}
 
 		final int fullAttributeCount = ( ojlPersister ).countSubclassProperties();
 		for ( int attributeNumber = 0; attributeNumber < fullAttributeCount; attributeNumber++ ) {
@@ -91,7 +137,13 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			final AbstractTable containingTable = tables[ Helper.INSTANCE.getSubclassPropertyTableNumber( persister, attributeNumber ) ];
 			final String [] columns = Helper.INSTANCE.getSubclassPropertyColumnExpressions( persister, attributeNumber );
 			final String [] formulas = Helper.INSTANCE.getSubclassPropertyFormulaExpressions( persister, attributeNumber );
-			final Column[] values = Helper.makeValues( containingTable, attributeType, columns, formulas );
+			final Column[] values = Helper.makeValues(
+					domainMetamodel.getSessionFactory(),
+					containingTable,
+					attributeType,
+					columns,
+					formulas
+			);
 
 			final AbstractAttributeImpl attribute;
 			if ( attributeType.isCollectionType() ) {
@@ -171,29 +223,55 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 		fromClauseIndex.crossReference( fromElement, group );
 
+
+		final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
+		group.setRootTableBinding( drivingTableBinding );
+
 		// todo : determine proper join type
 		JoinType joinType = JoinType.LEFT;
-
-		addTableJoins( group, joinType );
+		addNonRootTables( group, joinType, 0, drivingTableBinding );
 
 		return group;
 	}
 
+	private void addNonRootTables(AbstractTableGroup group, JoinType joinType, int baseAdjust, TableBinding entityRootTableBinding) {
+		for ( int i = 1; i < tables.length; i++ ) {
+			final TableBinding tableBinding = new TableBinding( tables[i], group.getAliasBase() + '_' + (baseAdjust+i) );
+			group.addTableSpecificationJoin( new TableJoin( joinType, tableBinding, null ) );
+		}
+	}
 
-	public void addTableJoins(AbstractTableGroup group, JoinType joinType) {
+	public void addTableJoins(AbstractTableGroup group, JoinType joinType, Column[] fkColumns, Column[] fkTargetColumns) {
+		final int baseAdjust;
+		final TableBinding drivingTableBinding;
+
 		if ( group.getRootTableBinding() == null ) {
-			final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
+			assert fkColumns == null && fkTargetColumns == null;
+
+			baseAdjust = 0;
+			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
 			group.setRootTableBinding( drivingTableBinding );
 		}
 		else {
-			final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 1 );
-			group.addTableSpecificationJoin( new TableJoin( joinType, drivingTableBinding, null ) );
+			assert fkColumns.length == fkTargetColumns.length;
+
+			baseAdjust = 1;
+			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 1 );
+
+			final Junction joinPredicate = new Junction( Junction.Nature.CONJUNCTION );
+			for ( int i=0; i < fkColumns.length; i++ ) {
+				joinPredicate.add(
+						new RelationalPredicate(
+								RelationalPredicate.Type.EQUAL,
+								new ColumnBindingExpression( new ColumnBinding( fkColumns[i], group.getRootTableBinding() ) ),
+								new ColumnBindingExpression( new ColumnBinding( fkTargetColumns[i], drivingTableBinding ) )
+						)
+				);
+			}
+			group.addTableSpecificationJoin( new TableJoin( joinType, drivingTableBinding, joinPredicate ) );
 		}
 
-		for ( int i = 1; i < tables.length; i++ ) {
-			final TableBinding tableBinding = new TableBinding( tables[i], group.getAliasBase() + '_' + i );
-			group.addTableSpecificationJoin( new TableJoin( joinType, tableBinding, null ) );
-		}
+		addNonRootTables( group, joinType, 1, drivingTableBinding );
 	}
 
 
@@ -223,9 +301,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	}
 
 	@Override
-	public IdentifierDescriptor getIdentifierDescriptor() {
-		// todo : implement
-		throw new NotYetImplementedException();
+	public IdentifierDescriptorImplementor getIdentifierDescriptor() {
+		return identifierDescriptor;
 	}
 
 	@Override

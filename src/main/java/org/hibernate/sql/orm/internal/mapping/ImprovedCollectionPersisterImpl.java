@@ -20,6 +20,7 @@ import org.hibernate.sqm.parser.NotYetImplementedException;
 import org.hibernate.sqm.query.from.JoinedFromElement;
 import org.hibernate.type.AnyType;
 import org.hibernate.type.BasicType;
+import org.hibernate.type.CompositeType;
 import org.hibernate.type.EntityType;
 
 /**
@@ -80,16 +81,37 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		}
 		else {
 			final Column[] columns = Helper.makeValues(
+					domainMetamodel.getSessionFactory(),
 					collectionTable,
 					persister.getIndexType(),
 					this.persister.getIndexColumnNames(),
 					this.persister.getIndexFormulas()
 			);
-			this.indexDescriptor = new PluralAttributeIndex(
-					persister.getIndexType(),
-					domainMetamodel.toSqmType( persister.getIndexType() ),
-					columns
-			);
+			if ( persister.getIndexType().isComponentType() ) {
+				this.indexDescriptor = new PluralAttributeIndexEmbeddable(
+						Helper.INSTANCE.buildEmbeddablePersister(
+								databaseModel,
+								domainMetamodel,
+								persister.getRole() + ".key",
+								(CompositeType) persister.getIndexType(),
+								columns
+						)
+				);
+			}
+			else if ( persister.getIndexType().isEntityType() ) {
+				this.indexDescriptor = new PluralAttributeIndexEntity(
+						(EntityType) persister.getIndexType(),
+						domainMetamodel.toSqmType( (EntityType) persister.getIndexType() ),
+						columns
+				);
+			}
+			else {
+				this.indexDescriptor = new PluralAttributeIndexBasic(
+						(BasicType) persister.getIndexType(),
+						domainMetamodel.toSqmType( (BasicType) persister.getIndexType() ),
+						columns
+				);
+			}
 		}
 
 		this.elementDescriptor = buildElementDescriptor( databaseModel, domainMetamodel );
@@ -99,26 +121,80 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel) {
 		final org.hibernate.type.Type elementType = persister.getElementType();
+
 		if ( elementType.isAnyType() ) {
+			assert separateCollectionTable != null;
+
+			final Column[] columns = Helper.makeValues(
+					domainMetamodel.getSessionFactory(),
+					separateCollectionTable,
+					persister.getElementType(),
+					this.persister.getElementColumnNames(),
+					null
+			);
+
 			return new PluralAttributeElementAny(
 					(AnyType) elementType,
-					domainMetamodel.toSqmType( (AnyType) elementType )
+					domainMetamodel.toSqmType( (AnyType) elementType ),
+					columns
 			);
 		}
 		else if ( elementType.isComponentType() ) {
-			throw new NotYetImplementedException();
+			assert separateCollectionTable != null;
+
+			final Column[] columns = Helper.makeValues(
+					domainMetamodel.getSessionFactory(),
+					separateCollectionTable,
+					persister.getElementType(),
+					this.persister.getElementColumnNames(),
+					null
+			);
+
+			return new PluralAttributeElementEmbeddable(
+					Helper.INSTANCE.buildEmbeddablePersister(
+							databaseModel,
+							domainMetamodel,
+							persister.getRole() + ".value",
+							(CompositeType) elementType,
+							columns
+					)
+			);
 		}
 		else if ( elementType.isEntityType() ) {
+			// NOTE : this only handles the FK, not the all of the columns for the entity
+			final AbstractTable table = separateCollectionTable != null
+					? separateCollectionTable
+					: domainMetamodel.toSqmType( this.persister.getElementPersister() ).getRootTable();
+			final Column[] columns = Helper.makeValues(
+					domainMetamodel.getSessionFactory(),
+					table,
+					persister.getElementType(),
+					this.persister.getElementColumnNames(),
+					null
+			);
+
 			return new PluralAttributeElementEntity(
 					persister.isManyToMany() ? ElementClassification.MANY_TO_MANY : ElementClassification.ONE_TO_MANY,
 					(EntityType) elementType,
-					domainMetamodel.toSqmType( (EntityType) elementType )
+					domainMetamodel.toSqmType( (EntityType) elementType ),
+					columns
 			);
 		}
 		else {
+			assert separateCollectionTable != null;
+
+			final Column[] columns = Helper.makeValues(
+					domainMetamodel.getSessionFactory(),
+					separateCollectionTable,
+					persister.getElementType(),
+					this.persister.getElementColumnNames(),
+					null
+			);
+
 			return new PluralAttributeElementBasic(
 					(BasicType) elementType,
-					domainMetamodel.toSqmType( (BasicType) elementType )
+					domainMetamodel.toSqmType( (BasicType) elementType ),
+					columns
 			);
 		}
 	}
@@ -193,14 +269,33 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		fromClauseIndex.crossReference( joinedFromElement, group );
 
 		if ( separateCollectionTable != null ) {
-			group.setRootTableBinding(
-					new TableBinding( separateCollectionTable, group.getAliasBase() + '_' + 0 )
-			);
+			group.setRootTableBinding( new TableBinding( separateCollectionTable, group.getAliasBase() + '_' + 0 ) );
 		}
 
 		if ( getElementDescriptor() instanceof PluralAttributeElementEntity ) {
-			final ImprovedEntityPersister elementPersister = (ImprovedEntityPersister) getElementDescriptor().getSqmType();
-			elementPersister.addTableJoins( group, joinedFromElement.getJoinType() );
+			Column[] fkColumns = null;
+			Column[] fkTargetColumns = null;
+
+			final PluralAttributeElementEntity elementEntity = (PluralAttributeElementEntity) getElementDescriptor();
+			final ImprovedEntityPersister elementPersister = (ImprovedEntityPersister) elementEntity.getSqmType();
+
+			if ( separateCollectionTable != null ) {
+				fkColumns = elementEntity.getColumns();
+				if ( elementEntity.getOrmType().isReferenceToPrimaryKey() ) {
+					fkTargetColumns = elementPersister.getIdentifierDescriptor().getColumns();
+				}
+				else {
+					SingularAttributeImplementor referencedAttribute = (SingularAttributeImplementor) elementPersister.findAttribute( elementEntity.getOrmType().getRHSUniqueKeyPropertyName() );
+					fkTargetColumns = referencedAttribute.getColumns();
+				}
+			}
+
+			elementPersister.addTableJoins(
+					group,
+					joinedFromElement.getJoinType(),
+					fkColumns,
+					fkTargetColumns
+			);
 		}
 
 		return group;

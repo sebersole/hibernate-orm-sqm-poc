@@ -7,13 +7,12 @@
 package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.sqm.domain.PluralAttribute.ElementClassification;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public interface PluralAttributeElement {
+public interface PluralAttributeElement<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type> {
 	ElementClassification getElementClassification();
-	org.hibernate.sqm.domain.Type getSqmType();
-	Type getType();
+	O getOrmType();
+	S getSqmType();
 }
