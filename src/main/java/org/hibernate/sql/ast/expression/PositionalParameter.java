@@ -15,16 +15,14 @@ import org.hibernate.sql.orm.QueryParameterBinding;
 import org.hibernate.type.Type;
 
 /**
- * Represents a named parameter coming from the query.
- *
  * @author Steve Ebersole
  */
-public class NamedParameter extends AbstractParameter {
-	private final String name;
+public class PositionalParameter extends AbstractParameter {
+	private final int position;
 
-	public NamedParameter(String name, Type inferredType) {
+	public PositionalParameter(int position, Type inferredType) {
 		super( inferredType );
-		this.name = name;
+		this.position = position;
 	}
 
 	@Override
@@ -33,7 +31,7 @@ public class NamedParameter extends AbstractParameter {
 			int startPosition,
 			QueryOptions queryOptions,
 			SessionImplementor session) throws SQLException {
-		final QueryParameterBinding binding = queryOptions.getParameterBindings().getNamedParameterBinding( name );
+		final QueryParameterBinding binding = queryOptions.getParameterBindings().getPositionalParameterBinding( position );
 		return bindParameterValue(  statement, startPosition, binding, session );
 	}
 }

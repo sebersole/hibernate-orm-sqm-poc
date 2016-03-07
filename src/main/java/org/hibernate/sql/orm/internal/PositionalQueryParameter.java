@@ -7,16 +7,14 @@
 package org.hibernate.sql.orm.internal;
 
 import org.hibernate.sql.orm.QueryParameter;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class PositionalQueryParameter extends AbstractQueryParameter implements QueryParameter {
+public class PositionalQueryParameter implements QueryParameter {
 	private final int position;
 
-	public PositionalQueryParameter(int position, Type expectedType) {
-		super( expectedType );
+	public PositionalQueryParameter(int position) {
 		this.position = position;
 	}
 

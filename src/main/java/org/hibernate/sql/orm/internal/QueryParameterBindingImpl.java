@@ -6,7 +6,6 @@
  */
 package org.hibernate.sql.orm.internal;
 
-import org.hibernate.sql.orm.QueryParameter;
 import org.hibernate.sql.orm.QueryParameterBinding;
 import org.hibernate.type.Type;
 
@@ -14,19 +13,10 @@ import org.hibernate.type.Type;
  * @author Steve Ebersole
  */
 public class QueryParameterBindingImpl implements QueryParameterBinding {
-	private final QueryParameter parameter;
-
 	private Type bindType;
 	private Object bindValue;
 
-	public QueryParameterBindingImpl(QueryParameter parameter) {
-		this.parameter = parameter;
-		this.bindType = parameter.getExpectedType();
-	}
-
-	@Override
-	public QueryParameter getParameter() {
-		return parameter;
+	public QueryParameterBindingImpl() {
 	}
 
 	@Override

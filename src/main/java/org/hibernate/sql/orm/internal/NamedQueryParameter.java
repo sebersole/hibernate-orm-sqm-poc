@@ -7,16 +7,14 @@
 package org.hibernate.sql.orm.internal;
 
 import org.hibernate.sql.orm.QueryParameter;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class NamedQueryParameter extends AbstractQueryParameter implements QueryParameter {
+public class NamedQueryParameter implements QueryParameter {
 	private final String name;
 
-	public NamedQueryParameter(String name, Type expectedType) {
-		super( expectedType );
+	public NamedQueryParameter(String name) {
 		this.name = name;
 	}
 

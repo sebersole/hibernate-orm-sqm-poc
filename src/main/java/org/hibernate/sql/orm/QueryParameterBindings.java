@@ -38,10 +38,7 @@ public class QueryParameterBindings {
 			positionalParameterMap = new HashMap<Integer, PositionalQueryParameter>();
 
 			for ( QueryParameter queryParameter : queryParameters ) {
-				parameterBindingMap.put(
-						queryParameter,
-						new QueryParameterBindingImpl( queryParameter )
-				);
+				parameterBindingMap.put( queryParameter, new QueryParameterBindingImpl() );
 
 				if ( queryParameter instanceof NamedQueryParameter ) {
 					final NamedQueryParameter namedQueryParameter = (NamedQueryParameter) queryParameter;
