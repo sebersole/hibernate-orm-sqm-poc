@@ -280,7 +280,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		fromClauseIndex.crossReference( joinedFromElement, group );
 
 		if ( separateCollectionTable != null ) {
-			group.setRootTableBinding( new TableBinding( separateCollectionTable, group.getAliasBase() + '_' + 0 ) );
+			group.setRootTableBinding( new TableBinding( separateCollectionTable, group.getAliasBase() ) );
 		}
 
 		if ( getElementDescriptor() instanceof PluralAttributeElementEntity ) {

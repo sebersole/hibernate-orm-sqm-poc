@@ -224,7 +224,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		fromClauseIndex.crossReference( fromElement, group );
 
 
-		final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
+		final TableBinding drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() );
 		group.setRootTableBinding( drivingTableBinding );
 
 		// todo : determine proper join type
@@ -236,7 +236,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 	private void addNonRootTables(AbstractTableGroup group, JoinType joinType, int baseAdjust, TableBinding entityRootTableBinding) {
 		for ( int i = 1; i < tables.length; i++ ) {
-			final TableBinding tableBinding = new TableBinding( tables[i], group.getAliasBase() + '_' + (baseAdjust+i) );
+			final TableBinding tableBinding = new TableBinding( tables[i], group.getAliasBase() + '_' + (i + (baseAdjust-1)) );
 			group.addTableSpecificationJoin( new TableJoin( joinType, tableBinding, null ) );
 		}
 	}
@@ -249,14 +249,14 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			assert fkColumns == null && fkTargetColumns == null;
 
 			baseAdjust = 0;
-			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
+			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() );
 			group.setRootTableBinding( drivingTableBinding );
 		}
 		else {
 			assert fkColumns.length == fkTargetColumns.length;
 
 			baseAdjust = 1;
-			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 1 );
+			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
 
 			final Junction joinPredicate = new Junction( Junction.Nature.CONJUNCTION );
 			for ( int i=0; i < fkColumns.length; i++ ) {

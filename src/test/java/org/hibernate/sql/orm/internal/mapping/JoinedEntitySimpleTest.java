@@ -59,7 +59,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 		final PhysicalTable tableSpec = (PhysicalTable) result.getRootTableBinding().getTable();
 		assertThat( tableSpec.getTableName(), equalTo( "joined_entity_base" ) );
-		assertThat( result.getRootTableBinding().getIdentificationVariable(), equalTo( "j1_0" ) );
+		assertThat( result.getRootTableBinding().getIdentificationVariable(), equalTo( "j1" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
@@ -69,7 +69,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		);
 		final TableBinding firstSubclassTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
 		assertThat( firstSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_branch" ) );
-		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
+		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat(
 				result.getTableJoins().get( 1 ).getJoinedTableBinding().getTable(),
@@ -77,7 +77,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		);
 		final TableBinding secondSubclassTableBinding = result.getTableJoins().get( 1 ).getJoinedTableBinding();
 		assertThat( secondSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_leaf" ) );
-		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_2" ) );
+		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
 	}
 
 	@Test
@@ -106,7 +106,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 		final TableBinding tableBindingSpec = result.getRootTableBinding();
 		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "joined_entity_branch" ) );
-		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "j1" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
@@ -116,7 +116,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		);
 		final TableBinding firstSubclassTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
 		assertThat( firstSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_base" ) );
-		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
+		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat(
 				result.getTableJoins().get( 1 ).getJoinedTableBinding().getTable(),
@@ -124,7 +124,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		);
 		final TableBinding secondSubclassTableBinding = result.getTableJoins().get( 1 ).getJoinedTableBinding();
 		assertThat( secondSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_leaf" ) );
-		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_2" ) );
+		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
 	}
 
 	@Test
@@ -153,7 +153,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 		final TableBinding tableBindingSpec = result.getRootTableBinding();
 		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "joined_entity_leaf" ) );
-		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "j1_0" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "j1" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 2 ) );
 
@@ -163,7 +163,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		);
 		final TableBinding firstSubclassTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
 		assertThat( firstSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_branch" ) );
-		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
+		assertThat( firstSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_0" ) );
 
 		assertThat(
 				result.getTableJoins().get( 1 ).getJoinedTableBinding().getTable(),
@@ -171,7 +171,7 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 		);
 		final TableBinding secondSubclassTableBinding = result.getTableJoins().get( 1 ).getJoinedTableBinding();
 		assertThat( secondSubclassTableBinding.getTable().getTableExpression(), equalTo( "joined_entity_base" ) );
-		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_2" ) );
+		assertThat( secondSubclassTableBinding.getIdentificationVariable(), equalTo( "j1_1" ) );
 	}
 
 

@@ -62,7 +62,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( result.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 		final TableBinding tableBindingSpec = result.getRootTableBinding();
 		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "stwst_primary" ) );
-		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "s1" ) );
 
 		assertThat( result.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
@@ -71,7 +71,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		);
 		final TableBinding secondaryTableBinding = result.getTableJoins().get( 0 ).getJoinedTableBinding();
 		assertThat( secondaryTableBinding.getTable().getTableExpression(), equalTo( "stwst_secondary" ) );
-		assertThat( secondaryTableBinding.getIdentificationVariable(), equalTo( "s1_1" ) );
+		assertThat( secondaryTableBinding.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 	}
 	@Test
@@ -103,7 +103,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( firstSpace.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 		final TableBinding firstSpaceTableBindingSpec = firstSpace.getRootTableBinding();
 		assertThat( firstSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "stwst_primary" ) );
-		assertThat( firstSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		assertThat( firstSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s1" ) );
 
 		assertThat( firstSpace.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
@@ -112,7 +112,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		);
 		final TableBinding firstSpaceSecondaryTableBinding = firstSpace.getTableJoins().get( 0 ).getJoinedTableBinding();
 		assertThat( firstSpaceSecondaryTableBinding.getTable().getTableExpression(), equalTo( "stwst_secondary" ) );
-		assertThat( firstSpaceSecondaryTableBinding.getIdentificationVariable(), equalTo( "s1_1" ) );
+		assertThat( firstSpaceSecondaryTableBinding.getIdentificationVariable(), equalTo( "s1_0" ) );
 
 		// the second space
 		final EntityTableGroup secondSpace = improvedEntityPersister.buildTableGroup(
@@ -128,7 +128,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		assertThat( secondSpace.getRootTableBinding().getTable(), instanceOf( PhysicalTable.class ) );
 		final TableBinding secondSpaceTableBindingSpec = secondSpace.getRootTableBinding();
 		assertThat( secondSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "stwst_primary" ) );
-		assertThat( secondSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
+		assertThat( secondSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s2" ) );
 
 		assertThat( secondSpace.getTableJoins().size(), equalTo( 1 ) );
 		assertThat(
@@ -137,7 +137,7 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 		);
 		final TableBinding secondSpaceSecondaryTableBinding = secondSpace.getTableJoins().get( 0 ).getJoinedTableBinding();
 		assertThat( secondSpaceSecondaryTableBinding.getTable().getTableExpression(), equalTo( "stwst_secondary" ) );
-		assertThat( secondSpaceSecondaryTableBinding.getIdentificationVariable(), equalTo( "s2_1" ) );
+		assertThat( secondSpaceSecondaryTableBinding.getIdentificationVariable(), equalTo( "s2_0" ) );
 	}
 
 	@Override

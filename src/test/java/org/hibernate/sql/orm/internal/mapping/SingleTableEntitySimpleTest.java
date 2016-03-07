@@ -62,7 +62,7 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 
 		final TableBinding tableBindingSpec = result.getRootTableBinding();
 		assertThat( tableBindingSpec.getTable().getTableExpression(), equalTo( "single_table_entity" ) );
-		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		assertThat( tableBindingSpec.getIdentificationVariable(), equalTo( "s1" ) );
 	}
 	@Test
 	public void testTwoSpaces() {
@@ -95,7 +95,7 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 
 		final TableBinding firstSpaceTableBindingSpec = firstSpace.getRootTableBinding();
 		assertThat( firstSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "single_table_entity" ) );
-		assertThat( firstSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s1_0" ) );
+		assertThat( firstSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s1" ) );
 
 		// the second space
 		final EntityTableGroup secondSpace = improvedEntityPersister.buildTableGroup(
@@ -113,7 +113,7 @@ public class SingleTableEntitySimpleTest extends BaseUnitTest {
 
 		final TableBinding secondSpaceTableBindingSpec = secondSpace.getRootTableBinding();
 		assertThat( secondSpaceTableBindingSpec.getTable().getTableExpression(), equalTo( "single_table_entity" ) );
-		assertThat( secondSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s2_0" ) );
+		assertThat( secondSpaceTableBindingSpec.getIdentificationVariable(), equalTo( "s2" ) );
 	}
 
 	@Override
