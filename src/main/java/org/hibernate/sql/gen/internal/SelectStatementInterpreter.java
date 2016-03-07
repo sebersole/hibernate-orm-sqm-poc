@@ -44,8 +44,15 @@ import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
 import org.hibernate.sqm.query.expression.AvgFunction;
+import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
+import org.hibernate.sqm.query.expression.CaseSearchedExpression;
+import org.hibernate.sqm.query.expression.CaseSimpleExpression;
+import org.hibernate.sqm.query.expression.CoalesceExpression;
+import org.hibernate.sqm.query.expression.ConstantEnumExpression;
+import org.hibernate.sqm.query.expression.ConstantFieldExpression;
 import org.hibernate.sqm.query.expression.CountFunction;
 import org.hibernate.sqm.query.expression.CountStarFunction;
+import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.expression.LiteralBigDecimalExpression;
 import org.hibernate.sqm.query.expression.LiteralBigIntegerExpression;
 import org.hibernate.sqm.query.expression.LiteralCharacterExpression;
@@ -60,8 +67,10 @@ import org.hibernate.sqm.query.expression.LiteralTrueExpression;
 import org.hibernate.sqm.query.expression.MaxFunction;
 import org.hibernate.sqm.query.expression.MinFunction;
 import org.hibernate.sqm.query.expression.NamedParameterExpression;
+import org.hibernate.sqm.query.expression.NullifExpression;
 import org.hibernate.sqm.query.expression.PositionalParameterExpression;
 import org.hibernate.sqm.query.expression.SumFunction;
+import org.hibernate.sqm.query.expression.UnaryOperationExpression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElementSpace;
@@ -499,6 +508,22 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
+	public Object visitConstantEnumExpression(ConstantEnumExpression expression) {
+		return new QueryLiteral(
+				expression.getValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitConstantFieldExpression(ConstantFieldExpression expression) {
+		return new QueryLiteral(
+				expression.getValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
 	public NamedParameter visitNamedParameterExpression(NamedParameterExpression expression) {
 		return new NamedParameter(
 				expression.getName(),
@@ -564,6 +589,124 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.CountStarFunction(
 				expression.isDistinct(),
 				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitUnaryOperationExpression(UnaryOperationExpression expression) {
+		return new org.hibernate.sql.ast.expression.UnaryOperationExpression(
+				interpret( expression.getOperation() ),
+				(org.hibernate.sql.ast.expression.Expression) expression.getOperand().accept( this ),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	private org.hibernate.sql.ast.expression.UnaryOperationExpression.Operation interpret(UnaryOperationExpression.Operation operation) {
+		switch ( operation ) {
+			case PLUS: {
+				return org.hibernate.sql.ast.expression.UnaryOperationExpression.Operation.PLUS;
+			}
+			case MINUS: {
+				return org.hibernate.sql.ast.expression.UnaryOperationExpression.Operation.MINUS;
+			}
+		}
+
+		throw new IllegalStateException( "Unexpected UnaryOperationExpression Operation : " + operation );
+	}
+
+	@Override
+	public Object visitBinaryArithmeticExpression(BinaryArithmeticExpression expression) {
+		return new org.hibernate.sql.ast.expression.BinaryArithmeticExpression(
+				interpret( expression.getOperation() ),
+				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) expression.getRightHandOperand().accept( this ),
+				(BasicTypeImpl) expression.getExpressionType()
+		);
+	}
+
+	private org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation interpret(BinaryArithmeticExpression.Operation operation) {
+		switch ( operation ) {
+			case ADD: {
+				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.ADD;
+			}
+			case SUBTRACT: {
+				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.SUBTRACT;
+			}
+			case MULTIPLY: {
+				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.MULTIPLY;
+			}
+			case DIVIDE: {
+				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.DIVIDE;
+			}
+			case QUOT: {
+				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.QUOT;
+			}
+			case MODULO: {
+				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.MODULO;
+			}
+		}
+
+		throw new IllegalStateException( "Unexpected BinaryArithmeticExpression Operation : " + operation );
+	}
+
+	@Override
+	public Object visitCoalesceExpression(CoalesceExpression expression) {
+		final org.hibernate.sql.ast.expression.CoalesceExpression result = new org.hibernate.sql.ast.expression.CoalesceExpression();
+		for ( Expression value : expression.getValues() ) {
+			result.value(
+					(org.hibernate.sql.ast.expression.Expression) value.accept( this )
+			);
+		}
+
+		return result;
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.CaseSimpleExpression visitSimpleCaseExpression(CaseSimpleExpression expression) {
+		final org.hibernate.sql.ast.expression.CaseSimpleExpression result = new org.hibernate.sql.ast.expression.CaseSimpleExpression(
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType(),
+				(org.hibernate.sql.ast.expression.Expression) expression.getFixture().accept( this )
+		);
+
+		for ( CaseSimpleExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
+			result.when(
+					(org.hibernate.sql.ast.expression.Expression) whenFragment.getCheckValue().accept( this ),
+					(org.hibernate.sql.ast.expression.Expression) whenFragment.getResult().accept( this )
+			);
+		}
+
+		result.otherwise(
+				(org.hibernate.sql.ast.expression.Expression) expression.getOtherwise().accept( this )
+		);
+
+		return result;
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.CaseSearchedExpression visitSearchedCaseExpression(CaseSearchedExpression expression) {
+		final org.hibernate.sql.ast.expression.CaseSearchedExpression result = new org.hibernate.sql.ast.expression.CaseSearchedExpression(
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+
+		for ( CaseSearchedExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
+			result.when(
+					(org.hibernate.sql.ast.predicate.Predicate) whenFragment.getPredicate().accept( this ),
+					(org.hibernate.sql.ast.expression.Expression) whenFragment.getResult().accept( this )
+			);
+		}
+
+		result.otherwise(
+				(org.hibernate.sql.ast.expression.Expression) expression.getOtherwise().accept( this )
+		);
+
+		return result;
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.NullifExpression visitNullifExpression(NullifExpression expression) {
+		return new org.hibernate.sql.ast.expression.NullifExpression(
+				(org.hibernate.sql.ast.expression.Expression) expression.getFirstArgument().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) expression.getSecondArgument().accept( this )
 		);
 	}
 

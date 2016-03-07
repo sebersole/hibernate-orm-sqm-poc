@@ -6,15 +6,23 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.sql.gen.ParameterBinder;
+import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.type.Type;
 
 /**
  * We classify literals different based on their source so that we can handle then differently
  * when rendering SQL.  This class offers convenience for those implementations
+ * <p/>
+ * Can function as a ParameterBinder for cases where we want to treat literals using bind parameters.
  *
  * @author Steve Ebersole
  */
-public abstract class AbstractLiteral implements Expression {
+public abstract class AbstractLiteral implements Expression, ParameterBinder {
 	private final Object value;
 	private final Type ormType;
 
@@ -30,5 +38,15 @@ public abstract class AbstractLiteral implements Expression {
 	@Override
 	public Type getType() {
 		return ormType;
+	}
+
+	@Override
+	public int bindParameterValue(
+			PreparedStatement statement,
+			int startPosition,
+			QueryOptions queryOptions,
+			SessionImplementor session) throws SQLException {
+		getType().nullSafeSet( statement, getValue(), startPosition, session );
+		return getType().getColumnSpan( session.getFactory() );
 	}
 }
