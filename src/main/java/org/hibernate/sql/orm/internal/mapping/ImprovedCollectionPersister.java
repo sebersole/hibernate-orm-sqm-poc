@@ -20,6 +20,11 @@ import org.hibernate.sqm.query.from.JoinedFromElement;
 public interface ImprovedCollectionPersister extends PluralAttribute {
 	CollectionPersister getPersister();
 
+	PluralAttributeKey getForeignKeyDescriptor();
+	PluralAttributeId getIdDescriptor();
+	PluralAttributeIndex getIndexDescriptor();
+	PluralAttributeElement getElementDescriptor();
+
 	CollectionTableGroup buildTableGroup(
 			JoinedFromElement joinedFromElement,
 			TableSpace tableSpace,

@@ -6,7 +6,8 @@
  */
 package org.hibernate.sql.ast.from;
 
-import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.sql.orm.internal.mapping.Column;
+import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 
 /**
  * A TableSpecificationGroup for an entity reference
@@ -14,14 +15,25 @@ import org.hibernate.persister.entity.EntityPersister;
  * @author Steve Ebersole
  */
 public class EntityTableGroup extends AbstractTableGroup {
-	private final EntityPersister persister;
+	private final ImprovedEntityPersister persister;
 
-	public EntityTableGroup(TableSpace tableSpace, String aliasBase, EntityPersister persister) {
+	public EntityTableGroup(TableSpace tableSpace, String aliasBase, ImprovedEntityPersister persister) {
 		super( tableSpace, aliasBase );
 		this.persister = persister;
 	}
 
-	public EntityPersister getPersister() {
+	public ImprovedEntityPersister getPersister() {
 		return persister;
+	}
+
+	public ColumnBinding[] resolveIdentifierColumnBindings() {
+		final Column[] columns = persister.getIdentifierDescriptor().getColumns();
+
+		final TableBinding tableBinding = getRootTableBinding();
+		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
+		for ( int i = 0; i < columns.length; i++ ) {
+			bindings[i] = new ColumnBinding( columns[i], tableBinding );
+		}
+		return bindings;
 	}
 }

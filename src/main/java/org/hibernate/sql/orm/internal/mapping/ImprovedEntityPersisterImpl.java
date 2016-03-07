@@ -218,7 +218,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		final EntityTableGroup group = new EntityTableGroup(
 				tableSpace,
 				sqlAliasBaseManager.getSqlAliasBase( fromElement ),
-				persister
+				this
 		);
 
 		fromClauseIndex.crossReference( fromElement, group );
@@ -271,7 +271,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			group.addTableSpecificationJoin( new TableJoin( joinType, drivingTableBinding, joinPredicate ) );
 		}
 
-		addNonRootTables( group, joinType, 1, drivingTableBinding );
+		addNonRootTables( group, joinType, baseAdjust, drivingTableBinding );
 	}
 
 

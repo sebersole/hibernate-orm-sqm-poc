@@ -68,11 +68,11 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
 
 		checkRootTableName( "PERSON", rootTableGroup );
+		assertThat( rootTableGroup.getRootTableBinding().getIdentificationVariable(), is( "p1_0" ) );
 
-		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
 
-		final TableGroupJoin tableGroupJoin =
-				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
+		final TableGroupJoin tableGroupJoin = tableSpace.getJoinedTableGroups().get( 0 );
 		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
@@ -81,26 +81,60 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		checkRootTableName( "PERSON_ADDRESS", joinedGroup );
 		assertThat( joinedGroup.getRootTableBinding().getIdentificationVariable(), is( "a1_0" ) );
 
+		// Let's check the join predicate which should join PERSON(id) -> PERSON_ADDRESS(Person_id)
+		{
+			assertThat( tableGroupJoin.getPredicate(), notNullValue() );
+			assertThat( tableGroupJoin.getPredicate(), instanceOf( Junction.class ) );
+			final Junction junction = (Junction) tableGroupJoin.getPredicate();
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate joinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( joinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) joinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "p1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+
+			assertThat( joinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) joinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "a1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "Person_id" )
+			);
+		}
+
 		assertThat( joinedGroup.getTableJoins().size(), is( 1 ) );
 
 		// Let's check the join predicate which should join PERSON_ADDRESS(addresses_id) -> ADDRESS(id)
-		assertThat( joinedGroup.getTableJoins().get( 0 ).getJoinPredicate(), notNullValue() );
-		final Predicate joinPredicate = joinedGroup.getTableJoins().get( 0 ).getJoinPredicate();
-		assertThat( joinPredicate, instanceOf( Junction.class ) );
-		final Junction junction = (Junction) joinPredicate;
-		assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
-		assertThat( junction.getPredicates().size(), is(1) );
-		assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
-		final RelationalPredicate singleJoinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
-		assertThat( singleJoinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
-		final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) singleJoinPredicate.getLeftHandExpression();
-		assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is("a1_0") );
-		assertThat( ( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(), is("addresses_id") );
+		{
+			assertThat( joinedGroup.getTableJoins().get( 0 ).getJoinPredicate(), notNullValue() );
+			final Predicate joinPredicate = joinedGroup.getTableJoins().get( 0 ).getJoinPredicate();
+			assertThat( joinPredicate, instanceOf( Junction.class ) );
+			final Junction junction = (Junction) joinPredicate;
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate singleJoinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( singleJoinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) singleJoinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "a1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "addresses_id" )
+			);
 
-		assertThat( singleJoinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
-		final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) singleJoinPredicate.getRightHandExpression();
-		assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is("a1_1") );
-		assertThat( ( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(), is("id") );
+			assertThat( singleJoinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) singleJoinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "a1_1" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+		}
 
 		final TableBinding joinedTableBinding = joinedGroup.getTableJoins().get( 0 ).getJoinedTableBinding();
 		checkTableName( "ADDRESS", joinedTableBinding );
@@ -116,10 +150,10 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		checkRootTableName( "PERSON", rootTableGroup );
 
-		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
 
 		final TableGroupJoin tableGroupJoin =
-				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
+				tableSpace.getJoinedTableGroups().get( 0 );
 		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
@@ -139,10 +173,10 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		checkRootTableName( "PERSON", rootTableGroup );
 
-		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
 
 		final TableGroupJoin tableGroupJoin =
-				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
+				tableSpace.getJoinedTableGroups().get( 0 );
 		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
@@ -162,10 +196,10 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		checkRootTableName( "PERSON", rootTableGroup );
 
-		assertThat( tableSpace.getJoinedTableSpecificationGroups().size(), is( 1 ) );
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
 
 		final TableGroupJoin tableGroupJoin =
-				tableSpace.getJoinedTableSpecificationGroups().get( 0 );
+				tableSpace.getJoinedTableGroups().get( 0 );
 		assertThat( tableGroupJoin.getJoinType(), is( JoinType.CROSS ) );
 
 		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();

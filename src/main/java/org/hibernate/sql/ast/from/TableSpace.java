@@ -30,7 +30,7 @@ public class TableSpace {
 	private final FromClause fromClause;
 
 	private TableGroup rootTableGroup;
-	private List<TableGroupJoin> joinedTableSpecificationGroups;
+	private List<TableGroupJoin> joinedTableGroups;
 
 	public TableSpace(FromClause fromClause) {
 		if ( fromClause == null ) {
@@ -57,20 +57,20 @@ public class TableSpace {
 		this.rootTableGroup = rootTableGroup;
 	}
 
-	public List<TableGroupJoin> getJoinedTableSpecificationGroups() {
-		if ( joinedTableSpecificationGroups == null ) {
+	public List<TableGroupJoin> getJoinedTableGroups() {
+		if ( joinedTableGroups == null ) {
 			return Collections.emptyList();
 		}
 		else {
-			return Collections.unmodifiableList( joinedTableSpecificationGroups );
+			return Collections.unmodifiableList( joinedTableGroups );
 		}
 	}
 
-	public void addJoinedTableSpecificationGroup(TableGroupJoin join) {
+	public void addJoinedTableGroup(TableGroupJoin join) {
 		log.tracef( "Adding TableSpecificationGroup join [%s] to space [%s]", join, this );
-		if ( joinedTableSpecificationGroups == null ) {
-			joinedTableSpecificationGroups = new ArrayList<TableGroupJoin>();
+		if ( joinedTableGroups == null ) {
+			joinedTableGroups = new ArrayList<TableGroupJoin>();
 		}
-		joinedTableSpecificationGroups.add( join );
+		joinedTableGroups.add( join );
 	}
 }

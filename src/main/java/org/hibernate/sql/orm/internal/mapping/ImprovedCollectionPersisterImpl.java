@@ -8,15 +8,15 @@ package org.hibernate.sql.orm.internal.mapping;
 
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.entity.Joinable;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
-import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.from.TableBinding;
+import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
 import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.sqm.domain.Type;
-import org.hibernate.sqm.parser.NotYetImplementedException;
 import org.hibernate.sqm.query.from.JoinedFromElement;
 import org.hibernate.type.AnyType;
 import org.hibernate.type.BasicType;
@@ -49,10 +49,27 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		this.persister = (AbstractCollectionPersister) persister;
 		this.collectionClassification = Helper.interpretCollectionClassification( persister.getCollectionType() );
 
+
+		final AbstractTable collectionTable;
+		if ( persister.isOneToMany() ) {
+			collectionTable = domainMetamodel.toSqmType( this.persister.getElementPersister() ).getRootTable();
+			this.separateCollectionTable = null;
+		}
+		else {
+			collectionTable = makeTableReference( databaseModel, this.persister.getTableName() );
+			this.separateCollectionTable = collectionTable;
+		}
+
 		this.foreignKeyDescriptor = new PluralAttributeKey(
 				persister.getKeyType(),
 				domainMetamodel.toSqmType( persister.getKeyType() ),
-				foreignKeyColumns
+				Helper.makeValues(
+						domainMetamodel.getSessionFactory(),
+						collectionTable,
+						persister.getKeyType(),
+						( (Joinable) persister ).getKeyColumnNames(),
+						null
+				)
 		);
 
 		if ( persister.getIdentifierType() == null ) {
@@ -64,16 +81,6 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 					domainMetamodel.toSqmType( (BasicType) persister.getIdentifierType() ),
 					persister.getIdentifierGenerator()
 			);
-		}
-
-		final AbstractTable collectionTable;
-		if ( persister.isOneToMany() ) {
-			collectionTable = domainMetamodel.toSqmType( this.persister.getElementPersister() ).getRootTable();
-			this.separateCollectionTable = null;
-		}
-		else {
-			collectionTable = makeTableReference( databaseModel, this.persister.getTableName() );
-			this.separateCollectionTable = collectionTable;
 		}
 
 		if ( !persister.hasIndex() ) {
@@ -204,18 +211,22 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		return collectionClassification;
 	}
 
+	@Override
 	public PluralAttributeKey getForeignKeyDescriptor() {
 		return foreignKeyDescriptor;
 	}
 
+	@Override
 	public PluralAttributeId getIdDescriptor() {
 		return idDescriptor;
 	}
 
+	@Override
 	public PluralAttributeElement getElementDescriptor() {
 		return elementDescriptor;
 	}
 
+	@Override
 	public PluralAttributeIndex getIndexDescriptor() {
 		return indexDescriptor;
 	}
@@ -263,7 +274,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex) {
 		final CollectionTableGroup group = new CollectionTableGroup(
-				tableSpace, sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ), persister
+				tableSpace, sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ), this
 		);
 
 		fromClauseIndex.crossReference( joinedFromElement, group );

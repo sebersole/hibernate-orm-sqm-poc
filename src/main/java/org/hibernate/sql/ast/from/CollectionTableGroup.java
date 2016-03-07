@@ -6,7 +6,8 @@
  */
 package org.hibernate.sql.ast.from;
 
-import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.sql.orm.internal.mapping.Column;
+import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 
 /**
  * A TableSpecificationGroup for a collection reference
@@ -14,17 +15,28 @@ import org.hibernate.persister.collection.CollectionPersister;
  * @author Steve Ebersole
  */
 public class CollectionTableGroup extends AbstractTableGroup {
-	private final CollectionPersister persister;
+	private final ImprovedCollectionPersister persister;
 
 	public CollectionTableGroup(
 			TableSpace tableSpace,
 			String aliasBase,
-			CollectionPersister persister) {
+			ImprovedCollectionPersister persister) {
 		super( tableSpace, aliasBase );
 		this.persister = persister;
 	}
 
-	public CollectionPersister getPersister() {
+	public ImprovedCollectionPersister getPersister() {
 		return persister;
+	}
+
+	public ColumnBinding[] resolveKeyColumnBindings() {
+		final Column[] columns = persister.getForeignKeyDescriptor().getForeignKeyColumns();
+
+		final TableBinding tableBinding = getRootTableBinding();
+		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
+		for ( int i = 0; i < columns.length; i++ ) {
+			bindings[i] = new ColumnBinding( columns[i], tableBinding );
+		}
+		return bindings;
 	}
 }

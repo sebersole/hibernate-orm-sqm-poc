@@ -9,12 +9,16 @@ import org.hibernate.AssertionFailure;
 import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.ColumnBindingExpression;
+import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.ast.from.TableSpace;
+import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
+import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.gen.Callback;
 import org.hibernate.sql.gen.JdbcSelectPlan;
 import org.hibernate.sql.gen.NotYetImplementedException;
@@ -33,10 +37,8 @@ import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
-import org.hibernate.sqm.query.expression.Expression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
-import org.hibernate.sqm.query.from.FromElement;
 import org.hibernate.sqm.query.from.FromElementSpace;
 import org.hibernate.sqm.query.from.JoinedFromElement;
 import org.hibernate.sqm.query.from.QualifiedAttributeJoinFromElement;
@@ -207,7 +209,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		try {
 			visitRootEntityFromElement( fromElementSpace.getRoot() );
 			for ( JoinedFromElement joinedFromElement : fromElementSpace.getJoins() ) {
-				tableSpace.addJoinedTableSpecificationGroup( (TableGroupJoin) joinedFromElement.accept(
+				tableSpace.addJoinedTableGroup( (TableGroupJoin) joinedFromElement.accept(
 						this ) );
 			}
 			return tableSpace;
@@ -241,7 +243,8 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			return null;
 		}
 
-		TableGroup group = null;
+		final Junction predicate = new Junction( Junction.Nature.CONJUNCTION );
+		final TableGroup group;
 
 		if ( joinedFromElement.getBoundAttribute() instanceof PluralAttribute ) {
 			final ImprovedCollectionPersister improvedCollectionPersister = (ImprovedCollectionPersister) joinedFromElement.getBoundAttribute();
@@ -251,6 +254,23 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 					sqlAliasBaseManager,
 					fromClauseIndex
 			);
+
+			final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBindingSource() );
+			// I *think* it is a valid assumption here that the underlying TableGroup for an attribute is ultimately an EntityTableGroup
+			// todo : verify this
+			final ColumnBinding[] joinLhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
+			final ColumnBinding[] joinRhsColumns = ( (CollectionTableGroup) group ).resolveKeyColumnBindings();
+			assert joinLhsColumns.length == joinRhsColumns.length;
+
+			for ( int i = 0; i < joinLhsColumns.length; i++ ) {
+				predicate.add(
+						new RelationalPredicate(
+								RelationalPredicate.Type.EQUAL,
+								new ColumnBindingExpression( joinLhsColumns[i] ),
+								new ColumnBindingExpression( joinRhsColumns[i] )
+						)
+				);
+			}
 		}
 		else {
 			final SingularAttributeImplementor singularAttribute = (SingularAttributeImplementor) joinedFromElement.getBoundAttribute();
@@ -265,14 +285,43 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 						sqlAliasBaseManager,
 						fromClauseIndex
 				);
+
+				final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBindingSource() );
+				// I *think* it is a valid assumption here that the underlying TableGroup for an attribute is ultimately an EntityTableGroup
+				// todo : verify this
+				final ColumnBinding[] joinLhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
+				final ColumnBinding[] joinRhsColumns;
+
+				final org.hibernate.type.EntityType ormType = (org.hibernate.type.EntityType) singularAttribute.getOrmType();
+				if ( ormType.getRHSUniqueKeyPropertyName() == null ) {
+					joinRhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
+				}
+				else {
+					final ImprovedEntityPersister associatedPersister = ( (EntityTableGroup) lhsTableGroup ).getPersister();
+					joinRhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveBindings(
+							(SingularAttribute) associatedPersister.findAttribute( ormType.getRHSUniqueKeyPropertyName() )
+					);
+				}
+				assert joinLhsColumns.length == joinRhsColumns.length;
+
+				for ( int i = 0; i < joinLhsColumns.length; i++ ) {
+					predicate.add(
+							new RelationalPredicate(
+									RelationalPredicate.Type.EQUAL,
+									new ColumnBindingExpression( joinLhsColumns[i] ),
+									new ColumnBindingExpression( joinRhsColumns[i] )
+							)
+					);
+				}
 			}
 		}
 
 		fromClauseIndex.crossReference( joinedFromElement, group );
 
-		// todo : determine the Predicate
-		final Predicate predicate = new Predicate() {
-		};
+		// add any additional join restrictions
+		if ( joinedFromElement.getOnClausePredicate() != null ) {
+			predicate.add( (Predicate) joinedFromElement.getOnClausePredicate().accept( this ) );
+		}
 
 		return new TableGroupJoin( joinedFromElement.getJoinType(), group, predicate );
 	}
