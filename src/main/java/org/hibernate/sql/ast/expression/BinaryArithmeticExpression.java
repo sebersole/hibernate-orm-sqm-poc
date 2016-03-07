@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
@@ -16,22 +16,22 @@ public class BinaryArithmeticExpression implements Expression {
 	private final Operation operation;
 	private final Expression lhsOperand;
 	private final Expression rhsOperand;
-	private final BasicTypeImpl resultSqmType;
+	private final BasicType resultType;
 
 	public BinaryArithmeticExpression(
 			Operation operation,
 			Expression lhsOperand,
 			Expression rhsOperand,
-			BasicTypeImpl resultSqmType) {
+			BasicType resultType) {
 		this.operation = operation;
 		this.lhsOperand = lhsOperand;
 		this.rhsOperand = rhsOperand;
-		this.resultSqmType = resultSqmType;
+		this.resultType = resultType;
 	}
 
 	@Override
-	public Type getType() {
-		return resultSqmType.getOrmType();
+	public BasicType getType() {
+		return resultType;
 	}
 
 	public enum Operation {

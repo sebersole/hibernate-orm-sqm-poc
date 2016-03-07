@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
@@ -15,12 +15,12 @@ import org.hibernate.type.Type;
 public abstract class AbstractAggregateFunction implements AggregateFunction {
 	private final Expression argument;
 	private final boolean distinct;
-	private final BasicTypeImpl resultSqmType;
+	private final BasicType resultType;
 
-	public AbstractAggregateFunction(Expression argument, boolean distinct, BasicTypeImpl resultSqmType) {
+	public AbstractAggregateFunction(Expression argument, boolean distinct, BasicType resultType) {
 		this.argument = argument;
 		this.distinct = distinct;
-		this.resultSqmType = resultSqmType;
+		this.resultType = resultType;
 	}
 
 	@Override
@@ -35,6 +35,6 @@ public abstract class AbstractAggregateFunction implements AggregateFunction {
 
 	@Override
 	public Type getType() {
-		return resultSqmType.getOrmType();
+		return resultType;
 	}
 }

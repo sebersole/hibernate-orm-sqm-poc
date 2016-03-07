@@ -7,15 +7,15 @@
 package org.hibernate.sql.ast.expression;
 
 
-import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
 public class CountStarFunction extends AbstractAggregateFunction {
-	public CountStarFunction(boolean distinct, BasicTypeImpl resultSqmType) {
-		super( STAR, distinct, resultSqmType );
+	public CountStarFunction(boolean distinct, BasicType resultType) {
+		super( STAR, distinct, resultType );
 	}
 
 	private static Expression STAR = new Expression() {

@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
@@ -19,16 +20,16 @@ public class UnaryOperationExpression implements Expression {
 
 	private final Operation operation;
 	private final Expression operand;
-	private final Type type;
+	private final BasicType type;
 
-	public UnaryOperationExpression(Operation operation, Expression operand, Type type) {
+	public UnaryOperationExpression(Operation operation, Expression operand, BasicType type) {
 		this.operation = operation;
 		this.operand = operand;
 		this.type = type;
 	}
 
 	@Override
-	public Type getType() {
+	public BasicType getType() {
 		return type;
 	}
 

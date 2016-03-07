@@ -93,6 +93,7 @@ import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.select.SelectClause;
 import org.hibernate.sqm.query.select.Selection;
 import org.hibernate.type.BasicType;
+import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
@@ -428,15 +429,23 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralStringExpression(LiteralStringExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
+	}
+
+	protected Type extractOrmType(org.hibernate.sqm.domain.Type sqmType) {
+		if ( sqmType == null ) {
+			return null;
+		}
+
+		return ( (SqmTypeImplementor) sqmType ).getOrmType();
 	}
 
 	@Override
 	public QueryLiteral visitLiteralCharacterExpression(LiteralCharacterExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -444,7 +453,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralDoubleExpression(LiteralDoubleExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -452,7 +461,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralIntegerExpression(LiteralIntegerExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -460,7 +469,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralBigIntegerExpression(LiteralBigIntegerExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -468,7 +477,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralBigDecimalExpression(LiteralBigDecimalExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -476,7 +485,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralFloatExpression(LiteralFloatExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -484,7 +493,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralLongExpression(LiteralLongExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -492,7 +501,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralTrueExpression(LiteralTrueExpression expression) {
 		return new QueryLiteral(
 				Boolean.TRUE,
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -500,7 +509,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralFalseExpression(LiteralFalseExpression expression) {
 		return new QueryLiteral(
 				Boolean.FALSE,
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -508,7 +517,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralNullExpression(LiteralNullExpression expression) {
 		return new QueryLiteral(
 				null,
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -516,7 +525,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public Object visitConstantEnumExpression(ConstantEnumExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -524,7 +533,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public Object visitConstantFieldExpression(ConstantFieldExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -532,7 +541,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public NamedParameter visitNamedParameterExpression(NamedParameterExpression expression) {
 		return new NamedParameter(
 				expression.getName(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -540,7 +549,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public PositionalParameter visitPositionalParameterExpression(PositionalParameterExpression expression) {
 		return new PositionalParameter(
 				expression.getPosition(),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -549,7 +558,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.AvgFunction(
 				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -558,7 +567,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.MaxFunction(
 				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -567,7 +576,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.MinFunction(
 				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -576,7 +585,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.SumFunction(
 				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -585,7 +594,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.CountFunction(
 				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -593,7 +602,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public org.hibernate.sql.ast.expression.CountStarFunction visitCountStarFunction(CountStarFunction expression) {
 		return new org.hibernate.sql.ast.expression.CountStarFunction(
 				expression.isDistinct(),
-				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -602,7 +611,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.UnaryOperationExpression(
 				interpret( expression.getOperation() ),
 				(org.hibernate.sql.ast.expression.Expression) expression.getOperand().accept( this ),
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -625,7 +634,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 				interpret( expression.getOperation() ),
 				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) expression.getRightHandOperand().accept( this ),
-				(BasicTypeImpl) expression.getExpressionType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -669,7 +678,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	@Override
 	public org.hibernate.sql.ast.expression.CaseSimpleExpression visitSimpleCaseExpression(CaseSimpleExpression expression) {
 		final org.hibernate.sql.ast.expression.CaseSimpleExpression result = new org.hibernate.sql.ast.expression.CaseSimpleExpression(
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType(),
+				extractOrmType( expression.getExpressionType() ),
 				(org.hibernate.sql.ast.expression.Expression) expression.getFixture().accept( this )
 		);
 
@@ -690,7 +699,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	@Override
 	public org.hibernate.sql.ast.expression.CaseSearchedExpression visitSearchedCaseExpression(CaseSearchedExpression expression) {
 		final org.hibernate.sql.ast.expression.CaseSearchedExpression result = new org.hibernate.sql.ast.expression.CaseSearchedExpression(
-				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				extractOrmType( expression.getExpressionType() )
 		);
 
 		for ( CaseSearchedExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
@@ -720,7 +729,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.expression.ConcatExpression(
 				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
-				(BasicType) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -756,6 +765,40 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.predicate.NegatedPredicate(
 				(Predicate) predicate.getWrappedPredicate().accept( this )
 		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.RelationalPredicate visitRelationalPredicate(org.hibernate.sqm.query.predicate.RelationalPredicate predicate) {
+		return new org.hibernate.sql.ast.predicate.RelationalPredicate(
+				interpret( predicate.getType() ),
+				(org.hibernate.sql.ast.expression.Expression) predicate.getLeftHandExpression().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) predicate.getRightHandExpression().accept( this )
+		);
+	}
+
+	private RelationalPredicate.Type interpret(org.hibernate.sqm.query.predicate.RelationalPredicate.Type type) {
+		switch ( type ) {
+			case EQUAL: {
+				return RelationalPredicate.Type.EQUAL;
+			}
+			case NOT_EQUAL: {
+				return RelationalPredicate.Type.NOT_EQUAL;
+			}
+			case GE: {
+				return RelationalPredicate.Type.GE;
+			}
+			case GT: {
+				return RelationalPredicate.Type.GT;
+			}
+			case LE: {
+				return RelationalPredicate.Type.LE;
+			}
+			case LT: {
+				return RelationalPredicate.Type.LT;
+			}
+		}
+
+		throw new IllegalStateException( "Unexpected RelationalPredicate Type : " + type );
 	}
 
 	@Override

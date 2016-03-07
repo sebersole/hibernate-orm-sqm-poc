@@ -6,13 +6,13 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
+import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
 public class MaxFunction extends AbstractAggregateFunction implements AggregateFunction {
-	public MaxFunction(Expression argument, boolean distinct, BasicTypeImpl resultSqmType) {
-		super( argument, distinct, resultSqmType );
+	public MaxFunction(Expression argument, boolean distinct, BasicType resultType) {
+		super( argument, distinct, resultType );
 	}
 }
