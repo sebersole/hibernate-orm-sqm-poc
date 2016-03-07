@@ -140,8 +140,10 @@ public class Helper {
 			return SingularAttribute.Classification.ANY;
 		}
 		else if ( attributeType.isEntityType() ) {
-			// todo : we don't really know if this is a many-to-one or one-to-one
-			return SingularAttribute.Classification.MANY_TO_ONE;
+			final org.hibernate.type.EntityType ormEntityType = (org.hibernate.type.EntityType) attributeType;
+			return ormEntityType.isOneToOne() || ormEntityType.isLogicalOneToOne()
+					? SingularAttribute.Classification.ONE_TO_ONE
+					: SingularAttribute.Classification.MANY_TO_ONE;
 		}
 		else if ( attributeType.isComponentType() ) {
 			return SingularAttribute.Classification.EMBEDDED;
@@ -246,12 +248,22 @@ public class Helper {
 			);
 		}
 		else {
+			final org.hibernate.type.EntityType ormEntityType = (org.hibernate.type.EntityType) attributeType;
+			if ( ormEntityType.isOneToOne() ) {
+				// the Classification here should be ONE_TO_ONE which could represent either a real PK one-to-one
+				//		or a unique-FK one-to-one (logical).  If this is a real one-to-one then we should have
+				//		no columns passed here and should instead use the LHS (source) PK column(s)
+				assert columns == null || columns.length == 0;
+				columns = ( (ImprovedEntityPersister) source ).getIdentifierDescriptor().getColumns();
+			}
+			assert columns != null && columns.length > 0;
+
 			return new SingularAttributeEntity(
 					source,
 					attributeName,
-					SingularAttribute.Classification.MANY_TO_ONE,
-					(org.hibernate.type.EntityType) attributeType,
-					domainMetamodel.toSqmType( (org.hibernate.type.EntityType) attributeType ),
+					classification,
+					ormEntityType,
+					domainMetamodel.toSqmType( ormEntityType ),
 					columns
 			);
 		}

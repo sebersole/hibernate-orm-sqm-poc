@@ -12,8 +12,10 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -142,7 +144,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	}
 
 	@Test
-	public void joinCollectionValuedFieldWithJoinColumnTest() {
+	public void joinOneToManyWithJoinColumnTest() {
 		final TableSpace tableSpace = getTableSpace( "from Person p join p.pastRoles" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
@@ -152,8 +154,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
 
-		final TableGroupJoin tableGroupJoin =
-				tableSpace.getJoinedTableGroups().get( 0 );
+		final TableGroupJoin tableGroupJoin = tableSpace.getJoinedTableGroups().get( 0 );
 		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
 
 		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
@@ -162,10 +163,37 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
 		checkRootTableName( "ROLE", joinedGroup );
+
+		// Let's check the join predicate which should join PERSON(id) -> ROLE(person_id)
+		{
+			assertThat( tableGroupJoin.getPredicate(), notNullValue() );
+			final Predicate joinPredicate = tableGroupJoin.getPredicate();
+			assertThat( joinPredicate, instanceOf( Junction.class ) );
+			final Junction junction = (Junction) joinPredicate;
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate singleJoinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( singleJoinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) singleJoinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "p1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+
+			assertThat( singleJoinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) singleJoinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "r1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "person_id" )
+			);
+		}
 	}
 
 	@Test
-	public void joinSingleValuedObjectFieldTest() {
+	public void joinOneToOneAssociationWithPrimaryKeyJoinColumn() {
 		final TableSpace tableSpace = getTableSpace( "from Person p join p.actualRole" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
@@ -185,6 +213,183 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
 
 		checkRootTableName( "ROLE", joinedGroup );
+
+
+		// Let's check the join predicate which should join PERSON(id) -> Role(id)
+		{
+			assertThat( tableGroupJoin.getPredicate(), notNullValue() );
+			assertThat( tableGroupJoin.getPredicate(), instanceOf( Junction.class ) );
+			final Junction junction = (Junction) tableGroupJoin.getPredicate();
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate joinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( joinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) joinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "p1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+
+			assertThat( joinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) joinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "r1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+		}
+	}
+
+	@Test
+	public void joinOneToOneAssociationNoPrimaryKeyJoinColumn() {
+		final TableSpace tableSpace = getTableSpace( "from Person p join p.actualRole2" );
+
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
+
+		checkRootTableName( "PERSON", rootTableGroup );
+
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
+
+		final TableGroupJoin tableGroupJoin =
+				tableSpace.getJoinedTableGroups().get( 0 );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
+
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( EntityTableGroup.class ) ) );
+
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
+
+		checkRootTableName( "ROLE", joinedGroup );
+
+
+		// Let's check the join predicate which should join PERSON(id) -> Role(id)
+		{
+			assertThat( tableGroupJoin.getPredicate(), notNullValue() );
+			assertThat( tableGroupJoin.getPredicate(), instanceOf( Junction.class ) );
+			final Junction junction = (Junction) tableGroupJoin.getPredicate();
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate joinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( joinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) joinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "p1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "actualRole2_id" )
+			);
+
+			assertThat( joinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) joinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "r1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+		}
+	}
+
+	@Test
+	public void joinManyToOneAssociationWithJoinColumn() {
+		final TableSpace tableSpace = getTableSpace( "from Person p join p.nextRole" );
+
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
+
+		checkRootTableName( "PERSON", rootTableGroup );
+
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
+
+		final TableGroupJoin tableGroupJoin =
+				tableSpace.getJoinedTableGroups().get( 0 );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
+
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( EntityTableGroup.class ) ) );
+
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
+
+		checkRootTableName( "ROLE", joinedGroup );
+
+
+		// Let's check the join predicate which should join PERSON(nextRole_id) -> Role(id)
+		{
+			assertThat( tableGroupJoin.getPredicate(), notNullValue() );
+			assertThat( tableGroupJoin.getPredicate(), instanceOf( Junction.class ) );
+			final Junction junction = (Junction) tableGroupJoin.getPredicate();
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate joinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( joinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) joinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "p1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "nextRole_id" )
+			);
+
+			assertThat( joinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) joinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "r1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+		}
+	}
+
+	@Test
+	public void joinManyToOneAssociationNoJoinColumn() {
+		final TableSpace tableSpace = getTableSpace( "from Person p join p.lastRole" );
+
+		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
+		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
+
+		checkRootTableName( "PERSON", rootTableGroup );
+
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
+
+		final TableGroupJoin tableGroupJoin =
+				tableSpace.getJoinedTableGroups().get( 0 );
+		assertThat( tableGroupJoin.getJoinType(), is( JoinType.INNER ) );
+
+		final TableGroup joinedGroup = tableGroupJoin.getJoinedGroup();
+		assertThat( joinedGroup, is( instanceOf( EntityTableGroup.class ) ) );
+
+		assertThat( joinedGroup.getTableJoins().size(), is( 0 ) );
+
+		checkRootTableName( "ROLE", joinedGroup );
+
+
+		// Let's check the join predicate which should join PERSON(lastRole_id) -> Role(id)
+		{
+			assertThat( tableGroupJoin.getPredicate(), notNullValue() );
+			assertThat( tableGroupJoin.getPredicate(), instanceOf( Junction.class ) );
+			final Junction junction = (Junction) tableGroupJoin.getPredicate();
+			assertThat( junction.getNature(), is( Junction.Nature.CONJUNCTION ) );
+			assertThat( junction.getPredicates().size(), is( 1 ) );
+			assertThat( junction.getPredicates().get( 0 ), instanceOf( RelationalPredicate.class ) );
+			final RelationalPredicate joinPredicate = (RelationalPredicate) junction.getPredicates().get( 0 );
+			assertThat( joinPredicate.getLeftHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateLhsColumn = (ColumnBindingExpression) joinPredicate.getLeftHandExpression();
+			assertThat( joinPredicateLhsColumn.getColumnBinding().getIdentificationVariable(), is( "p1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateLhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "lastRole_id" )
+			);
+
+			assertThat( joinPredicate.getRightHandExpression(), instanceOf( ColumnBindingExpression.class ) );
+			final ColumnBindingExpression joinPredicateRhsColumn = (ColumnBindingExpression) joinPredicate.getRightHandExpression();
+			assertThat( joinPredicateRhsColumn.getColumnBinding().getIdentificationVariable(), is( "r1_0" ) );
+			assertThat(
+					( (PhysicalColumn) joinPredicateRhsColumn.getColumnBinding().getColumn() ).getName(),
+					is( "id" )
+			);
+		}
 	}
 
 	@Test
@@ -294,7 +499,18 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		Set<Role> pastRoles = new HashSet<Role>();
 
 		@OneToOne
+		@PrimaryKeyJoinColumn
 		Role actualRole;
+
+		@OneToOne
+		Role actualRole2;
+
+		@ManyToOne
+		Role lastRole;
+
+		@ManyToOne
+		@JoinColumn
+		Role nextRole;
 	}
 
 	@Embeddable

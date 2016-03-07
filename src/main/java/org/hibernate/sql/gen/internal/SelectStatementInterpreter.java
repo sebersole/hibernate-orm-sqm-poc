@@ -287,18 +287,16 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 				);
 
 				final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBindingSource() );
-				// I *think* it is a valid assumption here that the underlying TableGroup for an attribute is ultimately an EntityTableGroup
-				// todo : verify this
-				final ColumnBinding[] joinLhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
+				final ColumnBinding[] joinLhsColumns = lhsTableGroup.resolveBindings( singularAttribute );
 				final ColumnBinding[] joinRhsColumns;
 
 				final org.hibernate.type.EntityType ormType = (org.hibernate.type.EntityType) singularAttribute.getOrmType();
 				if ( ormType.getRHSUniqueKeyPropertyName() == null ) {
-					joinRhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
+					joinRhsColumns = ( (EntityTableGroup) group ).resolveIdentifierColumnBindings();
 				}
 				else {
 					final ImprovedEntityPersister associatedPersister = ( (EntityTableGroup) lhsTableGroup ).getPersister();
-					joinRhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveBindings(
+					joinRhsColumns = group.resolveBindings(
 							(SingularAttribute) associatedPersister.findAttribute( ormType.getRHSUniqueKeyPropertyName() )
 					);
 				}
