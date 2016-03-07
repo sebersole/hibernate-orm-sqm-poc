@@ -10,6 +10,8 @@ import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
+import org.hibernate.sql.ast.expression.NamedParameter;
+import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
@@ -30,6 +32,7 @@ import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
+import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
 import org.hibernate.sql.orm.internal.sqm.model.SqmTypeImplementor;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
@@ -40,6 +43,9 @@ import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
+import org.hibernate.sqm.query.expression.AvgFunction;
+import org.hibernate.sqm.query.expression.CountFunction;
+import org.hibernate.sqm.query.expression.CountStarFunction;
 import org.hibernate.sqm.query.expression.LiteralBigDecimalExpression;
 import org.hibernate.sqm.query.expression.LiteralBigIntegerExpression;
 import org.hibernate.sqm.query.expression.LiteralCharacterExpression;
@@ -51,6 +57,11 @@ import org.hibernate.sqm.query.expression.LiteralLongExpression;
 import org.hibernate.sqm.query.expression.LiteralNullExpression;
 import org.hibernate.sqm.query.expression.LiteralStringExpression;
 import org.hibernate.sqm.query.expression.LiteralTrueExpression;
+import org.hibernate.sqm.query.expression.MaxFunction;
+import org.hibernate.sqm.query.expression.MinFunction;
+import org.hibernate.sqm.query.expression.NamedParameterExpression;
+import org.hibernate.sqm.query.expression.PositionalParameterExpression;
+import org.hibernate.sqm.query.expression.SumFunction;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElementSpace;
@@ -484,6 +495,75 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new QueryLiteral(
 				null,
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public NamedParameter visitNamedParameterExpression(NamedParameterExpression expression) {
+		return new NamedParameter(
+				expression.getName(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public PositionalParameter visitPositionalParameterExpression(PositionalParameterExpression expression) {
+		return new PositionalParameter(
+				expression.getPosition(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.AvgFunction visitAvgFunction(AvgFunction expression) {
+		return new org.hibernate.sql.ast.expression.AvgFunction(
+				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+				expression.isDistinct(),
+				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.MaxFunction visitMaxFunction(MaxFunction expression) {
+		return new org.hibernate.sql.ast.expression.MaxFunction(
+				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+				expression.isDistinct(),
+				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.MinFunction visitMinFunction(MinFunction expression) {
+		return new org.hibernate.sql.ast.expression.MinFunction(
+				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+				expression.isDistinct(),
+				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.SumFunction visitSumFunction(SumFunction expression) {
+		return new org.hibernate.sql.ast.expression.SumFunction(
+				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+				expression.isDistinct(),
+				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.CountFunction visitCountFunction(CountFunction expression) {
+		return new org.hibernate.sql.ast.expression.CountFunction(
+				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+				expression.isDistinct(),
+				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.CountStarFunction visitCountStarFunction(CountStarFunction expression) {
+		return new org.hibernate.sql.ast.expression.CountStarFunction(
+				expression.isDistinct(),
+				(BasicTypeImpl) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
 		);
 	}
 
