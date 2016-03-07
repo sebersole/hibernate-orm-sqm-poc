@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.hibernate.sql.gen.NotYetImplementedException;
+import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersisterImpl;
 import org.hibernate.sqm.domain.Attribute;
 import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.domain.IdentifiableType;
@@ -21,6 +22,7 @@ import org.hibernate.sqm.domain.PolymorphicEntityType;
 import org.hibernate.sqm.domain.SingularAttribute;
 import org.hibernate.sqm.domain.SingularAttribute.Classification;
 import org.hibernate.sqm.domain.Type;
+import org.hibernate.sql.orm.internal.mapping.AbstractAttributeImpl;
 
 /**
  * @author Steve Ebersole
@@ -38,8 +40,8 @@ public class PolymorphicEntityTypeImpl implements PolymorphicEntityType {
 		this.name = name;
 		this.implementors = implementors;
 
-		EntityTypeImpl firstImplementor = (EntityTypeImpl) implementors.get( 0 );
-		attr_loop: for ( AbstractAttributeImpl attributeDescriptor : firstImplementor.getAttributeDescriptorMap().values() ) {
+		ImprovedEntityPersisterImpl firstImplementor = (ImprovedEntityPersisterImpl) implementors.get( 0 );
+		attr_loop: for ( AbstractAttributeImpl attributeDescriptor : firstImplementor.getAttributeMap().values() ) {
 			for ( EntityType implementor : implementors ) {
 				if ( implementor.findAttribute(  attributeDescriptor.getName() ) == null ) {
 					break attr_loop;
@@ -48,19 +50,6 @@ public class PolymorphicEntityTypeImpl implements PolymorphicEntityType {
 
 			// if we get here, every implementor defined that attribute...
 			attributeDescriptorMap.put( attributeDescriptor.getName(), attributeDescriptor );
-		}
-
-		if ( !attributeDescriptorMap.containsKey( "id" ) ) {
-			final org.hibernate.type.Type ormIdType = firstImplementor.getPersister().getEntityPersister().getIdentifierType();
-			final Classification idClassification = Helper.interpretIdentifierClassification( ormIdType );
-			attributeDescriptorMap.put(
-					"id",
-					new PseudoIdAttributeImpl(
-							this,
-							modelMetadata.toSqmType( ormIdType ),
-							idClassification
-					)
-			);
 		}
 	}
 

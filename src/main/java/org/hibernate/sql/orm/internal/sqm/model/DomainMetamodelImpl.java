@@ -185,6 +185,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 
 	public AnyTypeImpl toSqmType(AnyType ormType) {
 		return new AnyTypeImpl(
+				ormType,
 				toSqmType( ( org.hibernate.type.BasicType) ormType.getDiscriminatorType() ),
 				toSqmType( ormType.getIdentifierType() )
 		);

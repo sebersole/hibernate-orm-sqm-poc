@@ -47,6 +47,11 @@ public class IdentifierCompositeAggregated
 		return true;
 	}
 
+	@Override
+	public String getReferableAttributeName() {
+		return attributeName;
+	}
+
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// SingularAttribute

@@ -9,10 +9,10 @@ package org.hibernate.sql.orm.internal.mapping;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
-import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
+import org.hibernate.sql.orm.internal.sqm.model.SqmTypeImplementor;
 import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.FromElement;
@@ -24,7 +24,7 @@ import org.hibernate.sqm.query.from.FromElement;
  *
  * @author Steve Ebersole
  */
-public interface ImprovedEntityPersister extends EntityType {
+public interface ImprovedEntityPersister extends EntityType, SqmTypeImplementor {
 	/**
 	 * In integrating this upstream, the methods here would all be part of EntityPersister
 	 * but here we cannot do that and therefore still need access to EntityPersister
@@ -45,5 +45,4 @@ public interface ImprovedEntityPersister extends EntityType {
 			FromClauseIndex fromClauseIndex);
 
 	void addTableJoins(AbstractTableGroup group, JoinType joinType, Column[] fkColumns, Column[] fkTargetColumns);
-
 }

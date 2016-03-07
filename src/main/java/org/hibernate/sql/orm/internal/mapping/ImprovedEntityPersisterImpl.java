@@ -25,7 +25,6 @@ import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sql.orm.internal.sqm.model.DomainMetamodelImpl;
-import org.hibernate.sql.orm.internal.sqm.model.PseudoIdAttributeImpl;
 import org.hibernate.sqm.domain.Attribute;
 import org.hibernate.sqm.domain.EntityType;
 import org.hibernate.sqm.domain.IdentifiableType;
@@ -317,16 +316,6 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			return attributeMap.get( name );
 		}
 
-		// todo : id should be handled explicitly on init
-
-		if ( "id".equals( name ) ) {
-			return new PseudoIdAttributeImpl(
-					this,
-					domainMetamodel.toSqmType( persister.getEntityPersister().getIdentifierType() ),
-					org.hibernate.sql.orm.internal.sqm.model.Helper.interpretIdentifierClassification( persister.getEntityPersister().getIdentifierType() )
-			);
-		}
-
 		return null;
 	}
 
@@ -341,8 +330,17 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		return persister.getEntityName();
 	}
 
+	public Map<String, AbstractAttributeImpl> getAttributeMap() {
+		return attributeMap;
+	}
+
 	@Override
 	public String toString() {
 		return "ImprovedEntityPersister(" + getTypeName() + ")";
+	}
+
+	@Override
+	public org.hibernate.type.Type getOrmType() {
+		return getEntityPersister().getEntityMetamodel().getEntityType();
 	}
 }

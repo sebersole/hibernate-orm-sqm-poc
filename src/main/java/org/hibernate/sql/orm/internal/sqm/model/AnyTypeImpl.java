@@ -13,11 +13,13 @@ import org.hibernate.sqm.domain.Type;
 /**
  * @author Steve Ebersole
  */
-public class AnyTypeImpl implements AnyType {
+public class AnyTypeImpl implements AnyType, SqmTypeImplementor {
+	private final org.hibernate.type.AnyType ormType;
 	private final BasicType discriminatorType;
 	private final Type identifierType;
 
-	public AnyTypeImpl(BasicType discriminatorType, Type identifierType) {
+	public AnyTypeImpl(org.hibernate.type.AnyType ormType, BasicType discriminatorType, Type identifierType) {
+		this.ormType = ormType;
 		this.discriminatorType = discriminatorType;
 		this.identifierType = identifierType;
 	}
@@ -25,6 +27,11 @@ public class AnyTypeImpl implements AnyType {
 	@Override
 	public String getTypeName() {
 		return "any";
+	}
+
+	@Override
+	public org.hibernate.type.AnyType getOrmType() {
+		return ormType;
 	}
 
 	@Override

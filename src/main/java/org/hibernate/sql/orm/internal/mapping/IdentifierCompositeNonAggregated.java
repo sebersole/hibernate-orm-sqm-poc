@@ -34,4 +34,9 @@ public class IdentifierCompositeNonAggregated implements IdentifierDescriptorImp
 	public boolean hasSingleIdAttribute() {
 		return false;
 	}
+
+	@Override
+	public String getReferableAttributeName() {
+		return null;
+	}
 }

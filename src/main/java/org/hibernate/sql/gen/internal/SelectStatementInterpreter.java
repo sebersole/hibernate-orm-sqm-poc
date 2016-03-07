@@ -10,6 +10,7 @@ import org.hibernate.loader.plan.spi.Return;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
+import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
@@ -28,6 +29,7 @@ import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
+import org.hibernate.sql.orm.internal.sqm.model.SqmTypeImplementor;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.SingularAttribute;
@@ -37,6 +39,17 @@ import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
 import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
+import org.hibernate.sqm.query.expression.LiteralBigDecimalExpression;
+import org.hibernate.sqm.query.expression.LiteralBigIntegerExpression;
+import org.hibernate.sqm.query.expression.LiteralCharacterExpression;
+import org.hibernate.sqm.query.expression.LiteralDoubleExpression;
+import org.hibernate.sqm.query.expression.LiteralFalseExpression;
+import org.hibernate.sqm.query.expression.LiteralFloatExpression;
+import org.hibernate.sqm.query.expression.LiteralIntegerExpression;
+import org.hibernate.sqm.query.expression.LiteralLongExpression;
+import org.hibernate.sqm.query.expression.LiteralNullExpression;
+import org.hibernate.sqm.query.expression.LiteralStringExpression;
+import org.hibernate.sqm.query.expression.LiteralTrueExpression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElementSpace;
@@ -377,5 +390,93 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		final ColumnBinding[] columnBindings = tableGroup.resolveBindings( attribute );
 
 		return new AttributeReference( attribute, columnBindings );
+	}
+
+	@Override
+	public Object visitLiteralStringExpression(LiteralStringExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralCharacterExpression(LiteralCharacterExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralDoubleExpression(LiteralDoubleExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralIntegerExpression(LiteralIntegerExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralBigIntegerExpression(LiteralBigIntegerExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralBigDecimalExpression(LiteralBigDecimalExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralFloatExpression(LiteralFloatExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralLongExpression(LiteralLongExpression expression) {
+		return new QueryLiteral(
+				expression.getLiteralValue(),
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralTrueExpression(LiteralTrueExpression expression) {
+		return new QueryLiteral(
+				Boolean.TRUE,
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralFalseExpression(LiteralFalseExpression expression) {
+		return new QueryLiteral(
+				Boolean.FALSE,
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+	@Override
+	public Object visitLiteralNullExpression(LiteralNullExpression expression) {
+		return new QueryLiteral(
+				null,
+				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
 	}
 }

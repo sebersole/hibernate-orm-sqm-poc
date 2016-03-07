@@ -11,14 +11,15 @@ import org.hibernate.sqm.domain.BasicType;
 /**
  * @author Steve Ebersole
  */
-public class BasicTypeImpl<X> implements BasicType<X> {
+public class BasicTypeImpl<X> implements BasicType<X>, SqmTypeImplementor {
 	private org.hibernate.type.BasicType ormBasicType;
 
 	public BasicTypeImpl(org.hibernate.type.BasicType ormBasicType) {
 		this.ormBasicType = ormBasicType;
 	}
 
-	public org.hibernate.type.BasicType getOrmBasicType() {
+	@Override
+	public org.hibernate.type.BasicType getOrmType() {
 		return ormBasicType;
 	}
 

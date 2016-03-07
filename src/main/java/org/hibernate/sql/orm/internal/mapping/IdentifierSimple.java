@@ -70,6 +70,11 @@ public class IdentifierSimple
 	}
 
 	@Override
+	public String getReferableAttributeName() {
+		return attributeName;
+	}
+
+	@Override
 	public Column[] getColumns() {
 		return columns;
 	}
