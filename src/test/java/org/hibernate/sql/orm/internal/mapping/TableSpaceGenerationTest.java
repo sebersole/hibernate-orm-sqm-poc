@@ -63,7 +63,7 @@ import static org.junit.Assert.assertThat;
 public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
-	public void joinCollectionValuedFieldTest() {
+	public void joinOneToManyNoJoinColumnTest() {
 		final TableSpace tableSpace = getTableSpace( "from Person p join p.addresses" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
