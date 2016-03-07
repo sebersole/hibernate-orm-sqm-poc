@@ -6,6 +6,9 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -16,36 +19,25 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.PrimaryKeyJoinColumn;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
-import org.hibernate.LockOptions;
-import org.hibernate.ScrollMode;
 import org.hibernate.boot.MetadataSources;
-import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.TableBinding;
+import org.hibernate.sql.ast.from.TableGroup;
+import org.hibernate.sql.ast.from.TableGroupJoin;
+import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
-import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
-import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.ast.from.TableBinding;
-import org.hibernate.sql.ast.from.TableGroup;
-import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.gen.Callback;
-import org.hibernate.sql.orm.QueryOptions;
-import org.hibernate.sql.orm.QueryParameterBindings;
-import org.hibernate.sqm.SemanticQueryInterpreter;
+import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.SelectStatement;
-import org.hibernate.sqm.query.Statement;
 
 import org.junit.Test;
 
@@ -535,70 +527,11 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	}
 
 	private TableSpace getTableSpace(String query) {
-		final SelectStatement statement = (SelectStatement) interpret( query );
-
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
-		interpreter.interpret( statement );
-
-		final SelectQuery selectQuery = interpreter.getSelectQuery();
-
+		final SelectQuery selectQuery = interpretSelectQuery( query );
 		final List<TableSpace> tableSpaces = selectQuery.getQuerySpec().getFromClause().getTableSpaces();
 		assertThat( tableSpaces.size(), is( 1 ) );
 
 		return tableSpaces.get( 0 );
-	}
-
-	private Callback callBack() {
-		return new Callback() {
-		};
-	}
-
-	private QueryOptions queryOption() {
-		return new QueryOptions() {
-			@Override
-			public QueryParameterBindings getParameterBindings() {
-				return null;
-			}
-
-			@Override
-			public LockOptions getLockOptions() {
-				return null;
-			}
-
-			@Override
-			public RowSelection getRowSelection() {
-				return null;
-			}
-
-			@Override
-			public ScrollMode getScrollMode() {
-				return null;
-			}
-
-			@Override
-			public boolean isCacheable() {
-				return false;
-			}
-
-			@Override
-			public String getCacheRegion() {
-				return null;
-			}
-
-			@Override
-			public String getComment() {
-				return null;
-			}
-
-			@Override
-			public List<String> getSqlHints() {
-				return null;
-			}
-		};
-	}
-
-	protected Statement interpret(String query) {
-		return SemanticQueryInterpreter.interpret( query, getConsumerContext() );
 	}
 
 	private void checkRootTableName(String expectedTableName, TableGroup tableGroup) {

@@ -17,6 +17,8 @@ TODO Items
 	of this is that I do not think its a good idea for all FromElement types (via org.hibernate.sqm.path.AttributePathPart) 
 	to be Expressions; that change has some bearing on the org.hibernate.query.parser.internal.hql.path.AttributePathResolver
 	code.
+* Codify the concept of "comparable" types.  E.g. given 2 expressions being able to verify that they are valid *in relation to each other*.
+	The relation is important, as is possibly late verification to account for parameter bind values. 
 
 Keep track of downcasts on FromElement
 

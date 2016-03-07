@@ -6,13 +6,10 @@
  */
 package org.hibernate.sql.orm;
 
-import org.hibernate.type.Type;
-
 /**
  * Represents a parameter defined in the source (HQL/JPQL or criteria) query.
  *
  * @author Steve Ebersole
  */
 public interface QueryParameter {
-	Type getExpectedType();
 }

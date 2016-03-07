@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast;
 
 import org.hibernate.sql.ast.from.FromClause;
+import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.select.SelectClause;
 
 /**
@@ -16,6 +17,8 @@ public class QuerySpec {
 	private final FromClause fromClause = new FromClause();
 	private final SelectClause selectClause = new SelectClause();
 
+	private Predicate whereClauseRestrictions;
+
 	// where clause, etc
 
 	public FromClause getFromClause() {
@@ -24,5 +27,16 @@ public class QuerySpec {
 
 	public SelectClause getSelectClause() {
 		return selectClause;
+	}
+
+	public Predicate getWhereClauseRestrictions() {
+		return whereClauseRestrictions;
+	}
+
+	public void setWhereClauseRestrictions(Predicate whereClauseRestrictions) {
+		if ( this.whereClauseRestrictions != null ) {
+			throw new UnsupportedOperationException( "Cannot set where-clause restrictions after already set" );
+		}
+		this.whereClauseRestrictions = whereClauseRestrictions;
 	}
 }

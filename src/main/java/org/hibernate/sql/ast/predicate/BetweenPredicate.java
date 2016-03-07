@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.predicate;
 
-import org.hibernate.sqm.query.expression.Expression;
+import org.hibernate.sql.ast.expression.Expression;
 
 /**
  * @author Steve Ebersole

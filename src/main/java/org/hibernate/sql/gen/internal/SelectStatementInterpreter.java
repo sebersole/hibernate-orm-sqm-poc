@@ -17,6 +17,7 @@ import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.ast.from.TableSpace;
+import org.hibernate.sql.ast.predicate.InListPredicate;
 import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
@@ -59,6 +60,11 @@ import org.hibernate.sqm.query.from.QualifiedEntityJoinFromElement;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 import org.hibernate.sqm.query.order.OrderByClause;
 import org.hibernate.sqm.query.order.SortSpecification;
+import org.hibernate.sqm.query.predicate.AndPredicate;
+import org.hibernate.sqm.query.predicate.BetweenPredicate;
+import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
+import org.hibernate.sqm.query.predicate.NegatedPredicate;
+import org.hibernate.sqm.query.predicate.OrPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.select.SelectClause;
 import org.hibernate.sqm.query.select.Selection;
@@ -194,7 +200,9 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 			final WhereClause whereClause = querySpec.getWhereClause();
 			if ( whereClause != null ) {
-				visitWhereClause( whereClause );
+				querySpecStack.peek().setWhereClauseRestrictions(
+						(Predicate) whereClause.getPredicate().accept( this )
+				);
 			}
 
 			return astQuerySpec;
@@ -338,8 +346,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitCrossJoinedFromElement(CrossJoinedFromElement joinedFromElement) {
-
+	public TableGroupJoin visitCrossJoinedFromElement(CrossJoinedFromElement joinedFromElement) {
 		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) joinedFromElement.getIntrinsicSubclassIndicator();
 		TableGroup group = entityPersister.buildTableGroup(
 				joinedFromElement,
@@ -356,7 +363,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitSelectClause(SelectClause selectClause) {
+	public org.hibernate.sql.ast.select.SelectClause visitSelectClause(SelectClause selectClause) {
 		super.visitSelectClause( selectClause );
 		currentQuerySpec().getSelectClause().makeDistinct( selectClause.isDistinct() );
 		return currentQuerySpec().getSelectClause();
@@ -367,7 +374,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitSelection(Selection selection) {
+	public org.hibernate.sql.ast.select.Selection visitSelection(Selection selection) {
 		org.hibernate.sql.ast.select.Selection ormSelection = new org.hibernate.sql.ast.select.Selection(
 				(org.hibernate.sql.ast.expression.Expression) selection.getExpression().accept( this ),
 				selection.getAlias()
@@ -375,11 +382,11 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 		currentQuerySpec().getSelectClause().selection( ormSelection );
 
-		return selection;
+		return ormSelection;
 	}
 
 	@Override
-	public Object visitAttributeReferenceExpression(AttributeReferenceExpression expression) {
+	public AttributeReference visitAttributeReferenceExpression(AttributeReferenceExpression expression) {
 		// WARNING : works on the assumption that the referenced attribute is always singular.
 		// I believe that is valid, but we will need to test
 		// todo : verify if this is a valid assumption
@@ -393,7 +400,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralStringExpression(LiteralStringExpression expression) {
+	public QueryLiteral visitLiteralStringExpression(LiteralStringExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -401,7 +408,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralCharacterExpression(LiteralCharacterExpression expression) {
+	public QueryLiteral visitLiteralCharacterExpression(LiteralCharacterExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -409,7 +416,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralDoubleExpression(LiteralDoubleExpression expression) {
+	public QueryLiteral visitLiteralDoubleExpression(LiteralDoubleExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -417,7 +424,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralIntegerExpression(LiteralIntegerExpression expression) {
+	public QueryLiteral visitLiteralIntegerExpression(LiteralIntegerExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -425,7 +432,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralBigIntegerExpression(LiteralBigIntegerExpression expression) {
+	public QueryLiteral visitLiteralBigIntegerExpression(LiteralBigIntegerExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -433,7 +440,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralBigDecimalExpression(LiteralBigDecimalExpression expression) {
+	public QueryLiteral visitLiteralBigDecimalExpression(LiteralBigDecimalExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -441,7 +448,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralFloatExpression(LiteralFloatExpression expression) {
+	public QueryLiteral visitLiteralFloatExpression(LiteralFloatExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -449,7 +456,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralLongExpression(LiteralLongExpression expression) {
+	public QueryLiteral visitLiteralLongExpression(LiteralLongExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -457,7 +464,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralTrueExpression(LiteralTrueExpression expression) {
+	public QueryLiteral visitLiteralTrueExpression(LiteralTrueExpression expression) {
 		return new QueryLiteral(
 				Boolean.TRUE,
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -465,7 +472,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralFalseExpression(LiteralFalseExpression expression) {
+	public QueryLiteral visitLiteralFalseExpression(LiteralFalseExpression expression) {
 		return new QueryLiteral(
 				Boolean.FALSE,
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
@@ -473,10 +480,72 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitLiteralNullExpression(LiteralNullExpression expression) {
+	public QueryLiteral visitLiteralNullExpression(LiteralNullExpression expression) {
 		return new QueryLiteral(
 				null,
 				( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
+
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Predicates
+
+
+	@Override
+	public Junction visitAndPredicate(AndPredicate predicate) {
+		final Junction conjunction = new Junction( Junction.Nature.CONJUNCTION );
+		conjunction.add( (Predicate) predicate.getLeftHandPredicate().accept( this ) );
+		conjunction.add( (Predicate) predicate.getRightHandPredicate().accept( this ) );
+		return conjunction;
+	}
+
+	@Override
+	public Junction visitOrPredicate(OrPredicate predicate) {
+		final Junction disjunction = new Junction( Junction.Nature.DISJUNCTION );
+		disjunction.add( (Predicate) predicate.getLeftHandPredicate().accept( this ) );
+		disjunction.add( (Predicate) predicate.getRightHandPredicate().accept( this ) );
+		return disjunction;
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.NegatedPredicate visitNegatedPredicate(NegatedPredicate predicate) {
+		return new org.hibernate.sql.ast.predicate.NegatedPredicate(
+				(Predicate) predicate.getWrappedPredicate().accept( this )
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.BetweenPredicate visitBetweenPredicate(BetweenPredicate predicate) {
+		return new org.hibernate.sql.ast.predicate.BetweenPredicate(
+				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) predicate.getLowerBound().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) predicate.getUpperBound().accept( this )
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.Predicate visitInListPredicate(org.hibernate.sqm.query.predicate.InListPredicate predicate) {
+		final InListPredicate inPredicate = new InListPredicate(
+				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this )
+		);
+		for ( org.hibernate.sqm.query.expression.Expression expression : predicate.getListExpressions() ) {
+			inPredicate.addExpression( (org.hibernate.sql.ast.expression.Expression) expression.accept( this ) );
+		}
+
+		if ( predicate.isNegated() ) {
+			return new org.hibernate.sql.ast.predicate.NegatedPredicate( inPredicate );
+		}
+		else {
+			return inPredicate;
+		}
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.Predicate visitInSubQueryPredicate(InSubQueryPredicate predicate) {
+		return new org.hibernate.sql.ast.predicate.InSubQueryPredicate(
+				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this ),
+				(org.hibernate.sql.ast.QuerySpec) predicate.getSubQueryExpression().accept( this )
 		);
 	}
 }

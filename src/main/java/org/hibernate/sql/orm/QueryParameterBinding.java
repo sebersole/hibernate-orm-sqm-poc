@@ -12,8 +12,6 @@ import org.hibernate.type.Type;
  * @author Steve Ebersole
  */
 public interface QueryParameterBinding {
-	QueryParameter getParameter();
-
 	void setBindValue(Object value);
 	void setBindValue(Object value, Type clarifiedType);
 

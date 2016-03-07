@@ -9,14 +9,5 @@ package org.hibernate.sql.ast.predicate;
 /**
  * @author Steve Ebersole
  */
-public class NegatedPredicate implements Predicate {
-	private final Predicate predicate;
-
-	public NegatedPredicate(Predicate predicate) {
-		this.predicate = predicate;
-	}
-
-	public Predicate getPredicate() {
-		return predicate;
-	}
+public class WhereClause {
 }

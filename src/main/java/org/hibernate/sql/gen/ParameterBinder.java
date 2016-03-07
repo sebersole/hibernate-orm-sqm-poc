@@ -1,7 +1,9 @@
 package org.hibernate.sql.gen;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.orm.QueryOptions;
 
 /**
@@ -11,5 +13,9 @@ import org.hibernate.sql.orm.QueryOptions;
  * @author John O'Hara
  */
 public interface ParameterBinder {
-	void bindParameterValue(PreparedStatement statement, QueryOptions queryOptions);
+	int bindParameterValue(
+			PreparedStatement statement,
+			int startPosition,
+			QueryOptions queryOptions,
+			SessionImplementor session) throws SQLException;
 }

@@ -6,13 +6,23 @@
  */
 package org.hibernate.sql.gen;
 
+import java.util.List;
+
+import org.hibernate.LockOptions;
+import org.hibernate.ScrollMode;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.sql.ast.SelectQuery;
+import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
 import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
+import org.hibernate.sql.orm.QueryOptions;
+import org.hibernate.sql.orm.QueryParameterBindings;
 import org.hibernate.sqm.SemanticQueryInterpreter;
+import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.Statement;
 
 import org.junit.After;
@@ -71,5 +81,63 @@ public class BaseUnitTest {
 
 	protected Statement interpret(String query) {
 		return SemanticQueryInterpreter.interpret( query, getConsumerContext() );
+	}
+
+	protected SelectQuery interpretSelectQuery(String query) {
+		final SelectStatement statement = (SelectStatement) interpret( query );
+
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		interpreter.interpret( statement );
+
+		return interpreter.getSelectQuery();
+	}
+
+	protected Callback callBack() {
+		return new Callback() {
+		};
+	}
+
+	protected QueryOptions queryOption() {
+		return new QueryOptions() {
+			@Override
+			public QueryParameterBindings getParameterBindings() {
+				return null;
+			}
+
+			@Override
+			public LockOptions getLockOptions() {
+				return null;
+			}
+
+			@Override
+			public RowSelection getRowSelection() {
+				return null;
+			}
+
+			@Override
+			public ScrollMode getScrollMode() {
+				return null;
+			}
+
+			@Override
+			public boolean isCacheable() {
+				return false;
+			}
+
+			@Override
+			public String getCacheRegion() {
+				return null;
+			}
+
+			@Override
+			public String getComment() {
+				return null;
+			}
+
+			@Override
+			public List<String> getSqlHints() {
+				return null;
+			}
+		};
 	}
 }

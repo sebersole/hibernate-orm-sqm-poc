@@ -70,14 +70,9 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		for ( int i = 1; i < subclassTableCount; i++ ) {
 			tables[i] = makeTableReference( databaseModel, queryable.getSubclassTableName( i ) );
 		}
-
-		// todo : attributes need to be built in a second phase after all entity persisters are available, just like we do for the "walking spi"
-		// for now just build them...
-		afterInit( databaseModel, domainMetamodel );
-
 	}
 
-	private void afterInit(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
+	public void afterInitialized(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
 		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
 
 		final Column[] idColumns = Helper.makeValues(

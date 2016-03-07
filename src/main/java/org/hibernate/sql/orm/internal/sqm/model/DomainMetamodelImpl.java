@@ -80,6 +80,11 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 					new ImprovedEntityPersisterImpl( databaseModel, this, entityPersister )
 			);
 		}
+
+		for ( ImprovedEntityPersisterImpl improvedEntityPersister : entityTypeDescriptorMap.values() ) {
+			improvedEntityPersister.afterInitialized( databaseModel, this );
+		}
+
 	}
 
 	@Override
