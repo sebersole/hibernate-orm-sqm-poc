@@ -48,6 +48,7 @@ import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
 import org.hibernate.sqm.query.expression.CaseSearchedExpression;
 import org.hibernate.sqm.query.expression.CaseSimpleExpression;
 import org.hibernate.sqm.query.expression.CoalesceExpression;
+import org.hibernate.sqm.query.expression.ConcatExpression;
 import org.hibernate.sqm.query.expression.ConstantEnumExpression;
 import org.hibernate.sqm.query.expression.ConstantFieldExpression;
 import org.hibernate.sqm.query.expression.CountFunction;
@@ -82,12 +83,16 @@ import org.hibernate.sqm.query.order.OrderByClause;
 import org.hibernate.sqm.query.order.SortSpecification;
 import org.hibernate.sqm.query.predicate.AndPredicate;
 import org.hibernate.sqm.query.predicate.BetweenPredicate;
+import org.hibernate.sqm.query.predicate.GroupedPredicate;
 import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
+import org.hibernate.sqm.query.predicate.LikePredicate;
 import org.hibernate.sqm.query.predicate.NegatedPredicate;
+import org.hibernate.sqm.query.predicate.NullnessPredicate;
 import org.hibernate.sqm.query.predicate.OrPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.select.SelectClause;
 import org.hibernate.sqm.query.select.Selection;
+import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
@@ -710,10 +715,25 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		);
 	}
 
+	@Override
+	public org.hibernate.sql.ast.expression.ConcatExpression visitConcatExpression(ConcatExpression expression) {
+		return new org.hibernate.sql.ast.expression.ConcatExpression(
+				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
+				(BasicType) ( (SqmTypeImplementor) expression.getExpressionType() ).getOrmType()
+		);
+	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Predicates
 
+
+	@Override
+	public org.hibernate.sql.ast.predicate.GroupedPredicate visitGroupedPredicate(GroupedPredicate predicate) {
+		return new org.hibernate.sql.ast.predicate.GroupedPredicate(
+				(org.hibernate.sql.ast.predicate.Predicate) predicate.getSubPredicate().accept( this )
+		);
+	}
 
 	@Override
 	public Junction visitAndPredicate(AndPredicate predicate) {
@@ -739,12 +759,46 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.BetweenPredicate visitBetweenPredicate(BetweenPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.BetweenPredicate(
+	public org.hibernate.sql.ast.predicate.Predicate visitBetweenPredicate(BetweenPredicate predicate) {
+		final org.hibernate.sql.ast.predicate.BetweenPredicate ast = new org.hibernate.sql.ast.predicate.BetweenPredicate(
 				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) predicate.getLowerBound().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) predicate.getUpperBound().accept( this )
 		);
+
+		if ( predicate.isNegated() ) {
+			return new org.hibernate.sql.ast.predicate.NegatedPredicate( ast );
+		}
+		else {
+			return ast;
+		}
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.Predicate visitLikePredicate(LikePredicate predicate) {
+		final org.hibernate.sql.ast.expression.Expression escapeExpression = predicate.getEscapeCharacter() == null
+				? null
+				: (org.hibernate.sql.ast.expression.Expression) predicate.getEscapeCharacter().accept( this );
+
+		return new org.hibernate.sql.ast.predicate.LikePredicate(
+				(org.hibernate.sql.ast.expression.Expression) predicate.getMatchExpression().accept( this ),
+				(org.hibernate.sql.ast.expression.Expression) predicate.getPattern().accept( this ),
+				escapeExpression
+		);
+	}
+
+	@Override
+	public org.hibernate.sql.ast.predicate.Predicate visitIsNullPredicate(NullnessPredicate predicate) {
+		final org.hibernate.sql.ast.predicate.NullnessPredicate ast = new org.hibernate.sql.ast.predicate.NullnessPredicate(
+				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this )
+		);
+
+		if ( predicate.isNegated() ) {
+			return new org.hibernate.sql.ast.predicate.NegatedPredicate( ast );
+		}
+		else {
+			return ast;
+		}
 	}
 
 	@Override

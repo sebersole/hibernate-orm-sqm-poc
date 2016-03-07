@@ -379,7 +379,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void testSimpleEmbeddedDereference2() {
-		final SelectStatement statement = (SelectStatement) interpret( "select p.name.first.fromFather from Person p" );
+		final SelectStatement statement = (SelectStatement) interpret( "select p.name.last.fromFather from Person p" );
 
 		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
 		interpreter.interpret( statement );
