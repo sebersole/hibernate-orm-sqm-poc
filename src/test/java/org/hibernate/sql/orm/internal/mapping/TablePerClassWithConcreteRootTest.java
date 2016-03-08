@@ -18,6 +18,7 @@ import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
+import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
 import org.hibernate.sqm.query.SelectStatement;
@@ -33,7 +34,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 /**
  * @author Andrea Boriero
  */
-public class TablePerClassWithAbstractRootTest extends BaseUnitTest {
+public class TablePerClassWithConcreteRootTest extends BaseUnitTest {
 
 	@Test
 	public void selectRootEntity() {
@@ -50,10 +51,28 @@ public class TablePerClassWithAbstractRootTest extends BaseUnitTest {
 		final TableBinding rootTableBinding = tableSpace.getRootTableGroup().getRootTableBinding();
 		final Table table = rootTableBinding.getTable();
 		assertThat( table, instanceOf( DerivedTable.class ) );
+		assertThat( table.getTableExpression(), containsString( "RootEntity union all" ) );
+		assertThat( table.getTableExpression(), containsString( "from second_child" ) );
+		assertThat( table.getTableExpression(), containsString( "from first_child" ) );
 
-		assertThat( table.getTableExpression(), containsString( "union all" ) );
-		assertThat( table.getTableExpression(), containsString( "second_child" ) );
-		assertThat( table.getTableExpression(), containsString( "first_child" ) );
+		assertThat( tableSpace.getRootTableGroup().getTableJoins().size(), is( 0 ) );
+	}
+
+	@Test
+	public void selectChild() {
+		final QuerySpec querySpec = getQuerySpec( "from FirstChild" );
+
+		final FromClause fromClause =
+				querySpec.getFromClause();
+		final List<TableSpace> tableSpaces = fromClause.getTableSpaces();
+		assertThat( tableSpaces.size(), is( 1 ) );
+		final TableSpace tableSpace = tableSpaces.get( 0 );
+
+		assertThat( tableSpace.getJoinedTableGroups().size(), is( 0 ) );
+
+		final TableBinding rootTableBinding = tableSpace.getRootTableGroup().getRootTableBinding();
+		final Table table = rootTableBinding.getTable();
+		assertThat( table, instanceOf( PhysicalTable.class ) );
 
 		assertThat( tableSpace.getRootTableGroup().getTableJoins().size(), is( 0 ) );
 	}
@@ -67,7 +86,7 @@ public class TablePerClassWithAbstractRootTest extends BaseUnitTest {
 
 	@Entity(name = "RootEntity")
 	@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-	public abstract static class RootEntity {
+	public static class RootEntity {
 		@Id
 		public Integer id;
 		public String name;
@@ -91,5 +110,4 @@ public class TablePerClassWithAbstractRootTest extends BaseUnitTest {
 		assertThat( selectQuery, notNullValue() );
 		return selectQuery.getQuerySpec();
 	}
-
 }
