@@ -8,6 +8,7 @@ package org.hibernate.sql.ast.predicate;
 
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.gen.SqlTreeWalker;
 
 /**
  * @author Steve Ebersole
@@ -27,5 +28,15 @@ public class InSubQueryPredicate implements Predicate {
 
 	public QuerySpec getSubQuery() {
 		return subQuery;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitInSubQueryPredicate( this );
 	}
 }

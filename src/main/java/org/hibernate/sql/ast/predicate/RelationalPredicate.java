@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.predicate;
 
 import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.gen.SqlTreeWalker;
 
 /**
  * @author Steve Ebersole
@@ -78,4 +79,13 @@ public class RelationalPredicate implements Predicate {
 		return type;
 	}
 
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitRelationalPredicate( this );
+	}
 }

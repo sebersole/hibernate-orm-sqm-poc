@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.predicate;
 
 import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.gen.SqlTreeWalker;
 
 /**
  * @author Steve Ebersole
@@ -35,5 +36,15 @@ public class BetweenPredicate implements Predicate {
 
 	public Expression getUpperBound() {
 		return upperBound;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitBetweenPredicate( this );
 	}
 }

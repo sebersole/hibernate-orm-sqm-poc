@@ -6,8 +6,8 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.BasicType;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
@@ -31,6 +31,11 @@ public class UnaryOperationExpression implements Expression {
 	@Override
 	public BasicType getType() {
 		return type;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitUnaryOperationExpression( this );
 	}
 
 	public Expression getOperand() {

@@ -6,8 +6,8 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.BasicType;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
@@ -34,50 +34,44 @@ public class BinaryArithmeticExpression implements Expression {
 		return resultType;
 	}
 
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitBinaryArithmeticExpression( this );
+	}
+
 	public enum Operation {
 		ADD {
 			@Override
-			String apply(String lhs, String rhs) {
-				return applyPrimitive( lhs, '+', rhs );
+			public String getOperatorSqlText() {
+				return "+";
 			}
 		},
 		SUBTRACT {
 			@Override
-			String apply(String lhs, String rhs) {
-				return applyPrimitive( lhs, '-', rhs );
+			public String getOperatorSqlText() {
+				return "-";
 			}
 		},
 		MULTIPLY {
 			@Override
-			String apply(String lhs, String rhs) {
-				return applyPrimitive( lhs, '*', rhs );
+			public String getOperatorSqlText() {
+				return "*";
 			}
 		},
 		DIVIDE {
 			@Override
-			String apply(String lhs, String rhs) {
-				return applyPrimitive( lhs, '/', rhs );
+			public String getOperatorSqlText() {
+				return "/";
 			}
 		},
 		QUOT {
 			@Override
-			String apply(String lhs, String rhs) {
-				return applyPrimitive( lhs, '/', rhs );
-			}
-		},
-		MODULO {
-			@Override
-			String apply(String lhs, String rhs) {
-//				return lhs + " % " + rhs;
-				return "mod(" + lhs + "," + rhs + ")";
+			public String getOperatorSqlText() {
+				return "/";
 			}
 		};
 
-		abstract String apply(String lhs, String rhs);
-
-		private static String applyPrimitive(String lhs, char operator, String rhs) {
-			return '(' + lhs + operator + rhs + ')';
-		}
+		public abstract String getOperatorSqlText();
 	}
 
 	/**

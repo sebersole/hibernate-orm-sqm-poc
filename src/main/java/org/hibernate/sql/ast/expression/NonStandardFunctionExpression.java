@@ -6,9 +6,11 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
+import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
@@ -19,15 +21,25 @@ import org.hibernate.type.Type;
 public class NonStandardFunctionExpression implements Expression {
 	private final String functionName;
 	private final List<Expression> arguments;
-	private final BasicTypeImpl resultSqmType;
+	private final BasicType resultType;
 
 	public NonStandardFunctionExpression(
 			String functionName,
 			List<Expression> arguments,
-			BasicTypeImpl resultSqmType) {
+			BasicType resultType) {
 		this.functionName = functionName;
 		this.arguments = arguments;
-		this.resultSqmType = resultSqmType;
+		this.resultType = resultType;
+	}
+	public NonStandardFunctionExpression(
+			String functionName,
+			BasicType resultType,
+			Expression... arguments) {
+		this(
+				functionName,
+				Arrays.asList( arguments ),
+				resultType
+		);
 	}
 
 	public String getFunctionName() {
@@ -38,12 +50,13 @@ public class NonStandardFunctionExpression implements Expression {
 		return arguments;
 	}
 
-	public BasicTypeImpl getResultSqmType() {
-		return resultSqmType;
+	@Override
+	public Type getType() {
+		return resultType;
 	}
 
 	@Override
-	public Type getType() {
-		return resultSqmType.getOrmType();
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitNonStandardFunctionExpression( this );
 	}
 }

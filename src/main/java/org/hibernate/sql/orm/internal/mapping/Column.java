@@ -16,4 +16,6 @@ public interface Column {
 	// todo : SqlTypeDescriptor would be better, along with nullable, etc information
 	int getJdbcType();
 	String toLoggableString();
+
+	String render(String identificationVariable);
 }

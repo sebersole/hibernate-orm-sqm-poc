@@ -1,5 +1,6 @@
 package org.hibernate.sql.gen;
 
+import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sqm.query.NonSelectStatement;
 import org.hibernate.sqm.query.SelectStatement;
@@ -22,7 +23,7 @@ public class SqmJdbcInterpreter {
 	 * @return The JdbcSelectPlan describing the select query execution
 	 */
 	public static JdbcSelectPlan interpret(SelectStatement statement, QueryOptions queryOptions, Callback callback) {
-		throw new NotYetImplementedException();
+		return SelectStatementInterpreter.interpret( statement, queryOptions, callback );
 	}
 
 	public static JdbcOperationPlan[] interpret(NonSelectStatement statement, QueryOptions queryOptions, Callback callback) {

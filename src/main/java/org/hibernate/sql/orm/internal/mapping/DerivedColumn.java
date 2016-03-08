@@ -36,6 +36,11 @@ public class DerivedColumn implements Column {
 
 	@Override
 	public String toLoggableString() {
-		return null;
+		return "DerivedColumn( " + expression + ")";
+	}
+
+	@Override
+	public String render(String identificationVariable) {
+		return expression;
 	}
 }

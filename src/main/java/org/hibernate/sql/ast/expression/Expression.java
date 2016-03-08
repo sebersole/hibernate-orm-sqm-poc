@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -13,4 +14,6 @@ import org.hibernate.type.Type;
  */
 public interface Expression {
 	Type getType();
+
+	void accept(SqlTreeWalker sqlTreeWalker);
 }

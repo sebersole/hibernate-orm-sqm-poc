@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -31,5 +32,10 @@ public class NullifExpression implements Expression {
 	@Override
 	public Type getType() {
 		return first.getType();
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitNullifExpression( this );
 	}
 }

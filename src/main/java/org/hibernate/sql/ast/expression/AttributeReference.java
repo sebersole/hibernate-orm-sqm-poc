@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
 import org.hibernate.type.Type;
 
@@ -31,6 +32,11 @@ public class AttributeReference implements Expression {
 	@Override
 	public Type getType() {
 		return referencedAttribute.getOrmType();
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitAttributeReference( this );
 	}
 
 	public ColumnBinding[] getColumnBindings() {

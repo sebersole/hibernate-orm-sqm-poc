@@ -6,8 +6,13 @@
  */
 package org.hibernate.sql.ast.predicate;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
+
 /**
  * @author Steve Ebersole
  */
 public interface Predicate {
+	boolean isEmpty();
+
+	void accept(SqlTreeWalker sqlTreeWalker);
 }

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.sqm.Helper;
 
 /**
@@ -51,5 +52,15 @@ public class InListPredicate implements Predicate {
 
 	public void addExpression(Expression expression) {
 		listExpressions.add( expression );
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitInListPredicate( this );
 	}
 }

@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -16,5 +17,10 @@ import org.hibernate.type.Type;
 public class QueryLiteral extends AbstractLiteral {
 	public QueryLiteral(Object value, Type ormType) {
 		super( value, ormType );
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitQueryLiteral( this );
 	}
 }

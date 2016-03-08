@@ -11,6 +11,7 @@ import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.expression.NamedParameter;
+import org.hibernate.sql.ast.expression.NonStandardFunctionExpression;
 import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
@@ -101,14 +102,18 @@ import org.hibernate.type.Type;
  */
 public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
+	/**
+	 * Main entry point into SQM SelectStatement interpretation
+	 *
+	 * @param statement
+	 * @param queryOptions
+	 * @param callback
+	 *
+	 * @return
+	 */
 	public static JdbcSelectPlan interpret(SelectStatement statement, QueryOptions queryOptions, Callback callback) {
 		final SelectStatementInterpreter walker = new SelectStatementInterpreter( queryOptions, callback );
 		return walker.interpret( statement );
-	}
-
-	public JdbcSelectPlan interpret(SelectStatement statement) {
-		visitSelectStatement( statement );
-		return null;
 	}
 
 	private final QueryOptions queryOptions;
@@ -119,14 +124,19 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	private SelectQuery sqlAst;
 
 	private final List<Return> returnDescriptors = new ArrayList<Return>();
-	private List<QueryOptionBinder> optionBinders;
 	private List<ParameterBinder> parameterBinders;
+	private List<QueryOptionBinder> optionBinders;
 
 	private final SqlAliasBaseManager sqlAliasBaseManager = new SqlAliasBaseManager();
 
 	public SelectStatementInterpreter(QueryOptions queryOptions, Callback callback) {
 		this.queryOptions = queryOptions;
 		this.callback = callback;
+	}
+
+	public JdbcSelectPlan interpret(SelectStatement statement) {
+		visitSelectStatement( statement );
+		return null;
 	}
 
 	public SelectQuery getSelectQuery() {
@@ -629,7 +639,15 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitBinaryArithmeticExpression(BinaryArithmeticExpression expression) {
+	public org.hibernate.sql.ast.expression.Expression visitBinaryArithmeticExpression(BinaryArithmeticExpression expression) {
+		if ( expression.getOperation() == BinaryArithmeticExpression.Operation.MODULO ) {
+			return new NonStandardFunctionExpression(
+					"mod",
+					(BasicType) extractOrmType( expression.getExpressionType() ),
+					(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
+					(org.hibernate.sql.ast.expression.Expression) expression.getRightHandOperand().accept( this )
+			);
+		}
 		return new org.hibernate.sql.ast.expression.BinaryArithmeticExpression(
 				interpret( expression.getOperation() ),
 				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
@@ -654,9 +672,6 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			}
 			case QUOT: {
 				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.QUOT;
-			}
-			case MODULO: {
-				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.MODULO;
 			}
 		}
 

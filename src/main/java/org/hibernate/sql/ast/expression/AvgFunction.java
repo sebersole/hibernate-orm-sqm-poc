@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.BasicType;
 
 /**
@@ -14,5 +15,10 @@ import org.hibernate.type.BasicType;
 public class AvgFunction extends AbstractAggregateFunction implements AggregateFunction {
 	public AvgFunction(Expression argument, boolean distinct, BasicType resultType) {
 		super( argument, distinct, resultType );
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitAvgFunction( this );
 	}
 }

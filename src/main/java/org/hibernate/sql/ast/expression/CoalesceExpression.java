@@ -9,6 +9,7 @@ package org.hibernate.sql.ast.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -28,5 +29,10 @@ public class CoalesceExpression implements Expression {
 	@Override
 	public Type getType() {
 		return values.get( 0 ).getType();
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitCoalesceExpression( this );
 	}
 }

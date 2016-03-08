@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -22,6 +23,11 @@ public class ColumnBindingExpression implements Expression {
 	@Override
 	public Type getType() {
 		return null;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitColumnBindingExpression( this );
 	}
 
 	public ColumnBinding getColumnBinding() {

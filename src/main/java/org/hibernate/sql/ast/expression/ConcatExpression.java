@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
@@ -38,5 +39,10 @@ public class ConcatExpression implements Expression {
 	@Override
 	public Type getType() {
 		return type;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitConcatExpression( this );
 	}
 }

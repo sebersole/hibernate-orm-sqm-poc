@@ -9,6 +9,7 @@ package org.hibernate.sql.ast.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -33,6 +34,11 @@ public class CaseSimpleExpression implements Expression {
 	@Override
 	public Type getType() {
 		return type;
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitCaseSimpleExpression( this );
 	}
 
 	public List<WhenFragment> getWhenFragments() {

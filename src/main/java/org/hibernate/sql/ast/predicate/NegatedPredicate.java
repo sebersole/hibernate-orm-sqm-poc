@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.ast.predicate;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
+
 /**
  * @author Steve Ebersole
  */
@@ -18,5 +20,15 @@ public class NegatedPredicate implements Predicate {
 
 	public Predicate getPredicate() {
 		return predicate;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return predicate.isEmpty();
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitNegatedPredicate( this );
 	}
 }

@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.QueryParameterBinding;
 import org.hibernate.type.Type;
@@ -35,5 +36,10 @@ public class NamedParameter extends AbstractParameter {
 			SessionImplementor session) throws SQLException {
 		final QueryParameterBinding binding = queryOptions.getParameterBindings().getNamedParameterBinding( name );
 		return bindParameterValue(  statement, startPosition, binding, session );
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitNamedParameter( this );
 	}
 }

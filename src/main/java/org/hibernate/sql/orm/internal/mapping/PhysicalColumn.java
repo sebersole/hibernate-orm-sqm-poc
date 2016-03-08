@@ -35,7 +35,12 @@ public class PhysicalColumn implements Column {
 	}
 
 	@Override
+	public String render(String identificationVariable) {
+		return identificationVariable + '.' + name;
+	}
+
+	@Override
 	public String toLoggableString() {
-		return null;
+		return "PhysicalColumn(" + name + ");";
 	}
 }

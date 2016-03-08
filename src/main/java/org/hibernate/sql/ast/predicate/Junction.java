@@ -9,6 +9,8 @@ package org.hibernate.sql.ast.predicate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.sql.gen.SqlTreeWalker;
+
 /**
  * @author Steve Ebersole
  */
@@ -41,5 +43,15 @@ public class Junction implements Predicate {
 
 	public List<Predicate> getPredicates() {
 		return predicates;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return predicates.isEmpty();
+	}
+
+	@Override
+	public void accept(SqlTreeWalker sqlTreeWalker) {
+		sqlTreeWalker.visitJunction( this );
 	}
 }

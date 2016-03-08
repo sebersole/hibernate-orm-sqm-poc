@@ -9,26 +9,22 @@ package org.hibernate.sql.ast.predicate;
 import org.hibernate.sql.gen.SqlTreeWalker;
 
 /**
+ * Represents a filter applied to an entity/collection.
+ * <p/>
+ * Note, we do not attempt to parse the filter
+ *
  * @author Steve Ebersole
  */
-public class GroupedPredicate implements Predicate {
-	private final Predicate subPredicate;
-
-	public GroupedPredicate(Predicate subPredicate) {
-		this.subPredicate = subPredicate;
-	}
-
-	public Predicate getSubPredicate() {
-		return subPredicate;
-	}
+public class FilterPredicate implements Predicate {
+	// todo : need to "carry forward" the FilterConfiguration information into the ImprovedEntityPersister so we have access to the alias injections
 
 	@Override
 	public boolean isEmpty() {
-		return subPredicate.isEmpty();
+		return true;
 	}
 
 	@Override
 	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitGroupedPredicate( this );
+		sqlTreeWalker.visitFilterPredicate( this );
 	}
 }
