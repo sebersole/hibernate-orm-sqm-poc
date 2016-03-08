@@ -19,9 +19,14 @@ import org.hibernate.sqm.Helper;
 public class InListPredicate implements Predicate {
 	private final Expression testExpression;
 	private final List<Expression> listExpressions;
+	private final boolean negated;
 
 	public InListPredicate(Expression testExpression) {
 		this( testExpression, new ArrayList<Expression>() );
+	}
+
+	public InListPredicate(Expression testExpression, boolean negated) {
+		this( testExpression, new ArrayList<Expression>(), negated );
 	}
 
 	public InListPredicate(Expression testExpression, Expression... listExpressions) {
@@ -40,6 +45,7 @@ public class InListPredicate implements Predicate {
 			boolean negated) {
 		this.testExpression = testExpression;
 		this.listExpressions = listExpressions;
+		this.negated = negated;
 	}
 
 	public Expression getTestExpression() {
@@ -52,6 +58,10 @@ public class InListPredicate implements Predicate {
 
 	public void addExpression(Expression expression) {
 		listExpressions.add( expression );
+	}
+
+	public boolean isNegated() {
+		return negated;
 	}
 
 	@Override

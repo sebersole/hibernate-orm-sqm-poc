@@ -13,58 +13,90 @@ import org.hibernate.sql.gen.SqlTreeWalker;
  * @author Steve Ebersole
  */
 public class RelationalPredicate implements Predicate {
-	public enum Type {
+	public enum Operator {
 		EQUAL {
 			@Override
-			public Type negate() {
+			public Operator negate() {
 				return NOT_EQUAL;
+			}
+
+			@Override
+			public String sqlText() {
+				return "=";
 			}
 		},
 		NOT_EQUAL {
 			@Override
-			public Type negate() {
+			public Operator negate() {
 				return EQUAL;
+			}
+
+			@Override
+			public String sqlText() {
+				return "<>";
 			}
 		},
 		GT {
 			@Override
-			public Type negate() {
+			public Operator negate() {
 				return LE;
+			}
+
+			@Override
+			public String sqlText() {
+				return ">";
 			}
 		},
 		GE {
 			@Override
-			public Type negate() {
+			public Operator negate() {
 				return LT;
+			}
+
+			@Override
+			public String sqlText() {
+				return ">=";
 			}
 		},
 		LT {
 			@Override
-			public Type negate() {
+			public Operator negate() {
 				return GE;
 			}
+
+			@Override
+			public String sqlText() {
+				return "<";
+			}
 		},
+
 		LE {
 			@Override
-			public Type negate() {
+			public Operator negate() {
 				return GT;
+			}
+
+			@Override
+			public String sqlText() {
+				return "<=";
 			}
 		};
 
-		public abstract Type negate();
+		public abstract Operator negate();
+		public abstract String sqlText();
 	}
 
 	private final Expression leftHandExpression;
 	private final Expression rightHandExpression;
-	private Type type;
+	private Operator operator;
 
 	public RelationalPredicate(
-			Type type,
+			Operator operator,
 			Expression leftHandExpression,
 			Expression rightHandExpression) {
 		this.leftHandExpression = leftHandExpression;
 		this.rightHandExpression = rightHandExpression;
-		this.type = type;
+		this.operator = operator;
 	}
 
 	public Expression getLeftHandExpression() {
@@ -75,8 +107,8 @@ public class RelationalPredicate implements Predicate {
 		return rightHandExpression;
 	}
 
-	public Type getType() {
-		return type;
+	public Operator getOperator() {
+		return operator;
 	}
 
 	@Override

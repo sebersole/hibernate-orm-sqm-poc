@@ -14,13 +14,19 @@ import org.hibernate.sql.gen.SqlTreeWalker;
  */
 public class NullnessPredicate implements Predicate {
 	private final Expression expression;
+	private final boolean negated;
 
-	public NullnessPredicate(Expression expression) {
+	public NullnessPredicate(Expression expression, boolean negated) {
 		this.expression = expression;
+		this.negated = negated;
 	}
 
 	public Expression getExpression() {
 		return expression;
+	}
+
+	public boolean isNegated() {
+		return negated;
 	}
 
 	@Override

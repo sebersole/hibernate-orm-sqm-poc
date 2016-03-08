@@ -11,14 +11,11 @@ import javax.persistence.Id;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
-import org.hibernate.engine.jdbc.internal.Formatter;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
-import org.hibernate.sqm.SemanticQueryInterpreter;
-import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
@@ -33,7 +30,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	}
 
 	@Test
-	public void testSqlTreeWalking() {
+	public void testSqlTreeWalking1() {
 		SelectQuery sqlTree = interpretSelectQuery( "select p.name from Person p" );
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
 		sqlTreeWalker.visitSelectQuery( sqlTree );
@@ -43,10 +40,113 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 	}
 
+	@Test
+	public void testSqlTreeWalking2() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.name, p2.name from Person p, Person p2" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+	}
+
+	@Test
+	public void testSqlTreeWalking3() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.name from Person p where p.age between 20 and 39" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(2) );
+	}
+
+	@Test
+	public void testSqlTreeWalking4() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.name from Person p where (p.age <= 20 and p.age >= 39)" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(2) );
+	}
+
+	@Test
+	public void testSqlTreeWalking5() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name like 'Steve%'" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(1) );
+	}
+
+	@Test
+	public void testSqlTreeWalking6() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name like 'Steve%' escape '/'" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(2) );
+	}
+
+	@Test
+	public void testSqlTreeWalking7() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name is null" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(0) );
+	}
+
+	@Test
+	public void testSqlTreeWalking8() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name is not null" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(0) );
+	}
+
+	@Test
+	public void testSqlTreeWalking9() {
+		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where not p.name is not null" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		// each literal is transformed into a parameter, so check the number of ParameterBinders
+		assertThat( sqlTreeWalker.getParameterBinders().size(), is(0) );
+	}
+
 	@Entity(name="Person")
 	public static class Person {
 		@Id
 		Integer id;
 		String name;
+		int age;
 	}
 }

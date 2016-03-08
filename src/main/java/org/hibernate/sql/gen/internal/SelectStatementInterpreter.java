@@ -33,7 +33,6 @@ import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
-import org.hibernate.sql.orm.internal.sqm.model.BasicTypeImpl;
 import org.hibernate.sql.orm.internal.sqm.model.SqmTypeImplementor;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
@@ -322,7 +321,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			for ( int i = 0; i < joinLhsColumns.length; i++ ) {
 				predicate.add(
 						new RelationalPredicate(
-								RelationalPredicate.Type.EQUAL,
+								RelationalPredicate.Operator.EQUAL,
 								new ColumnBindingExpression( joinLhsColumns[i] ),
 								new ColumnBindingExpression( joinRhsColumns[i] )
 						)
@@ -362,7 +361,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 				for ( int i = 0; i < joinLhsColumns.length; i++ ) {
 					predicate.add(
 							new RelationalPredicate(
-									RelationalPredicate.Type.EQUAL,
+									RelationalPredicate.Operator.EQUAL,
 									new ColumnBindingExpression( joinLhsColumns[i] ),
 									new ColumnBindingExpression( joinRhsColumns[i] )
 							)
@@ -785,51 +784,45 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	@Override
 	public org.hibernate.sql.ast.predicate.RelationalPredicate visitRelationalPredicate(org.hibernate.sqm.query.predicate.RelationalPredicate predicate) {
 		return new org.hibernate.sql.ast.predicate.RelationalPredicate(
-				interpret( predicate.getType() ),
+				interpret( predicate.getOperator() ),
 				(org.hibernate.sql.ast.expression.Expression) predicate.getLeftHandExpression().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) predicate.getRightHandExpression().accept( this )
 		);
 	}
 
-	private RelationalPredicate.Type interpret(org.hibernate.sqm.query.predicate.RelationalPredicate.Type type) {
-		switch ( type ) {
+	private RelationalPredicate.Operator interpret(org.hibernate.sqm.query.predicate.RelationalPredicate.Operator operator) {
+		switch ( operator ) {
 			case EQUAL: {
-				return RelationalPredicate.Type.EQUAL;
+				return RelationalPredicate.Operator.EQUAL;
 			}
 			case NOT_EQUAL: {
-				return RelationalPredicate.Type.NOT_EQUAL;
+				return RelationalPredicate.Operator.NOT_EQUAL;
 			}
 			case GE: {
-				return RelationalPredicate.Type.GE;
+				return RelationalPredicate.Operator.GE;
 			}
 			case GT: {
-				return RelationalPredicate.Type.GT;
+				return RelationalPredicate.Operator.GT;
 			}
 			case LE: {
-				return RelationalPredicate.Type.LE;
+				return RelationalPredicate.Operator.LE;
 			}
 			case LT: {
-				return RelationalPredicate.Type.LT;
+				return RelationalPredicate.Operator.LT;
 			}
 		}
 
-		throw new IllegalStateException( "Unexpected RelationalPredicate Type : " + type );
+		throw new IllegalStateException( "Unexpected RelationalPredicate Type : " + operator );
 	}
 
 	@Override
 	public org.hibernate.sql.ast.predicate.Predicate visitBetweenPredicate(BetweenPredicate predicate) {
-		final org.hibernate.sql.ast.predicate.BetweenPredicate ast = new org.hibernate.sql.ast.predicate.BetweenPredicate(
+		return new org.hibernate.sql.ast.predicate.BetweenPredicate(
 				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) predicate.getLowerBound().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) predicate.getUpperBound().accept( this )
+				(org.hibernate.sql.ast.expression.Expression) predicate.getUpperBound().accept( this ),
+				predicate.isNegated()
 		);
-
-		if ( predicate.isNegated() ) {
-			return new org.hibernate.sql.ast.predicate.NegatedPredicate( ast );
-		}
-		else {
-			return ast;
-		}
 	}
 
 	@Override
@@ -841,46 +834,37 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new org.hibernate.sql.ast.predicate.LikePredicate(
 				(org.hibernate.sql.ast.expression.Expression) predicate.getMatchExpression().accept( this ),
 				(org.hibernate.sql.ast.expression.Expression) predicate.getPattern().accept( this ),
-				escapeExpression
+				escapeExpression,
+				predicate.isNegated()
 		);
 	}
 
 	@Override
 	public org.hibernate.sql.ast.predicate.Predicate visitIsNullPredicate(NullnessPredicate predicate) {
-		final org.hibernate.sql.ast.predicate.NullnessPredicate ast = new org.hibernate.sql.ast.predicate.NullnessPredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this )
+		return new org.hibernate.sql.ast.predicate.NullnessPredicate(
+				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this ),
+				predicate.isNegated()
 		);
-
-		if ( predicate.isNegated() ) {
-			return new org.hibernate.sql.ast.predicate.NegatedPredicate( ast );
-		}
-		else {
-			return ast;
-		}
 	}
 
 	@Override
 	public org.hibernate.sql.ast.predicate.Predicate visitInListPredicate(org.hibernate.sqm.query.predicate.InListPredicate predicate) {
 		final InListPredicate inPredicate = new InListPredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this )
+				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this ),
+				predicate.isNegated()
 		);
 		for ( org.hibernate.sqm.query.expression.Expression expression : predicate.getListExpressions() ) {
 			inPredicate.addExpression( (org.hibernate.sql.ast.expression.Expression) expression.accept( this ) );
 		}
-
-		if ( predicate.isNegated() ) {
-			return new org.hibernate.sql.ast.predicate.NegatedPredicate( inPredicate );
-		}
-		else {
-			return inPredicate;
-		}
+		return inPredicate;
 	}
 
 	@Override
 	public org.hibernate.sql.ast.predicate.Predicate visitInSubQueryPredicate(InSubQueryPredicate predicate) {
 		return new org.hibernate.sql.ast.predicate.InSubQueryPredicate(
 				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this ),
-				(org.hibernate.sql.ast.QuerySpec) predicate.getSubQueryExpression().accept( this )
+				(org.hibernate.sql.ast.QuerySpec) predicate.getSubQueryExpression().accept( this ),
+				predicate.isNegated()
 		);
 	}
 }

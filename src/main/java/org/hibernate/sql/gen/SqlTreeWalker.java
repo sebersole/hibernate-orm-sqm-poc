@@ -50,6 +50,7 @@ import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.LikePredicate;
 import org.hibernate.sql.ast.predicate.NegatedPredicate;
 import org.hibernate.sql.ast.predicate.NullnessPredicate;
+import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
@@ -81,11 +82,12 @@ public class SqlTreeWalker {
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// for now, for tests
-
 	public String getSql() {
 		return sqlBuffer.toString();
 	}
-
+	public List<ParameterBinder> getParameterBinders() {
+		return parameterBinders;
+	}
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	private void appendSql(String fragment) {
@@ -458,7 +460,14 @@ public class SqlTreeWalker {
 	// Predicates
 
 	public void visitBetweenPredicate(BetweenPredicate betweenPredicate) {
-		throw new NotYetImplementedException();
+		betweenPredicate.getExpression().accept( this );
+		if ( betweenPredicate.isNegated() ) {
+			appendSql( " not" );
+		}
+		appendSql( " between " );
+		betweenPredicate.getLowerBound().accept( this );
+		appendSql( " and " );
+		betweenPredicate.getUpperBound().accept( this );
 	}
 
 	public void visitFilterPredicate(FilterPredicate filterPredicate) {
@@ -466,34 +475,94 @@ public class SqlTreeWalker {
 	}
 
 	public void visitGroupedPredicate(GroupedPredicate groupedPredicate) {
-		throw new NotYetImplementedException();
+		if ( groupedPredicate.isEmpty() ) {
+			return;
+		}
+
+		appendSql( "(" );
+		groupedPredicate.getSubPredicate().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitInListPredicate(InListPredicate inListPredicate) {
-		throw new NotYetImplementedException();
+		inListPredicate.getTestExpression().accept( this );
+		if ( inListPredicate.isNegated() ) {
+			appendSql( " not" );
+		}
+		appendSql( " in(" );
+		if ( inListPredicate.getListExpressions().isEmpty() ) {
+			appendSql( "null" );
+		}
+		else {
+			String separator = "";
+			for ( Expression expression : inListPredicate.getListExpressions() ) {
+				appendSql( separator );
+				expression.accept( this );
+				separator = ", ";
+			}
+		}
+		appendSql( ")" );
 	}
 
 	public void visitInSubQueryPredicate(InSubQueryPredicate inSubQueryPredicate) {
-		throw new NotYetImplementedException();
+		inSubQueryPredicate.getTestExpression().accept( this );
+		if ( inSubQueryPredicate.isNegated() ) {
+			appendSql( " not" );
+		}
+		appendSql( " in(" );
+		visitQuerySpec( inSubQueryPredicate.getSubQuery() );
+		appendSql( ")" );
 	}
 
 	public void visitJunction(Junction junction) {
-		throw new NotYetImplementedException();
+		if ( junction.isEmpty() ) {
+			return;
+		}
+
+		String separator = "";
+		for ( Predicate predicate : junction.getPredicates() ) {
+			appendSql( separator );
+			predicate.accept( this );
+			separator = junction.getNature() == Junction.Nature.CONJUNCTION ? " and " : " or ";
+		}
 	}
 
 	public void visitLikePredicate(LikePredicate likePredicate) {
-		throw new NotYetImplementedException();
+		likePredicate.getMatchExpression().accept( this );
+		if ( likePredicate.isNegated() ) {
+			appendSql( " not" );
+		}
+		appendSql( " like " );
+		likePredicate.getPattern().accept( this );
+		if ( likePredicate.getEscapeCharacter() != null ) {
+			appendSql( " escape " );
+			likePredicate.getEscapeCharacter().accept( this );
+		}
 	}
 
 	public void visitNegatedPredicate(NegatedPredicate negatedPredicate) {
-		throw new NotYetImplementedException();
+		if ( negatedPredicate.isEmpty() ) {
+			return;
+		}
+
+		appendSql( "not(" );
+		negatedPredicate.getPredicate().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitNullnessPredicate(NullnessPredicate nullnessPredicate) {
-		throw new NotYetImplementedException();
+		nullnessPredicate.getExpression().accept( this );
+		if ( nullnessPredicate.isNegated() ) {
+			appendSql( " is not null" );
+		}
+		else {
+			appendSql( " is null" );
+		}
 	}
 
 	public void visitRelationalPredicate(RelationalPredicate relationalPredicate) {
-		throw new NotYetImplementedException();
+		relationalPredicate.getLeftHandExpression().accept( this );
+		appendSql( relationalPredicate.getOperator().sqlText() );
+		relationalPredicate.getRightHandExpression().accept( this );
 	}
 }

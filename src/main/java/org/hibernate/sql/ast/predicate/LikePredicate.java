@@ -51,6 +51,10 @@ public class LikePredicate implements Predicate {
 		return escapeCharacter;
 	}
 
+	public boolean isNegated() {
+		return negated;
+	}
+
 	@Override
 	public boolean isEmpty() {
 		return false;

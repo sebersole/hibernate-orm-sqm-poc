@@ -263,7 +263,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			for ( int i=0; i < fkColumns.length; i++ ) {
 				joinPredicate.add(
 						new RelationalPredicate(
-								RelationalPredicate.Type.EQUAL,
+								RelationalPredicate.Operator.EQUAL,
 								new ColumnBindingExpression( new ColumnBinding( fkColumns[i], group.getRootTableBinding() ) ),
 								new ColumnBindingExpression( new ColumnBinding( fkTargetColumns[i], drivingTableBinding ) )
 						)

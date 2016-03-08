@@ -16,10 +16,12 @@ import org.hibernate.sql.gen.SqlTreeWalker;
 public class InSubQueryPredicate implements Predicate {
 	private final Expression testExpression;
 	private final QuerySpec subQuery;
+	private final boolean negated;
 
-	public InSubQueryPredicate(Expression testExpression, QuerySpec subQuery) {
+	public InSubQueryPredicate(Expression testExpression, QuerySpec subQuery, boolean negated) {
 		this.testExpression = testExpression;
 		this.subQuery = subQuery;
+		this.negated = negated;
 	}
 
 	public Expression getTestExpression() {
@@ -28,6 +30,10 @@ public class InSubQueryPredicate implements Predicate {
 
 	public QuerySpec getSubQuery() {
 		return subQuery;
+	}
+
+	public boolean isNegated() {
+		return negated;
 	}
 
 	@Override

@@ -16,14 +16,17 @@ public class BetweenPredicate implements Predicate {
 	private final Expression expression;
 	private final Expression lowerBound;
 	private final Expression upperBound;
+	private final boolean negated;
 
 	public BetweenPredicate(
 			Expression expression,
 			Expression lowerBound,
-			Expression upperBound) {
+			Expression upperBound,
+			boolean negated) {
 		this.expression = expression;
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
+		this.negated = negated;
 	}
 
 	public Expression getExpression() {
@@ -36,6 +39,10 @@ public class BetweenPredicate implements Predicate {
 
 	public Expression getUpperBound() {
 		return upperBound;
+	}
+
+	public boolean isNegated() {
+		return negated;
 	}
 
 	@Override
