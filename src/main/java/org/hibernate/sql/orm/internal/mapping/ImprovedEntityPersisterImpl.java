@@ -64,7 +64,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 		if ( persister instanceof UnionSubclassEntityPersister ) {
 			tables = new AbstractTable[1];
-			tables[0] = databaseModel.createDerivedTable( ( (UnionSubclassEntityPersister) persister ).getTableName() );
+			tables[0] =  makeTableReference( databaseModel, ((UnionSubclassEntityPersister) persister).getTableName() );
 		}
 		else {
 			// for now we treat super, self and sub attributes here just as EntityPersister does
@@ -174,7 +174,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 	private AbstractTable makeTableReference(DatabaseModel databaseModel, String tableExpression) {
 		// fugly, but when moved into persister we would know from mapping metamodel which type.
-		if ( tableExpression.trim().startsWith( "select" ) ) {
+		if ( tableExpression.trim().startsWith( "select" ) || tableExpression.trim().contains( "( select" ) ) {
 			return databaseModel.createDerivedTable( tableExpression );
 		}
 		else {
