@@ -12,6 +12,7 @@ import java.util.Map;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
+import org.hibernate.persister.entity.UnionSubclassEntityPersister;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
@@ -61,14 +62,20 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		this.persister = persister;
 		this.queryable = (Queryable) persister;
 
-		// for now we treat super, self and sub attributes here just as EntityPersister does
-		// ultimately would be better to split that across the specific persister impls and link them imo
-		final int subclassTableCount = Helper.INSTANCE.extractSubclassTableCount( persister );
-		this.tables = new AbstractTable[subclassTableCount];
+		if ( persister instanceof UnionSubclassEntityPersister ) {
+			tables = new AbstractTable[1];
+			tables[0] = makeTableReference( databaseModel, ( (UnionSubclassEntityPersister) persister ).getTableName() );
+		}
+		else {
+			// for now we treat super, self and sub attributes here just as EntityPersister does
+			// ultimately would be better to split that across the specific persister impls and link them imo
+			final int subclassTableCount = Helper.INSTANCE.extractSubclassTableCount( persister );
+			this.tables = new AbstractTable[subclassTableCount];
 
-		tables[0] = makeTableReference( databaseModel, queryable.getSubclassTableName( 0 ) );
-		for ( int i = 1; i < subclassTableCount; i++ ) {
-			tables[i] = makeTableReference( databaseModel, queryable.getSubclassTableName( i ) );
+			tables[0] = makeTableReference( databaseModel, queryable.getSubclassTableName( 0 ) );
+			for ( int i = 1; i < subclassTableCount; i++ ) {
+				tables[i] = makeTableReference( databaseModel, queryable.getSubclassTableName( i ) );
+			}
 		}
 	}
 
