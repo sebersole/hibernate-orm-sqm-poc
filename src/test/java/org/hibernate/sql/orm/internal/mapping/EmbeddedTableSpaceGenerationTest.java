@@ -23,6 +23,7 @@ import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
+import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
@@ -48,7 +49,11 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference attributeReference = (AttributeReference) selection.getSelectExpression();
 		assertThat( attributeReference.getReferencedAttribute().getName(), is( "name" ) );
-
+		checkReferenceType(
+				attributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person",
+				ImprovedEntityPersister.class
+		);
 		final ColumnBinding[] columnBindings = attributeReference.getColumnBindings();
 		assertThat( columnBindings.length, is( 3 ) );
 
@@ -73,6 +78,11 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference attributeReference = (AttributeReference) selection.getSelectExpression();
 		assertThat( attributeReference.getReferencedAttribute().getName(), is( "last" ) );
+		checkReferenceType(
+				attributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person.name",
+				EmbeddablePersister.class
+		);
 
 		final ColumnBinding[] columnBindings = attributeReference.getColumnBindings();
 		assertThat( columnBindings.length, is( 2 ) );
@@ -83,7 +93,6 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 		final Column column2 = columnBindings[1].getColumn();
 		checkPhysicalColumn( column2, "fromMother", "PERSON" );
 	}
-
 
 	@Test
 	public void testEmbeddedDereference() {
@@ -96,12 +105,24 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference attributeReference = (AttributeReference) selection.getSelectExpression();
 		assertThat( attributeReference.getReferencedAttribute().getName(), is( "fromFather" ) );
+		checkReferenceType(
+				attributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person.name.last",
+				EmbeddablePersister.class
+		);
 
 		final ColumnBinding[] columnBindings = attributeReference.getColumnBindings();
 		assertThat( columnBindings.length, is( 1 ) );
 
 		final Column column1 = columnBindings[0].getColumn();
 		checkPhysicalColumn( column1, "fromFather", "PERSON" );
+	}
+
+	private void checkReferenceType(AttributeReference attributeReference, String typeName, Class<? extends ManagedType>type) {
+		final SingularAttributeImplementor referencedAttribute = attributeReference.getReferencedAttribute();
+		final ManagedType declaringType = referencedAttribute.getDeclaringType();
+		assertThat( declaringType, instanceOf( type ) );
+		assertThat( declaringType.getTypeName(), is( typeName ) );
 	}
 
 	@Test
@@ -116,6 +137,11 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference firstAttributeReference = (AttributeReference) firstSelection.getSelectExpression();
 		assertThat( firstAttributeReference.getReferencedAttribute().getName(), is( "fromFather" ) );
+		checkReferenceType(
+				firstAttributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person.name2.last",
+				EmbeddablePersister.class
+		);
 
 		final ColumnBinding[] columnBindings = firstAttributeReference.getColumnBindings();
 		assertThat( columnBindings.length, is( 1 ) );
@@ -128,6 +154,11 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference secondSelectionAttributeReference = (AttributeReference) secondSelection.getSelectExpression();
 		assertThat( secondSelectionAttributeReference.getReferencedAttribute().getName(), is( "fromFather" ) );
+		checkReferenceType(
+				secondSelectionAttributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person.name.last",
+				EmbeddablePersister.class
+		);
 
 		final ColumnBinding[] secondSelectionColumnBindings = secondSelectionAttributeReference.getColumnBindings();
 		assertThat( secondSelectionColumnBindings.length, is( 1 ) );
@@ -147,6 +178,11 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference firstAttributeReference = (AttributeReference) firstSelection.getSelectExpression();
 		assertThat( firstAttributeReference.getReferencedAttribute().getName(), is( "fromFather" ) );
+		checkReferenceType(
+				firstAttributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person.name2.last",
+				EmbeddablePersister.class
+		);
 
 		final ColumnBinding[] columnBindings = firstAttributeReference.getColumnBindings();
 		assertThat( columnBindings.length, is( 1 ) );
@@ -159,6 +195,11 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 
 		final AttributeReference secondSelectionAttributeReference = (AttributeReference) secondSelection.getSelectExpression();
 		assertThat( secondSelectionAttributeReference.getReferencedAttribute().getName(), is( "last" ) );
+		checkReferenceType(
+				secondSelectionAttributeReference,
+				"org.hibernate.sql.orm.internal.mapping.EmbeddedTableSpaceGenerationTest$Person.name",
+				EmbeddablePersister.class
+		);
 
 		final ColumnBinding[] secondSelectionColumnBindings = secondSelectionAttributeReference.getColumnBindings();
 		assertThat( secondSelectionColumnBindings.length, is( 2 ) );
