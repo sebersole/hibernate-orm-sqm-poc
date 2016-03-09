@@ -9,16 +9,21 @@ package org.hibernate.sql.ast.expression;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.SqlTreeWalker;
-import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.QueryParameterBinding;
+import org.hibernate.sql.orm.QueryParameterBindings;
 import org.hibernate.type.Type;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author Steve Ebersole
  */
 public class PositionalParameter extends AbstractParameter {
+	private static final Logger log = Logger.getLogger( PositionalParameter.class );
+
 	private final int position;
 
 	public PositionalParameter(int position, Type inferredType) {
@@ -26,14 +31,33 @@ public class PositionalParameter extends AbstractParameter {
 		this.position = position;
 	}
 
+	public int getPosition() {
+		return position;
+	}
+
 	@Override
 	public int bindParameterValue(
 			PreparedStatement statement,
 			int startPosition,
-			QueryOptions queryOptions,
+			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session) throws SQLException {
-		final QueryParameterBinding binding = queryOptions.getParameterBindings().getPositionalParameterBinding( position );
+		final QueryParameterBinding binding = queryParameterBindings.getPositionalParameterBinding( position );
 		return bindParameterValue(  statement, startPosition, binding, session );
+	}
+
+	@Override
+	protected void warnNoBinding() {
+		log.debugf( "Query defined positional parameter [%s], but no binding was found (setParameter not called)", getPosition() );
+	}
+
+	@Override
+	protected void unresolvedType() {
+		throw new QueryException( "Unable to determine Type for positional parameter [" + getPosition() + "]" );
+	}
+
+	@Override
+	protected void warnNullBindValue() {
+		log.debugf( "Binding value for positional parameter [:%s] was null", getPosition() );
 	}
 
 	@Override

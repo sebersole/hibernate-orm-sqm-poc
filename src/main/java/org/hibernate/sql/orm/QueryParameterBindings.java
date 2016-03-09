@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.hibernate.sql.ast.expression.NamedParameter;
 import org.hibernate.sql.orm.internal.NamedQueryParameter;
 import org.hibernate.sql.orm.internal.PositionalQueryParameter;
 import org.hibernate.sql.orm.internal.QueryParameterBindingImpl;
@@ -23,31 +24,19 @@ import org.hibernate.sql.orm.internal.QueryParameterBindingImpl;
 public class QueryParameterBindings {
 	private Map<QueryParameter, QueryParameterBinding> parameterBindingMap;
 
-	private Map<String,NamedQueryParameter> namedParameterMap;
-	private Map<Integer,PositionalQueryParameter> positionalParameterMap;
+	public QueryParameterBindings() {
+		this( Collections.<QueryParameter>emptySet() );
+	}
 
 	public QueryParameterBindings(Set<QueryParameter> queryParameters) {
 		if ( queryParameters == null || queryParameters.isEmpty() ) {
 			parameterBindingMap = Collections.emptyMap();
-			namedParameterMap = Collections.emptyMap();
-			positionalParameterMap = Collections.emptyMap();
 		}
 		else {
 			parameterBindingMap = new HashMap<QueryParameter, QueryParameterBinding>();
-			namedParameterMap = new HashMap<String, NamedQueryParameter>();
-			positionalParameterMap = new HashMap<Integer, PositionalQueryParameter>();
 
 			for ( QueryParameter queryParameter : queryParameters ) {
 				parameterBindingMap.put( queryParameter, new QueryParameterBindingImpl() );
-
-				if ( queryParameter instanceof NamedQueryParameter ) {
-					final NamedQueryParameter namedQueryParameter = (NamedQueryParameter) queryParameter;
-					namedParameterMap.put( namedQueryParameter.getName(), namedQueryParameter );
-				}
-				else if ( queryParameter instanceof PositionalQueryParameter ) {
-					final PositionalQueryParameter positionalQueryParameter = (PositionalQueryParameter) queryParameter;
-					positionalParameterMap.put( positionalQueryParameter.getPosition(), positionalQueryParameter );
-				}
 			}
 		}
 	}
@@ -57,20 +46,26 @@ public class QueryParameterBindings {
 	}
 
 	public QueryParameterBinding getNamedParameterBinding(String name) {
-		final NamedQueryParameter param = namedParameterMap.get( name );
-		if ( param == null ) {
-			throw new IllegalStateException( "Unknown named parameter : " + name );
+		for ( Map.Entry<QueryParameter, QueryParameterBinding> entry : parameterBindingMap.entrySet() ) {
+			if ( entry.getKey() instanceof NamedQueryParameter ) {
+				if ( name.equals( ( (NamedQueryParameter) entry.getKey() ).getName() ) ) {
+					return entry.getValue();
+				}
+			}
 		}
 
-		return getBinding( param );
+		throw new IllegalStateException( "Unknown named parameter : " + name );
 	}
 
 	public QueryParameterBinding getPositionalParameterBinding(Integer position) {
-		final PositionalQueryParameter param = positionalParameterMap.get( position );
-		if ( param == null ) {
-			throw new IllegalStateException( "Unknown positional parameter : " + position );
+		for ( Map.Entry<QueryParameter, QueryParameterBinding> entry : parameterBindingMap.entrySet() ) {
+			if ( entry.getKey() instanceof PositionalQueryParameter ) {
+				if ( position.equals( ( (PositionalQueryParameter) entry.getKey() ).getPosition() ) ) {
+					return entry.getValue();
+				}
+			}
 		}
 
-		return getBinding( param );
+		throw new IllegalStateException( "Unknown positional parameter : " + position );
 	}
 }

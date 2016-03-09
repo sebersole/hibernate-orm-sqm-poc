@@ -9,7 +9,6 @@ package org.hibernate.sql.gen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Stack;
 
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -55,7 +54,9 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
+import org.hibernate.sql.orm.QueryParameterBindings;
 import org.hibernate.type.LiteralType;
+import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
 
@@ -67,6 +68,7 @@ public class SqlTreeWalker {
 
 	// pre-req state
 	private final SessionFactoryImplementor sessionFactory;
+	private final QueryParameterBindings parameterBindings;
 
 	// In-flight state
 	private final StringBuilder sqlBuffer = new StringBuilder();
@@ -77,8 +79,9 @@ public class SqlTreeWalker {
 	private boolean currentlyInPredicate;
 	private boolean currentlyInSelections;
 
-	public SqlTreeWalker(SessionFactoryImplementor sessionFactory) {
+	public SqlTreeWalker(SessionFactoryImplementor sessionFactory, QueryParameterBindings parameterBindings) {
 		this.sessionFactory = sessionFactory;
+		this.parameterBindings = parameterBindings;
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -361,7 +364,9 @@ public class SqlTreeWalker {
 	public void visitNamedParameter(NamedParameter namedParameter) {
 		parameterBinders.add( namedParameter.getParameterBinder() );
 
-		final int columnCount = namedParameter.getType().getColumnSpan( sessionFactory );
+		final Type type = Helper.resolveType( namedParameter, parameterBindings );
+
+		final int columnCount = type.getColumnSpan( sessionFactory );
 		final boolean needsParens = currentlyInPredicate && columnCount > 1;
 
 		if ( needsParens ) {
@@ -406,7 +411,9 @@ public class SqlTreeWalker {
 	public void visitPositionalParameter(PositionalParameter positionalParameter) {
 		parameterBinders.add( positionalParameter.getParameterBinder() );
 
-		final int columnCount = positionalParameter.getType().getColumnSpan( sessionFactory );
+		final Type type = Helper.resolveType( positionalParameter, parameterBindings );
+
+		final int columnCount = type.getColumnSpan( sessionFactory );
 		final boolean needsParens = currentlyInPredicate && columnCount > 1;
 
 		if ( needsParens ) {

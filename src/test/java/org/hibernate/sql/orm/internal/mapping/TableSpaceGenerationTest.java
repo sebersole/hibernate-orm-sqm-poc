@@ -36,7 +36,7 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
+import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.SelectStatement;
 

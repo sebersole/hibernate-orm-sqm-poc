@@ -22,7 +22,7 @@ import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
+import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.sqm.query.SelectStatement;
 

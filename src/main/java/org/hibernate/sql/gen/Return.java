@@ -18,4 +18,5 @@ public interface Return {
 	// proposal for the contract for reading back values
 	// todo : maybe a 2-phase approach too
 	Object readResult(ResultSet resultSet, int startPosition, SessionImplementor session, Object owner) throws SQLException;
+	int getNumberOfColumnsRead(SessionImplementor session);
 }

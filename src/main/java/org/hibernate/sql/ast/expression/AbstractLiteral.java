@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.ParameterBinder;
-import org.hibernate.sql.orm.QueryOptions;
+import org.hibernate.sql.orm.QueryParameterBindings;
 import org.hibernate.type.Type;
 
 /**
@@ -44,7 +44,7 @@ public abstract class AbstractLiteral extends ExpressionAsReturnSupport implemen
 	public int bindParameterValue(
 			PreparedStatement statement,
 			int startPosition,
-			QueryOptions queryOptions,
+			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session) throws SQLException {
 		getType().nullSafeSet( statement, getValue(), startPosition, session );
 		return getType().getColumnSpan( session.getFactory() );

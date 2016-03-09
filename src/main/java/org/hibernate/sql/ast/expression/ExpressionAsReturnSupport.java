@@ -13,6 +13,7 @@ import java.sql.Types;
 import org.hibernate.EntityMode;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.Return;
+import org.hibernate.sql.gen.internal.RecommendedJdbcTypeMappings;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
@@ -26,6 +27,12 @@ public abstract class ExpressionAsReturnSupport implements Expression, Return {
 	@Override
 	public Return getReturn() {
 		return this;
+	}
+
+	@Override
+	public int getNumberOfColumnsRead(SessionImplementor session) {
+		assert getType() != null;
+		return getType().getColumnSpan( session.getFactory() );
 	}
 
 	@Override
@@ -62,7 +69,7 @@ public abstract class ExpressionAsReturnSupport implements Expression, Return {
 	}
 
 	private Object readResultValue(ResultSet resultSet, int position, int jdbcType) throws SQLException {
-		final Class javaClassMapping = JdbcTypeJavaClassMappings.INSTANCE.determineJavaClassForJdbcTypeCode( jdbcType );
+		final Class javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode( jdbcType );
 		final JavaTypeDescriptor javaTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( javaClassMapping );
 
 		switch ( jdbcType ) {

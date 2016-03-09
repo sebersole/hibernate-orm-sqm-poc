@@ -1,13 +1,14 @@
-package org.hibernate.sql.gen.internal;
+/*
+ * Hibernate, Relational Persistence for Idiomatic Java
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
+ */
+package org.hibernate.sql.ast;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Stack;
 
 import org.hibernate.AssertionFailure;
-import org.hibernate.loader.plan.spi.Return;
-import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.expression.NamedParameter;
@@ -25,11 +26,9 @@ import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.gen.Callback;
-import org.hibernate.sql.gen.JdbcSelectPlan;
 import org.hibernate.sql.gen.NotYetImplementedException;
-import org.hibernate.sql.gen.ParameterBinder;
-import org.hibernate.sql.gen.QueryOptionBinder;
-import org.hibernate.sql.orm.QueryOptions;
+import org.hibernate.sql.gen.internal.FromClauseIndex;
+import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
 import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
@@ -104,64 +103,37 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	/**
 	 * Main entry point into SQM SelectStatement interpretation
 	 *
-	 * @param statement
-	 * @param queryOptions
-	 * @param callback
+	 * @param statement The SQM SelectStatement to interpret
+	 * @param interpretationOptions The options to be applied to the interpretation
+	 * @param callback to be formally defined
 	 *
-	 * @return
+	 * @return The SQL AST
 	 */
-	public static JdbcSelectPlan interpret(SelectStatement statement, QueryOptions queryOptions, Callback callback) {
-		final SelectStatementInterpreter walker = new SelectStatementInterpreter( queryOptions, callback );
+	public static SelectQuery interpret(SelectStatement statement, InterpretationOptions interpretationOptions, Callback callback) {
+		final SelectStatementInterpreter walker = new SelectStatementInterpreter( interpretationOptions, callback );
 		return walker.interpret( statement );
 	}
 
-	private final QueryOptions queryOptions;
+	private final InterpretationOptions interpretationOptions;
 	private final Callback callback;
 
 	private final FromClauseIndex fromClauseIndex = new FromClauseIndex();
+	private final SqlAliasBaseManager sqlAliasBaseManager = new SqlAliasBaseManager();
 
 	private SelectQuery sqlAst;
 
-	private final List<Return> returnDescriptors = new ArrayList<Return>();
-	private List<ParameterBinder> parameterBinders;
-	private List<QueryOptionBinder> optionBinders;
-
-	private final SqlAliasBaseManager sqlAliasBaseManager = new SqlAliasBaseManager();
-
-	public SelectStatementInterpreter(QueryOptions queryOptions, Callback callback) {
-		this.queryOptions = queryOptions;
+	public SelectStatementInterpreter(InterpretationOptions interpretationOptions, Callback callback) {
+		this.interpretationOptions = interpretationOptions;
 		this.callback = callback;
 	}
 
-	public JdbcSelectPlan interpret(SelectStatement statement) {
+	public SelectQuery interpret(SelectStatement statement) {
 		visitSelectStatement( statement );
-		return null;
+		return getSelectQuery();
 	}
 
 	public SelectQuery getSelectQuery() {
 		return sqlAst;
-	}
-
-	private List<ParameterBinder> getParameterBinders() {
-		if ( parameterBinders == null ) {
-			return Collections.emptyList();
-		}
-		else {
-			return Collections.unmodifiableList( parameterBinders );
-		}
-	}
-
-	private List<QueryOptionBinder> getOptionBinders() {
-		if ( optionBinders == null ) {
-			return Collections.emptyList();
-		}
-		else {
-			return Collections.unmodifiableList( optionBinders );
-		}
-	}
-
-	private List<Return> getReturnDescriptors() {
-		return Collections.unmodifiableList( returnDescriptors );
 	}
 
 

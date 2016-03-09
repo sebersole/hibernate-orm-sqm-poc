@@ -13,11 +13,12 @@ import org.hibernate.ScrollMode;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cache.spi.QueryCache;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
+import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
 import org.hibernate.sql.orm.QueryOptions;
 import org.hibernate.sql.orm.QueryParameterBindings;
@@ -105,12 +106,17 @@ public class BaseUnitTest {
 			}
 
 			@Override
-			public LockOptions getLockOptions() {
+			public Integer getTimeout() {
 				return null;
 			}
 
 			@Override
-			public RowSelection getRowSelection() {
+			public Integer getFetchSize() {
+				return null;
+			}
+
+			@Override
+			public LockOptions getLockOptions() {
 				return null;
 			}
 
@@ -120,12 +126,17 @@ public class BaseUnitTest {
 			}
 
 			@Override
-			public boolean isCacheable() {
-				return false;
+			public QueryCache getQueryResultCache() {
+				return null;
 			}
 
 			@Override
-			public String getCacheRegion() {
+			public Integer getFirstRow() {
+				return null;
+			}
+
+			@Override
+			public Integer getMaxRows() {
 				return null;
 			}
 

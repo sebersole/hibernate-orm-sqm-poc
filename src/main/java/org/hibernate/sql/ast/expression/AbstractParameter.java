@@ -15,10 +15,14 @@ import org.hibernate.sql.gen.ParameterSpec;
 import org.hibernate.sql.orm.QueryParameterBinding;
 import org.hibernate.type.Type;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author Steve Ebersole
  */
 public abstract class AbstractParameter extends ExpressionAsReturnSupport implements ParameterSpec, ParameterBinder {
+	private static final Logger log = Logger.getLogger( AbstractParameter.class );
+
 	private final Type inferredType;
 
 	public AbstractParameter(Type inferredType) {
@@ -45,15 +49,38 @@ public abstract class AbstractParameter extends ExpressionAsReturnSupport implem
 			QueryParameterBinding valueBinding,
 			SessionImplementor session) throws SQLException {
 		final Type bindType;
-		if ( valueBinding.getBindType() == null ) {
-			bindType = inferredType;
+		final Object bindValue;
+
+		if ( valueBinding == null ) {
+			warnNoBinding();
+			bindType = valueBinding.getBindType();
+			bindValue = null;
 		}
 		else {
-			bindType = valueBinding.getBindType();
+			if ( valueBinding.getBindType() == null ) {
+				bindType = inferredType;
+			}
+			else {
+				bindType = valueBinding.getBindType();
+			}
+			bindValue = valueBinding.getBindValue();
+		}
+
+		if ( bindType == null ) {
+			unresolvedType();
 		}
 		assert bindType != null;
+		if ( bindValue == null ) {
+			warnNullBindValue();
+		}
 
-		bindType.nullSafeSet( statement, valueBinding.getBindValue(), startPosition, session );
+		bindType.nullSafeSet( statement, bindValue, startPosition, session );
 		return bindType.getColumnSpan( session.getFactory() );
 	}
+
+	protected abstract void warnNoBinding();
+
+	protected abstract void unresolvedType();
+
+	protected abstract void warnNullBindValue();
 }

@@ -19,8 +19,6 @@ import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.gen.internal.SelectStatementInterpreter;
-import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.Test;
 
