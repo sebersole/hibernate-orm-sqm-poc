@@ -7,9 +7,9 @@
 package org.hibernate.sql.ast.from;
 
 
-import org.hibernate.sql.orm.internal.mapping.Column;
-import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
-import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
+import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 
 /**
  * A TableSpecificationGroup for a collection reference

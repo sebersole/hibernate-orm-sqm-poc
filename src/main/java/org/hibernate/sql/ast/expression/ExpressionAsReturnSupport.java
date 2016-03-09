@@ -13,12 +13,10 @@ import java.sql.Types;
 import org.hibernate.EntityMode;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.Return;
-import org.hibernate.sql.gen.internal.RecommendedJdbcTypeMappings;
+import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
-import org.hibernate.type.descriptor.sql.JdbcTypeJavaClassMappings;
-import org.hibernate.type.descriptor.sql.SqlTypeDescriptorRegistry;
 
 /**
  * @author Steve Ebersole

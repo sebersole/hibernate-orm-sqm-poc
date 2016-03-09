@@ -13,6 +13,8 @@ import javax.persistence.InheritanceType;
 import java.util.List;
 
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.persister.common.internal.DerivedTable;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.FromClause;

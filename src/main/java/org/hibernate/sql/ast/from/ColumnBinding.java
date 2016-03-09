@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.from;
 
-import org.hibernate.sql.orm.internal.mapping.Column;
+import org.hibernate.persister.common.spi.Column;
 
 /**
  * Represents a binding of a column (derived or physical) into a SQL statement

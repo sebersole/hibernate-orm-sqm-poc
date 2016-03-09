@@ -17,6 +17,12 @@ import javax.persistence.Id;
 import org.hamcrest.CoreMatchers;
 
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.persister.common.internal.PhysicalColumn;
+import org.hibernate.persister.common.internal.PhysicalTable;
+import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.embeddable.EmbeddablePersister;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.select.SelectClause;

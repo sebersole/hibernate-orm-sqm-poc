@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.from;
 
-import org.hibernate.sql.orm.internal.mapping.Table;
+import org.hibernate.persister.common.spi.Table;
 
 /**
  * Represents a binding of a table (derived or physical) into a from-clause.

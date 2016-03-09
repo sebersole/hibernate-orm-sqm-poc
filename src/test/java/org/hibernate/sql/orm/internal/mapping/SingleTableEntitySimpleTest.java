@@ -11,7 +11,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.persister.common.internal.PhysicalTable;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;

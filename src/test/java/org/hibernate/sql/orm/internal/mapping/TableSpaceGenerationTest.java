@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.persister.common.internal.PhysicalColumn;
+import org.hibernate.persister.common.internal.PhysicalTable;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
