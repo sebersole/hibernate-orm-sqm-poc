@@ -22,7 +22,7 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public abstract class AbstractLiteral implements Expression, ParameterBinder {
+public abstract class AbstractLiteral extends ExpressionAsReturnSupport implements ParameterBinder {
 	private final Object value;
 	private final Type ormType;
 

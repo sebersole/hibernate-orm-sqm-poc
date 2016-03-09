@@ -15,7 +15,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class CaseSimpleExpression implements Expression {
+public class CaseSimpleExpression extends ExpressionAsReturnSupport implements Expression {
 	private final Type type;
 	private final Expression fixture;
 

@@ -12,7 +12,7 @@ import org.hibernate.type.BasicType;
 /**
  * @author Steve Ebersole
  */
-public class BinaryArithmeticExpression implements Expression {
+public class BinaryArithmeticExpression extends ExpressionAsReturnSupport implements Expression {
 	private final Operation operation;
 	private final Expression lhsOperand;
 	private final Expression rhsOperand;

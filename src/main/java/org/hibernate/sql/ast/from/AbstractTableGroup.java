@@ -10,11 +10,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.orm.internal.mapping.Column;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeBasic;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeEmbedded;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeEntity;
+import org.hibernate.sql.orm.internal.mapping.SingularAttributeImplementor;
 import org.hibernate.sql.orm.internal.mapping.Table;
 import org.hibernate.sqm.domain.SingularAttribute;
 
@@ -91,7 +93,13 @@ public abstract class AbstractTableGroup implements TableGroup {
 			final TableBinding tableBinding = locateTableBinding( columns[i].getSourceTable() );
 			bindings[i] = new ColumnBinding( columns[i], tableBinding );
 		}
+
 		return bindings;
+	}
+
+	@Override
+	public AttributeReference resolve(SingularAttribute attribute) {
+		return new AttributeReference( (SingularAttributeImplementor) attribute, resolveBindings( attribute ) );
 	}
 
 	private TableBinding locateTableBinding(Table table) {

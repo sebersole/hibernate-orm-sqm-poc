@@ -18,7 +18,7 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public class NonStandardFunctionExpression implements Expression {
+public class NonStandardFunctionExpression extends ExpressionAsReturnSupport {
 	private final String functionName;
 	private final List<Expression> arguments;
 	private final BasicType resultType;

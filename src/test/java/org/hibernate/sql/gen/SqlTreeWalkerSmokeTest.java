@@ -6,11 +6,19 @@
  */
 package org.hibernate.sql.gen;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
+import org.hibernate.Session;
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.jdbc.Work;
 import org.hibernate.sql.ast.SelectQuery;
 
 import org.junit.Test;
@@ -38,6 +46,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -49,6 +58,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		assertThat( sqlTreeWalker.getReturns().size(), is(2) );
 	}
 
 	@Test
@@ -62,6 +72,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(2) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -75,6 +86,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(2) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -88,6 +100,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(1) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -101,6 +114,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(2) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -114,6 +128,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(0) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -127,6 +142,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(0) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Test
@@ -140,6 +156,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getSql(), notNullValue() );
 		// each literal is transformed into a parameter, so check the number of ParameterBinders
 		assertThat( sqlTreeWalker.getParameterBinders().size(), is(0) );
+		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
 	@Entity(name="Person")

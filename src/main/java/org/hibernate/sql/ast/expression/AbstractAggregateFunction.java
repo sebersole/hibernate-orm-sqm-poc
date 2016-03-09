@@ -12,7 +12,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractAggregateFunction implements AggregateFunction {
+public abstract class AbstractAggregateFunction extends ExpressionAsReturnSupport implements AggregateFunction {
 	private final Expression argument;
 	private final boolean distinct;
 	private final BasicType resultType;

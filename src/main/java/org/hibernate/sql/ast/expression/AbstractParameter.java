@@ -18,7 +18,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractParameter implements Expression, ParameterSpec, ParameterBinder {
+public abstract class AbstractParameter extends ExpressionAsReturnSupport implements ParameterSpec, ParameterBinder {
 	private final Type inferredType;
 
 	public AbstractParameter(Type inferredType) {

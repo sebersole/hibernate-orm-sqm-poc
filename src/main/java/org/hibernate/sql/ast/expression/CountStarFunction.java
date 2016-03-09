@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.expression;
 
 
+import org.hibernate.sql.gen.Return;
 import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
@@ -23,6 +24,11 @@ public class CountStarFunction extends AbstractAggregateFunction {
 		@Override
 		public Type getType() {
 			return null;
+		}
+
+		@Override
+		public Return getReturn() {
+			throw new UnsupportedOperationException(  );
 		}
 
 		@Override

@@ -9,6 +9,7 @@ package org.hibernate.sql.gen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Stack;
 
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -88,6 +89,9 @@ public class SqlTreeWalker {
 	public List<ParameterBinder> getParameterBinders() {
 		return parameterBinders;
 	}
+	public List<Return> getReturns() {
+		return returns;
+	}
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	private void appendSql(String fragment) {
@@ -96,6 +100,7 @@ public class SqlTreeWalker {
 
 	public void visitSelectQuery(SelectQuery selectQuery) {
 		visitQuerySpec( selectQuery.getQuerySpec() );
+
 	}
 
 	public void visitQuerySpec(QuerySpec querySpec) {
@@ -120,30 +125,59 @@ public class SqlTreeWalker {
 	// SELECT clause
 
 	public void visitSelectClause(SelectClause selectClause) {
-		boolean previouslyInSelections = currentlyInSelections;
-		currentlyInSelections = true;
+		currentSelectionProcessor = new SelectionProcessor( currentSelectionProcessor );
 
 		try {
-			appendSql( "select " );
-			if ( selectClause.isDistinct() ) {
-				appendSql( "distinct " );
-			}
+			boolean previouslyInSelections = currentlyInSelections;
+			currentlyInSelections = true;
 
-			String separator = "";
-			for ( Selection selection : selectClause.getSelections() ) {
-				appendSql( separator );
-				visitSelection( selection );
-				separator = ", ";
+			try {
+				appendSql( "select " );
+				if ( selectClause.isDistinct() ) {
+					appendSql( "distinct " );
+				}
+
+				String separator = "";
+				for ( Selection selection : selectClause.getSelections() ) {
+					appendSql( separator );
+					visitSelection( selection );
+					separator = ", ";
+				}
+			}
+			finally {
+				currentlyInSelections = previouslyInSelections;
 			}
 		}
 		finally {
-			currentlyInSelections = previouslyInSelections;
+			currentSelectionProcessor = currentSelectionProcessor.parentSelectionProcessor;
 		}
 	}
 
 	public void visitSelection(Selection selection) {
+		currentSelectionProcessor.processSelection( selection );
 		selection.getSelectExpression().accept( this );
 	}
+
+	private class SelectionProcessor {
+		private final SelectionProcessor parentSelectionProcessor;
+
+		private SelectionProcessor(SelectionProcessor parentSelectionProcessor) {
+			this.parentSelectionProcessor = parentSelectionProcessor;
+		}
+
+		private void processSelection(Selection selection) {
+			if ( parentSelectionProcessor != null ) {
+				return;
+			}
+
+			// otherwise build a Return
+			// 		(atm only simple selection expressions are supported)
+			returns.add( selection.getSelectExpression().getReturn() );
+		}
+	}
+
+	private SelectionProcessor currentSelectionProcessor;
+
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// FROM clause
@@ -565,4 +599,5 @@ public class SqlTreeWalker {
 		appendSql( relationalPredicate.getOperator().sqlText() );
 		relationalPredicate.getRightHandExpression().accept( this );
 	}
+
 }

@@ -426,12 +426,8 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		// I believe that is valid, but we will need to test
 		// todo : verify if this is a valid assumption
 		final SingularAttributeImplementor attribute = (SingularAttributeImplementor) expression.getBoundAttribute();
-
 		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( expression.getAttributeBindingSource() );
-
-		final ColumnBinding[] columnBindings = tableGroup.resolveBindings( attribute );
-
-		return new AttributeReference( attribute, columnBindings );
+		return tableGroup.resolve( attribute );
 	}
 
 	@Override
