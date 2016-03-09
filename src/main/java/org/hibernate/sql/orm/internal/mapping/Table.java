@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
+import java.util.Collection;
+
 /**
  * Represents a table in the mapping.  The name "table reference" comes from ANSI SQL
  * to describe the fact that the "table" might be a derived table (in-line view) or
@@ -17,4 +19,6 @@ public interface Table {
 	String getTableExpression();
 
 	Column getColumn(String name);
+
+	Collection<Column> getColumns();
 }

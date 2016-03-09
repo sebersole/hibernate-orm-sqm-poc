@@ -36,4 +36,9 @@ public class EntityTableGroup extends AbstractTableGroup {
 		}
 		return bindings;
 	}
+
+	@Override
+	protected ImprovedEntityPersister resolveEntityReferenceBase() {
+		return getPersister();
+	}
 }

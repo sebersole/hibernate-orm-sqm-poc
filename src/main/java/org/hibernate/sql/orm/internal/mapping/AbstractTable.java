@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.orm.internal.mapping;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -54,4 +55,8 @@ public abstract class AbstractTable implements Table {
 		return match;
 	}
 
+	@Override
+	public Collection<Column> getColumns() {
+		return valueMap.values();
+	}
 }

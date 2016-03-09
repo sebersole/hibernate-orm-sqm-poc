@@ -248,9 +248,10 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Void visitRootEntityFromElement(RootEntityFromElement rootEntityFromElement) {
+	public Object visitRootEntityFromElement(RootEntityFromElement rootEntityFromElement) {
 		if ( fromClauseIndex.isResolved( rootEntityFromElement ) ) {
-			return null;
+			final TableGroup resolvedTableGroup = fromClauseIndex.findResolvedTableGroup( rootEntityFromElement );
+			return resolvedTableGroup.resolveEntityReference();
 		}
 
 		final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) rootEntityFromElement.getBoundModelType();
@@ -266,9 +267,10 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public TableGroupJoin visitQualifiedAttributeJoinFromElement(QualifiedAttributeJoinFromElement joinedFromElement) {
+	public Object visitQualifiedAttributeJoinFromElement(QualifiedAttributeJoinFromElement joinedFromElement) {
 		if ( fromClauseIndex.isResolved( joinedFromElement ) ) {
-			return null;
+			final TableGroup resolvedTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement );
+			return resolvedTableGroup.resolveEntityReference();
 		}
 
 		final Junction predicate = new Junction( Junction.Nature.CONJUNCTION );

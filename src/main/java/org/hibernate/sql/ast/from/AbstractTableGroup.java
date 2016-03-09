@@ -7,12 +7,16 @@
 package org.hibernate.sql.ast.from;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.EntityReference;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.orm.internal.mapping.Column;
+import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeBasic;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeEmbedded;
 import org.hibernate.sql.orm.internal.mapping.SingularAttributeEntity;
@@ -101,6 +105,25 @@ public abstract class AbstractTableGroup implements TableGroup {
 	public AttributeReference resolve(SingularAttribute attribute) {
 		return new AttributeReference( (SingularAttributeImplementor) attribute, resolveBindings( attribute ) );
 	}
+
+	@Override
+	public EntityReference resolveEntityReference() {
+		final ImprovedEntityPersister improvedEntityPersister = resolveEntityReferenceBase();
+
+		final TableBinding tableBinding = locateTableBinding( improvedEntityPersister.getRootTable() );
+		final Collection<Column> columns = tableBinding.getTable().getColumns();
+		ColumnBinding[] columnBindings = new ColumnBinding[columns.size()];
+		final Iterator<Column> iterator = columns.iterator();
+		int i = 0;
+		while ( iterator.hasNext() ) {
+			columnBindings[i] = new ColumnBinding( iterator.next(), tableBinding );
+			i++;
+		}
+
+		return new EntityReference( improvedEntityPersister.getOrmType(), columnBindings );
+	}
+
+	protected abstract ImprovedEntityPersister resolveEntityReferenceBase();
 
 	private TableBinding locateTableBinding(Table table) {
 		if ( table == getRootTableBinding().getTable() ) {

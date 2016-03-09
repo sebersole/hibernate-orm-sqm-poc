@@ -6,8 +6,10 @@
  */
 package org.hibernate.sql.ast.from;
 
+
 import org.hibernate.sql.orm.internal.mapping.Column;
 import org.hibernate.sql.orm.internal.mapping.ImprovedCollectionPersister;
+import org.hibernate.sql.orm.internal.mapping.ImprovedEntityPersister;
 
 /**
  * A TableSpecificationGroup for a collection reference
@@ -38,5 +40,10 @@ public class CollectionTableGroup extends AbstractTableGroup {
 			bindings[i] = new ColumnBinding( columns[i], tableBinding );
 		}
 		return bindings;
+	}
+
+	@Override
+	protected ImprovedEntityPersister resolveEntityReferenceBase() {
+		return (ImprovedEntityPersister) persister.getElementDescriptor().getSqmType();
 	}
 }

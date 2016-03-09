@@ -8,8 +8,8 @@ package org.hibernate.sql.ast.from;
 
 import java.util.List;
 
-import org.hibernate.loader.plan.spi.EntityReference;
 import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.EntityReference;
 import org.hibernate.sqm.domain.SingularAttribute;
 
 /**
@@ -25,4 +25,6 @@ public interface TableGroup {
 
 	ColumnBinding[] resolveBindings(SingularAttribute attribute);
 	AttributeReference resolve(SingularAttribute attribute);
+
+	EntityReference resolveEntityReference();
 }

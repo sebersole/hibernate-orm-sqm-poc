@@ -24,6 +24,7 @@ import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.expression.ConcatExpression;
 import org.hibernate.sql.ast.expression.CountFunction;
 import org.hibernate.sql.ast.expression.CountStarFunction;
+import org.hibernate.sql.ast.expression.EntityReference;
 import org.hibernate.sql.ast.expression.Expression;
 import org.hibernate.sql.ast.expression.MaxFunction;
 import org.hibernate.sql.ast.expression.MinFunction;
@@ -242,21 +243,7 @@ public class SqlTreeWalker {
 	// Expressions
 
 	public void visitAttributeReference(AttributeReference attributeReference) {
-		final boolean needsParens = attributeReference.getColumnBindings().length > 1 && currentlyInPredicate;
-		if ( needsParens ) {
-			appendSql( "(" );
-		}
-
-		String separator = "";
-		for ( ColumnBinding columnBinding : attributeReference.getColumnBindings() ) {
-			appendSql( separator );
-			visitColumnBinding( columnBinding );
-			separator = ", ";
-		}
-
-		if ( needsParens ) {
-			appendSql( ")" );
-		}
+		renderColumnBindings( attributeReference.getColumnBindings() );
 	}
 
 	private void visitColumnBinding(ColumnBinding columnBinding) {
@@ -607,4 +594,25 @@ public class SqlTreeWalker {
 		relationalPredicate.getRightHandExpression().accept( this );
 	}
 
+	public void visitEntityExpression(EntityReference entityExpression) {
+		renderColumnBindings( entityExpression.getColumnBindings() );
+	}
+
+	private void renderColumnBindings(ColumnBinding[] columnBindings) {
+		final boolean needsParens = columnBindings.length > 1 && currentlyInPredicate;
+		if ( needsParens ) {
+			appendSql( "(" );
+		}
+
+		String separator = "";
+		for ( ColumnBinding columnBinding : columnBindings ) {
+			appendSql( separator );
+			visitColumnBinding( columnBinding );
+			separator = ", ";
+		}
+
+		if ( needsParens ) {
+			appendSql( ")" );
+		}
+	}
 }

@@ -6,24 +6,22 @@
  */
 package org.hibernate.sql.gen;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.hibernate.Session;
 import org.hibernate.boot.MetadataSources;
-import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
-import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.jdbc.Work;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.orm.QueryParameterBindings;
 
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -36,6 +34,8 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	protected void applyMetadataSources(MetadataSources metadataSources) {
 		super.applyMetadataSources( metadataSources );
 		metadataSources.addAnnotatedClass( Person.class );
+		metadataSources.addAnnotatedClass( Address.class );
+		metadataSources.addAnnotatedClass( Role.class );
 	}
 
 	@Test
@@ -160,11 +160,77 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
+	@Test
+	public void testSqlTreeWalking10() {
+		SelectQuery sqlTree = interpretSelectQuery( "from Person p" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		assertThat( sqlTreeWalker.getSql(), containsString( "select" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "p1.id" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "p1.name" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "p1.age" ) );
+	}
+
+	@Test
+	public void testSqlTreeWalking11() {
+		SelectQuery sqlTree = interpretSelectQuery( "select a from Person p join p.address a" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		assertThat( sqlTreeWalker.getSql(), containsString( "select" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "a1.id" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "a1.street" ) );
+	}
+
+	@Test
+	public void testSqlTreeWalking12() {
+		SelectQuery sqlTree = interpretSelectQuery( "select r from Person p join p.roles r" );
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		sqlTreeWalker.visitSelectQuery( sqlTree );
+
+		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
+
+		assertThat( sqlTreeWalker.getSql(), notNullValue() );
+		assertThat( sqlTreeWalker.getSql(), containsString( "select" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "r1.id" ) );
+		assertThat( sqlTreeWalker.getSql(), containsString( "r1.description" ) );
+	}
+
 	@Entity(name="Person")
 	public static class Person {
 		@Id
 		Integer id;
 		String name;
 		int age;
+
+		@ManyToOne
+		Address address;
+
+		@OneToMany
+		@JoinColumn
+		Set<Role> roles = new HashSet<Role>();
+	}
+
+	@Entity(name="Address")
+	public static class Address {
+		@Id
+		Integer id;
+
+		String street;
+	}
+
+	@Entity(name="Role")
+	public static class Role {
+		@Id
+		Integer id;
+
+		String description;
 	}
 }
