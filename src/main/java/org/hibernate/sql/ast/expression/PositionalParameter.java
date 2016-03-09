@@ -12,8 +12,8 @@ import java.sql.SQLException;
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.SqlTreeWalker;
-import org.hibernate.sql.orm.QueryParameterBinding;
-import org.hibernate.sql.orm.QueryParameterBindings;
+import org.hibernate.query.QueryParameterBinding;
+import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;

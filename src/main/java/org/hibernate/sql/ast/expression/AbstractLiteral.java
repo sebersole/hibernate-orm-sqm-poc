@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.ParameterBinder;
-import org.hibernate.sql.orm.QueryParameterBindings;
+import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.type.Type;
 
 /**

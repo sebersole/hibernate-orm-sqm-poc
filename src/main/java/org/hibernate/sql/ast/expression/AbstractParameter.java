@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.ParameterBinder;
 import org.hibernate.sql.gen.ParameterSpec;
-import org.hibernate.sql.orm.QueryParameterBinding;
+import org.hibernate.query.QueryParameterBinding;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;

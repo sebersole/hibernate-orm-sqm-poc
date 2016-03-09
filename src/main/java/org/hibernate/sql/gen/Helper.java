@@ -9,8 +9,8 @@ package org.hibernate.sql.gen;
 import org.hibernate.QueryException;
 import org.hibernate.sql.ast.expression.NamedParameter;
 import org.hibernate.sql.ast.expression.PositionalParameter;
-import org.hibernate.sql.orm.QueryParameterBinding;
-import org.hibernate.sql.orm.QueryParameterBindings;
+import org.hibernate.query.QueryParameterBinding;
+import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.type.Type;
 
 /**

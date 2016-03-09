@@ -55,7 +55,7 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
-import org.hibernate.sql.orm.QueryParameterBindings;
+import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.type.LiteralType;
 import org.hibernate.type.Type;
 

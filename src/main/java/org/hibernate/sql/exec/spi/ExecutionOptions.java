@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.spi;
 
 import org.hibernate.ScrollMode;
 import org.hibernate.cache.spi.QueryCache;
-import org.hibernate.sql.orm.QueryParameterBindings;
+import org.hibernate.query.QueryParameterBindings;
 
 /**
  * Access to options for query execution

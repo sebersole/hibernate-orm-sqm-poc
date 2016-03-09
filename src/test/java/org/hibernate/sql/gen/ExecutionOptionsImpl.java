@@ -6,15 +6,13 @@
  */
 package org.hibernate.sql.gen;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 
 import org.hibernate.ScrollMode;
 import org.hibernate.cache.spi.QueryCache;
 import org.hibernate.sql.exec.spi.ExecutionOptions;
-import org.hibernate.sql.orm.QueryParameter;
-import org.hibernate.sql.orm.QueryParameterBindings;
+import org.hibernate.query.QueryParameter;
+import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.type.Type;
 
 /**

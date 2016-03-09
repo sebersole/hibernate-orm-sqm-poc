@@ -1,20 +1,19 @@
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
- * License: GNU Lesser General Public License (LGPL), version 2.1 or later.
- * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.sql.orm;
+package org.hibernate.query;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.sql.ast.expression.NamedParameter;
-import org.hibernate.sql.orm.internal.NamedQueryParameter;
-import org.hibernate.sql.orm.internal.PositionalQueryParameter;
-import org.hibernate.sql.orm.internal.QueryParameterBindingImpl;
+import org.hibernate.query.internal.NamedQueryParameter;
+import org.hibernate.query.internal.PositionalQueryParameter;
+import org.hibernate.query.internal.QueryParameterBindingImpl;
 
 /**
  * Kind of part of {@link org.hibernate.engine.spi.QueryParameters}; but partially implemented and done elsewhere too

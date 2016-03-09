@@ -20,7 +20,7 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.exec.internal.SemanticQueryExecutorImpl;
 import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
-import org.hibernate.sql.orm.internal.PositionalQueryParameter;
+import org.hibernate.query.internal.PositionalQueryParameter;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.SelectStatement;
 
