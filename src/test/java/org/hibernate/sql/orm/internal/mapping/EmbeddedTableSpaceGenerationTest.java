@@ -256,7 +256,7 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 	private SelectClause getSelectClause(String query) {
 		final SelectStatement statement = (SelectStatement) interpret( query );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( interpretationOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		return interpreter.getSelectQuery().getQuerySpec().getSelectClause();

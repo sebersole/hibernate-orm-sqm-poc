@@ -16,9 +16,10 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cache.spi.QueryCache;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.sql.ast.InterpretationOptions;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.SelectStatementInterpreter;
-import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
+import org.hibernate.query.internal.ConsumerContextImpl;
 import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.SelectStatement;
@@ -85,7 +86,7 @@ public class BaseUnitTest {
 	protected SelectQuery interpretSelectQuery(String query) {
 		final SelectStatement statement = (SelectStatement) interpret( query );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( interpretationOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		return interpreter.getSelectQuery();
@@ -96,57 +97,8 @@ public class BaseUnitTest {
 		};
 	}
 
-	protected QueryOptions queryOption() {
-		return new QueryOptions() {
-			@Override
-			public QueryParameterBindings getParameterBindings() {
-				return null;
-			}
-
-			@Override
-			public Integer getTimeout() {
-				return null;
-			}
-
-			@Override
-			public Integer getFetchSize() {
-				return null;
-			}
-
-			@Override
-			public LockOptions getLockOptions() {
-				return null;
-			}
-
-			@Override
-			public ScrollMode getScrollMode() {
-				return null;
-			}
-
-			@Override
-			public QueryCache getQueryResultCache() {
-				return null;
-			}
-
-			@Override
-			public Integer getFirstRow() {
-				return null;
-			}
-
-			@Override
-			public Integer getMaxRows() {
-				return null;
-			}
-
-			@Override
-			public String getComment() {
-				return null;
-			}
-
-			@Override
-			public List<String> getSqlHints() {
-				return null;
-			}
-		};
+	protected InterpretationOptions interpretationOptions() {
+		return new InterpretationOptionsTestingImpl();
 	}
+
 }

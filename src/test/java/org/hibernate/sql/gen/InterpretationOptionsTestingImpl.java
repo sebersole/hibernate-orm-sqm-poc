@@ -14,7 +14,7 @@ import org.hibernate.sql.ast.InterpretationOptions;
 /**
  * @author Steve Ebersole
  */
-class InterpretationOptionsImpl implements InterpretationOptions {
+class InterpretationOptionsTestingImpl implements InterpretationOptions {
 	@Override
 	public Integer getFirstRow() {
 		return null;

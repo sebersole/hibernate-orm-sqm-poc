@@ -335,7 +335,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void testSimpleAttributeReference() {
 		final SelectStatement statement = (SelectStatement) interpret( "select p.email from Person p" );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOption(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( interpretationOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		final SelectClause selectClause = interpreter.getSelectQuery().getQuerySpec().getSelectClause();

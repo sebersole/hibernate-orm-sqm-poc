@@ -4,18 +4,15 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.sql.exec.spi;
+package org.hibernate.query.internal;
 
-import org.hibernate.CacheMode;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 /**
- * Access to options for query execution
- *
  * @author Steve Ebersole
  */
-public interface ExecutionOptions {
-	Integer getTimeout();
-	Integer getFetchSize();
-	CacheMode getCacheMode();
-	String getCacheRegion();
+public interface PreparedStatementCreator {
+	PreparedStatement create(Connection connection, String sql) throws SQLException;
 }

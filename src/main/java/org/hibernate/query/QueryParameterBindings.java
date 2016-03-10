@@ -16,7 +16,7 @@ import org.hibernate.query.internal.PositionalQueryParameter;
 import org.hibernate.query.internal.QueryParameterBindingImpl;
 
 /**
- * Kind of part of {@link org.hibernate.engine.spi.QueryParameters}; but partially implemented and done elsewhere too
+ * Collection of value bindings for query parameters.
  *
  * @author Steve Ebersole
  */

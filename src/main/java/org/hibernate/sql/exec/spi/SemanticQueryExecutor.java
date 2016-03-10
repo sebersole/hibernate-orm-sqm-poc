@@ -8,7 +8,10 @@ package org.hibernate.sql.exec.spi;
 
 import java.util.List;
 
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.sql.ast.InterpretationOptions;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.gen.Callback;
@@ -23,6 +26,17 @@ public interface SemanticQueryExecutor {
 			SelectStatement sqm,
 			InterpretationOptions interpretationOptions,
 			ExecutionOptions executionOptions,
+			QueryParameterBindings queryParameterBindings,
+			RowTransformer<T> rowTransformer,
+			Callback callback,
+			SessionImplementor session);
+
+	<T> ScrollableResults executeSelect(
+			SelectStatement sqm,
+			ScrollMode scrollMode,
+			InterpretationOptions interpretationOptions,
+			ExecutionOptions executionOptions,
+			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			Callback callback,
 			SessionImplementor session);
@@ -30,6 +44,7 @@ public interface SemanticQueryExecutor {
 	<T> List<T> executeSelect(
 			SelectQuery sqlTree,
 			ExecutionOptions executionOptions,
+			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			SessionImplementor session);
 

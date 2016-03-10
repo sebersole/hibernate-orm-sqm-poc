@@ -18,8 +18,10 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.query.internal.QueryImpl;
+import org.hibernate.query.internal.RowTransformerPassThruImpl;
 import org.hibernate.sql.exec.internal.SemanticQueryExecutorImpl;
-import org.hibernate.sql.gen.sqm.ConsumerContextImpl;
+import org.hibernate.query.internal.ConsumerContextImpl;
 import org.hibernate.query.internal.PositionalQueryParameter;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.SelectStatement;
@@ -86,15 +88,14 @@ public class FullStackTest {
 	public void testFullStack() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		final SelectStatement sqm = interpret( "select p.name from Person p where p.age >= 20 and p.age <= ?1" );
-		final List results = new SemanticQueryExecutorImpl().executeSelect(
-				sqm,
-				new InterpretationOptionsImpl(),
-				new ExecutionOptionsImpl( new PositionalQueryParameter( 1 ), 39 ),
-				RowTransformerPassThruImpl.INSTANCE,
-				new Callback() {},
-				(SessionImplementor) session
+		QueryImpl query = new QueryImpl(
+				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
+				(SessionImplementor) session,
+				consumerContext
 		);
+
+		query.setParameter( 1, 39 );
+		final List results = query.list();
 
 		assertThat( results.size(), is( 1 ) );
 		assertThat( results.get( 0 ), instanceOf( Object[].class ) );
