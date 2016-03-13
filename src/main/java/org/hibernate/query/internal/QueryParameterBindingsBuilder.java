@@ -12,8 +12,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.hibernate.query.NamedQueryParameter;
+import org.hibernate.query.PositionalQueryParameter;
 import org.hibernate.query.QueryParameter;
-import org.hibernate.query.QueryParameterBindings;
+import org.hibernate.query.spi.QueryParameterBindings;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.query.Statement;
 import org.hibernate.sqm.query.expression.NamedParameterExpression;

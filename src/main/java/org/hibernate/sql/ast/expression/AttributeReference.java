@@ -14,7 +14,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class AttributeReference extends ExpressionAsReturnSupport {
+public class AttributeReference extends SelfReadingExpressionSupport {
 	private final SingularAttributeImplementor referencedAttribute;
 	private final ColumnBinding[] columnBindings;
 

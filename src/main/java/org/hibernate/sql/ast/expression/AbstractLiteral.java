@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.ParameterBinder;
-import org.hibernate.query.QueryParameterBindings;
+import org.hibernate.query.spi.QueryParameterBindings;
 import org.hibernate.type.Type;
 
 /**
@@ -22,7 +22,7 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public abstract class AbstractLiteral extends ExpressionAsReturnSupport implements ParameterBinder {
+public abstract class AbstractLiteral extends SelfReadingExpressionSupport implements ParameterBinder {
 	private final Object value;
 	private final Type ormType;
 

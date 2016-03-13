@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.gen.ParameterBinder;
 import org.hibernate.sql.gen.ParameterSpec;
-import org.hibernate.query.QueryParameterBinding;
+import org.hibernate.query.spi.QueryParameterBinding;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
@@ -20,7 +20,7 @@ import org.jboss.logging.Logger;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractParameter extends ExpressionAsReturnSupport implements ParameterSpec, ParameterBinder {
+public abstract class AbstractParameter extends SelfReadingExpressionSupport implements ParameterSpec, ParameterBinder {
 	private static final Logger log = Logger.getLogger( AbstractParameter.class );
 
 	private final Type inferredType;

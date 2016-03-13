@@ -7,15 +7,13 @@
 package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.gen.NotYetImplementedException;
-import org.hibernate.sql.gen.Return;
 import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
  * @author Andrea Boriero
  */
-public class EntityReference extends ExpressionAsReturnSupport {
+public class EntityReference extends SelfReadingExpressionSupport {
 	private final Type ormType;
 	private final ColumnBinding[]  columnBindings;
 

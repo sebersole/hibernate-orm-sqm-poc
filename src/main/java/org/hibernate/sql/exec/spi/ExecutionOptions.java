@@ -7,12 +7,14 @@
 package org.hibernate.sql.exec.spi;
 
 import org.hibernate.CacheMode;
+import org.hibernate.Incubating;
 
 /**
  * Access to options for query execution
  *
  * @author Steve Ebersole
  */
+@Incubating
 public interface ExecutionOptions {
 	Integer getTimeout();
 	Integer getFetchSize();

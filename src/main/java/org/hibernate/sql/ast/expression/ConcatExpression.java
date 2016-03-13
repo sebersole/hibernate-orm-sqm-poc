@@ -13,7 +13,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class ConcatExpression extends ExpressionAsReturnSupport {
+public class ConcatExpression extends SelfReadingExpressionSupport {
 	private final Expression lhsOperand;
 	private final Expression rhsOperand;
 	private final BasicType type;

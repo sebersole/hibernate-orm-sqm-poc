@@ -55,7 +55,7 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
-import org.hibernate.query.QueryParameterBindings;
+import org.hibernate.query.spi.QueryParameterBindings;
 import org.hibernate.type.LiteralType;
 import org.hibernate.type.Type;
 
@@ -176,7 +176,12 @@ public class SqlTreeWalker {
 
 			// otherwise build a Return
 			// 		(atm only simple selection expressions are supported)
-			returns.add( selection.getSelectExpression().getReturn() );
+			returns.add(
+					new Return(
+							selection.getResultVariable(),
+							selection.getSelectExpression().getReturnReader()
+					)
+			);
 		}
 	}
 

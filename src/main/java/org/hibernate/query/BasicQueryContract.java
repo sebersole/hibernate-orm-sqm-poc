@@ -6,14 +6,17 @@
  */
 package org.hibernate.query;
 
-import org.hibernate.*;
-import org.hibernate.type.Type;
+import org.hibernate.CacheMode;
+import org.hibernate.FlushMode;
+import org.hibernate.Incubating;
+import org.hibernate.Session;
 
 /**
  * Clean room design of {@link org.hibernate.BasicQueryContract} based on this SQM work
  *
  * @author Steve Ebersole
  */
+@Incubating
 public interface BasicQueryContract<T extends BasicQueryContract> {
 	/**
 	 * Obtain the FlushMode in effect for this query.  By default, the query inherits the FlushMode of the Session

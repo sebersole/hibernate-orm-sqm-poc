@@ -12,7 +12,7 @@ import org.hibernate.type.BasicType;
 /**
  * @author Steve Ebersole
  */
-public class UnaryOperationExpression extends ExpressionAsReturnSupport {
+public class UnaryOperationExpression extends SelfReadingExpressionSupport {
 	public enum Operation {
 		PLUS,
 		MINUS

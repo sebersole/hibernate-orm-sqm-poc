@@ -16,7 +16,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class CaseSearchedExpression extends ExpressionAsReturnSupport implements Expression {
+public class CaseSearchedExpression extends SelfReadingExpressionSupport implements Expression {
 	private final Type type;
 
 	private List<WhenFragment> whenFragments = new ArrayList<WhenFragment>();

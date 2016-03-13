@@ -17,7 +17,7 @@ import java.util.Set;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.query.QueryParameterBindings;
+import org.hibernate.query.spi.QueryParameterBindings;
 
 import org.junit.Test;
 

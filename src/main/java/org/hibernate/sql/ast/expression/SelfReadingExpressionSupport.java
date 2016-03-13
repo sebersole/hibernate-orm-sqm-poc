@@ -12,8 +12,8 @@ import java.sql.Types;
 
 import org.hibernate.EntityMode;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.sql.gen.Return;
 import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
+import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
@@ -21,9 +21,9 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 /**
  * @author Steve Ebersole
  */
-public abstract class ExpressionAsReturnSupport implements Expression, Return {
+public abstract class SelfReadingExpressionSupport implements Expression, ReturnReader {
 	@Override
-	public Return getReturn() {
+	public ReturnReader getReturnReader() {
 		return this;
 	}
 

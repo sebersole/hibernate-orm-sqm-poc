@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.gen.Return;
+import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
@@ -22,11 +22,11 @@ public interface Expression {
 	Type getType();
 
 	/**
-	 * Obtain the Return for properly reading back values for this expression from the select
+	 * Obtain the ReturnReader for properly reading back values for this expression from the select
 	 *
 	 * @return The Return
 	 */
-	Return getReturn();
+	ReturnReader getReturnReader();
 
 	/**
 	 * Visitation by delegation

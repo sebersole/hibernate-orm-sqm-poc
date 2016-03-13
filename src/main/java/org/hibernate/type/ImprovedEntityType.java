@@ -4,15 +4,10 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.query.internal;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+package org.hibernate.type;
 
 /**
  * @author Steve Ebersole
  */
-public interface PreparedStatementCreator {
-	PreparedStatement create(Connection connection, String sql) throws SQLException;
+public interface ImprovedEntityType extends ImprovedType {
 }

@@ -6,17 +6,27 @@
  */
 package org.hibernate.sql.gen;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.Incubating;
+import org.hibernate.sql.exec.results.spi.ReturnReader;
 
 /**
  * @author Steve Ebersole
  */
-public interface Return {
-	// proposal for the contract for reading back values
-	// todo : maybe a 2-phase approach too
-	Object readResult(ResultSet resultSet, int startPosition, SessionImplementor session, Object owner) throws SQLException;
-	int getNumberOfColumnsRead(SessionImplementor session);
+@Incubating
+public class Return {
+	private final String resultVariable;
+	private final ReturnReader returnReader;
+
+	public Return(String resultVariable, ReturnReader returnReader) {
+		this.resultVariable = resultVariable;
+		this.returnReader = returnReader;
+	}
+
+	public String getResultVariable() {
+		return resultVariable;
+	}
+
+	public ReturnReader getReturnReader() {
+		return returnReader;
+	}
 }

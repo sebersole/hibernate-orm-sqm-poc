@@ -4,22 +4,26 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.query;
+package org.hibernate.query.spi;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.query.internal.NamedQueryParameter;
-import org.hibernate.query.internal.PositionalQueryParameter;
+import org.hibernate.Incubating;
+import org.hibernate.query.QueryParameter;
+import org.hibernate.query.UnknownParameterException;
+import org.hibernate.query.NamedQueryParameter;
+import org.hibernate.query.PositionalQueryParameter;
 import org.hibernate.query.internal.QueryParameterBindingImpl;
 
 /**
- * Collection of value bindings for query parameters.
+ * Manages the group of QueryParameterBinding for a particular query.
  *
  * @author Steve Ebersole
  */
+@Incubating
 public class QueryParameterBindings {
 	private Map<QueryParameter, QueryParameterBinding> parameterBindingMap;
 
@@ -53,7 +57,7 @@ public class QueryParameterBindings {
 			}
 		}
 
-		throw new IllegalStateException( "Unknown named parameter : " + name );
+		throw new UnknownParameterException( "Unknown named parameter : " + name );
 	}
 
 	public QueryParameterBinding getPositionalParameterBinding(Integer position) {
@@ -65,6 +69,22 @@ public class QueryParameterBindings {
 			}
 		}
 
-		throw new IllegalStateException( "Unknown positional parameter : " + position );
+		throw new UnknownParameterException( "Unknown positional parameter : " + position );
+	}
+
+	public QueryParameterBinding getParameterBinding(QueryParameter parameter) {
+		// see if this exact instance is known as a key
+		if ( parameterBindingMap.containsKey( parameter ) ) {
+			return parameterBindingMap.get( parameter );
+		}
+
+		if ( parameter instanceof NamedQueryParameter ) {
+			return getNamedParameterBinding( ( (NamedQueryParameter) parameter ).getName() );
+		}
+		if ( parameter instanceof PositionalQueryParameter ) {
+			return getPositionalParameterBinding( ( (PositionalQueryParameter) parameter ).getPosition() );
+		}
+
+		throw new UnknownParameterException( "Could not resolve  parameter [" + parameter + "] as part of query" );
 	}
 }

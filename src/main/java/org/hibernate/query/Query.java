@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.persistence.TemporalType;
 
+import org.hibernate.Incubating;
 import org.hibernate.LockMode;
 import org.hibernate.LockOptions;
 import org.hibernate.NonUniqueResultException;
@@ -25,7 +26,8 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public interface Query<T extends Query> extends BasicQueryContract<T> {
+@Incubating
+public interface Query<T extends Query,R> extends BasicQueryContract<T> {
 	/**
 	 * Get the query string.
 	 *
@@ -166,7 +168,7 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	 *
 	 * @return the result iterator
 	 */
-	Iterator iterate();
+	Iterator<R> iterate();
 
 	/**
 	 * Return the query results as <tt>ScrollableResults</tt>. The
@@ -200,7 +202,7 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	 *
 	 * @return the result list
 	 */
-	List list();
+	List<R> list();
 
 	/**
 	 * Convenience method to return a single instance that matches
@@ -210,7 +212,7 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	 *
 	 * @throws NonUniqueResultException if there is more than one matching result
 	 */
-	Object uniqueResult();
+	R uniqueResult();
 
 	/**
 	 * Execute the update or delete statement.
@@ -227,7 +229,7 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	 * use of this form of binding is not allowed, and {@link #setParameter(int, Object, Type)}
 	 * should be used instead
 	 * <p/>
-	 * Warn about binding null values for parameters
+	 * todo : Warn about binding null values for parameters
 	 *
 	 * @param position the position of the parameter in the query
 	 * string, numbered from <tt>0</tt>.
@@ -240,7 +242,7 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	/**
 	 * Bind a positional query parameter using the supplied Type
 	 * <p/>
-	 * Warn about binding null values for parameters
+	 * todo : Warn about binding null values for parameters
 	 *
 	 * @param position the position of the parameter in the query
 	 * string, numbered from <tt>0</tt>.
@@ -252,12 +254,27 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	Query setParameter(int position, Object val, Type type);
 
 	/**
+	 * Bind a positional query parameter as some form of date/time using
+	 * the indicated temporal-type.
+	 * <p/>
+	 * todo : Warn about binding null values for parameters
+	 *
+	 * @param position the position of the parameter in the query
+	 * string, numbered from <tt>0</tt>.
+	 * @param val the possibly-null parameter value
+	 * @param temporalType the temporal-type to use in binding the date/time
+	 *
+	 * @return {@code this}, for method chaining
+	 */
+	Query setParameter(int position, Object val, TemporalType temporalType);
+
+	/**
 	 * Bind a named query parameter using its inferred Type.  If the parameter is
 	 * defined in such a way that the Type cannot be inferred from its usage context then
 	 * use of this form of binding is not allowed, and {@link #setParameter(String, Object, Type)}
 	 * should be used instead
 	 * <p/>
-	 * Warn about binding null values for parameters
+	 * todo : Warn about binding null values for parameters
 	 *
 	 * @param name the parameter name
 	 * @param val the (possibly-null) parameter value
@@ -269,7 +286,7 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	/**
 	 * Bind a named query parameter using the supplied Type
 	 * <p/>
-	 * Warn about binding null values for parameters
+	 * todo : Warn about binding null values for parameters
 	 *
 	 * @param name the parameter name
 	 * @param val the possibly-null parameter value
@@ -279,6 +296,60 @@ public interface Query<T extends Query> extends BasicQueryContract<T> {
 	 */
 	Query setParameter(String name, Object val, Type type);
 
+	/**
+	 * Bind a named query parameter as some form of date/time using
+	 * the indicated temporal-type.
+	 * <p/>
+	 * todo : Warn about binding null values for parameters
+	 *
+	 * @param name the parameter name
+	 * @param val the possibly-null parameter value
+	 * @param temporalType the temporal-type to use in binding the date/time
+	 *
+	 * @return {@code this}, for method chaining
+	 */
+	Query setParameter(String name, Object val, TemporalType temporalType);
 
+	/**
+	 * Bind a query parameter using its inferred Type.  If the parameter is
+	 * defined in such a way that the Type cannot be inferred from its usage context then
+	 * use of this form of binding is not allowed, and {@link #setParameter(int, Object, Type)}
+	 * should be used instead
+	 * <p/>
+	 * todo : Warn about binding null values for parameters
+	 *
+	 * @param parameter The query parameter memento
+	 * @param val the possibly-null parameter value
+	 *
+	 * @return {@code this}, for method chaining
+	 */
+	Query setParameter(QueryParameter parameter, Object val);
+
+	/**
+	 * Bind a query parameter using the supplied Type
+	 * <p/>
+	 * todo : Warn about binding null values for parameters
+	 *
+	 * @param parameter The query parameter memento
+	 * @param val the possibly-null parameter value
+	 * @param type the Hibernate type
+	 *
+	 * @return {@code this}, for method chaining
+	 */
+	Query setParameter(QueryParameter parameter, Object val, Type type);
+
+	/**
+	 * Bind a query parameter as some form of date/time using the indicated
+	 * temporal-type.
+	 * <p/>
+	 * todo : Warn about binding null values for parameters
+	 *
+	 * @param parameter The query parameter memento
+	 * @param val the possibly-null parameter value
+	 * @param temporalType the temporal-type to use in binding the date/time
+	 *
+	 * @return {@code this}, for method chaining
+	 */
+	Query setParameter(QueryParameter parameter, Object val, TemporalType temporalType);
 
 }

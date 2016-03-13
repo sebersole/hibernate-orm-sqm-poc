@@ -6,7 +6,10 @@
  */
 package org.hibernate.query.internal;
 
-import org.hibernate.query.QueryParameterBinding;
+import javax.persistence.TemporalType;
+
+import org.hibernate.query.spi.QueryParameterBinding;
+import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.type.Type;
 
 /**
@@ -41,5 +44,10 @@ public class QueryParameterBindingImpl implements QueryParameterBinding {
 	public void setBindValue(Object value, Type clarifiedType) {
 		setBindValue( value );
 		this.bindType = clarifiedType;
+	}
+
+	@Override
+	public void setBindValue(Object value, TemporalType clarifiedTemporalType) {
+		throw new NotYetImplementedException( "swapping types based on TemporalType not yet implemented" );
 	}
 }

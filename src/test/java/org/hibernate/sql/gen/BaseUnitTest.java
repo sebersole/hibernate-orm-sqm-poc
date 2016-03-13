@@ -6,21 +6,15 @@
  */
 package org.hibernate.sql.gen;
 
-import java.util.List;
-
-import org.hibernate.LockOptions;
-import org.hibernate.ScrollMode;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cache.spi.QueryCache;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.InterpretationOptions;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.query.internal.ConsumerContextImpl;
-import org.hibernate.query.QueryParameterBindings;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.Statement;

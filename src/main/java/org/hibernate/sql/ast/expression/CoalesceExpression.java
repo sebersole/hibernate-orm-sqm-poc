@@ -15,7 +15,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class CoalesceExpression extends ExpressionAsReturnSupport {
+public class CoalesceExpression extends SelfReadingExpressionSupport {
 	private List<Expression> values = new ArrayList<Expression>();
 
 	public List<Expression> getValues() {

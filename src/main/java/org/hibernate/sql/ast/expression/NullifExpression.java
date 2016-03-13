@@ -12,7 +12,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class NullifExpression extends ExpressionAsReturnSupport {
+public class NullifExpression extends SelfReadingExpressionSupport {
 	private final Expression first;
 	private final Expression second;
 

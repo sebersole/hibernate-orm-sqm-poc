@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Tuple;
 
 import org.hibernate.Session;
 import org.hibernate.boot.MetadataSources;
@@ -19,12 +20,7 @@ import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.query.internal.QueryImpl;
-import org.hibernate.query.internal.RowTransformerPassThruImpl;
-import org.hibernate.sql.exec.internal.SemanticQueryExecutorImpl;
 import org.hibernate.query.internal.ConsumerContextImpl;
-import org.hibernate.query.internal.PositionalQueryParameter;
-import org.hibernate.sqm.SemanticQueryInterpreter;
-import org.hibernate.sqm.query.SelectStatement;
 
 import org.junit.After;
 import org.junit.Before;
@@ -90,6 +86,7 @@ public class FullStackTest {
 
 		QueryImpl query = new QueryImpl(
 				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
+				null,
 				(SessionImplementor) session,
 				consumerContext
 		);
@@ -105,8 +102,42 @@ public class FullStackTest {
 		assertThat( (String)row[0], is("Steve") );
 	}
 
-	protected SelectStatement interpret(String query) {
-		return (SelectStatement) SemanticQueryInterpreter.interpret( query, consumerContext );
+	@Test
+	public void testFullStackTyped() throws SQLException {
+		final Session session = sessionFactory.openSession();
+
+		QueryImpl<String> query = new QueryImpl<String>(
+				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
+				String.class,
+				(SessionImplementor) session,
+				consumerContext
+		);
+
+		query.setParameter( 1, 39 );
+		final List results = query.list();
+
+		assertThat( results.size(), is( 1 ) );
+		assertThat( results.get( 0 ), instanceOf( String.class ) );
+		String name = (String) results.get( 0 );
+		assertThat( name, is("Steve") );
+	}
+
+	@Test
+	public void testFullStackTupleTyped() throws SQLException {
+		final Session session = sessionFactory.openSession();
+
+		QueryImpl<Tuple> query = new QueryImpl<Tuple>(
+				"select p.name as name from Person p where p.age >= 20 and p.age <= ?1",
+				Tuple.class,
+				(SessionImplementor) session,
+				consumerContext
+		);
+
+		query.setParameter( 1, 39 );
+		final List<Tuple> results = query.list();
+		assertThat( results.size(), is( 1 ) );
+		Tuple tuple = results.get( 0 );
+		assertThat( (String) tuple.get( "name" ), is("Steve") );
 	}
 
 	@Entity(name="Person")

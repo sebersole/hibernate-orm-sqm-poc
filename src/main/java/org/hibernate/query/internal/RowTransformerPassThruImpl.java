@@ -6,11 +6,13 @@
  */
 package org.hibernate.query.internal;
 
+import org.hibernate.Incubating;
 import org.hibernate.sql.exec.spi.RowTransformer;
 
 /**
  * @author Steve Ebersole
  */
+@Incubating
 public class RowTransformerPassThruImpl implements RowTransformer<Object[]> {
 	/**
 	 * Singleton access

@@ -6,10 +6,13 @@
  */
 package org.hibernate.query;
 
+import org.hibernate.Incubating;
+
 /**
  * Represents a parameter defined in the source (HQL/JPQL or criteria) query.
  *
  * @author Steve Ebersole
  */
+@Incubating
 public interface QueryParameter {
 }
