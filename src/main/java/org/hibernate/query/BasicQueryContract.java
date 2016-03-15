@@ -65,30 +65,30 @@ public interface BasicQueryContract<T extends BasicQueryContract> {
 	 */
 	T setCacheMode(CacheMode cacheMode);
 
-//	/**
-//	 * Are the results of this query eligible for second level query caching?  This is different that second level
-//	 * caching of any returned entities and collections.
-//	 *
-//	 * NOTE: the query being "eligible" for caching does not necessarily mean its results will be cached.  Second level
-//	 * query caching still has to be enabled on the {@link SessionFactory} for this to happen.  Usually that is
-//	 * controlled by the {@code hibernate.cache.use_query_cache} configuration setting.
-//	 *
-//	 * @return {@code true} if the query results are eligible for caching, {@code false} otherwise.
-//	 *
-//	 * @see org.hibernate.cfg.AvailableSettings#USE_QUERY_CACHE
-//	 */
-//	boolean isCacheable();
-//
-//	/**
-//	 * Enable/disable second level query (result) caching for this query.
-//	 *
-//	 * @param cacheable Should the query results be cacheable?
-//	 *
-//	 * @return {@code this}, for method chaining
-//	 *
-//	 * @see #isCacheable
-//	 */
-//	T setCacheable(boolean cacheable);
+	/**
+	 * Are the results of this query eligible for second level query caching?  This is different that second level
+	 * caching of any returned entities and collections.
+	 *
+	 * NOTE: the query being "eligible" for caching does not necessarily mean its results will be cached.  Second level
+	 * query caching still has to be enabled on the {@link org.hibernate.SessionFactory} for this to happen.  Usually that is
+	 * controlled by the {@code hibernate.cache.use_query_cache} configuration setting.
+	 *
+	 * @return {@code true} if the query results are eligible for caching, {@code false} otherwise.
+	 *
+	 * @see org.hibernate.cfg.AvailableSettings#USE_QUERY_CACHE
+	 */
+	boolean isCacheable();
+
+	/**
+	 * Enable/disable second level query (result) caching for this query.
+	 *
+	 * @param cacheable Should the query results be cacheable?
+	 *
+	 * @return {@code this}, for method chaining
+	 *
+	 * @see #isCacheable
+	 */
+	T setCacheable(boolean cacheable);
 
 	/**
 	 * Obtain the name of the second level query cache region in which query results will be stored (if they are

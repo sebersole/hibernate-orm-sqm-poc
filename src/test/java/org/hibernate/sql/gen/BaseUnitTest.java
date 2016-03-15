@@ -11,7 +11,6 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.ast.InterpretationOptions;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.query.internal.ConsumerContextImpl;
@@ -80,7 +79,7 @@ public class BaseUnitTest {
 	protected SelectQuery interpretSelectQuery(String query) {
 		final SelectStatement statement = (SelectStatement) interpret( query );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( interpretationOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		return interpreter.getSelectQuery();
@@ -91,8 +90,8 @@ public class BaseUnitTest {
 		};
 	}
 
-	protected InterpretationOptions interpretationOptions() {
-		return new InterpretationOptionsTestingImpl();
+	protected org.hibernate.sql.exec.spi.QueryOptions queryOptions() {
+		return new QueryOptionsTestingImpl();
 	}
 
 }

@@ -9,6 +9,8 @@ package org.hibernate.sql.exec.spi;
 import org.hibernate.Incubating;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.query.spi.QueryParameterBindings;
+import org.hibernate.result.Output;
+import org.hibernate.result.Outputs;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.gen.Callback;
 
@@ -38,6 +40,9 @@ import org.hibernate.sql.gen.Callback;
  *     </li>
  * </ul>
  *
+ * Actually, I think that with PreparedStatementExecutor we can still handle
+ * ProcedureCall here.
+ *
  *
  * @author Steve Ebersole
  */
@@ -49,7 +54,7 @@ public interface SqlTreeExecutor {
 			SelectQuery sqlTree,
 			PreparedStatementCreator statementCreator,
 			PreparedStatementExecutor<R,T> preparedStatementExecutor,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			Callback callback,
@@ -58,21 +63,29 @@ public interface SqlTreeExecutor {
 	Object[] executeInsert(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session);
 
 	int executeUpdate(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session);
 
 	int executeDelete(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
+			SessionImplementor session);
+
+	<T> Outputs executeCall(
+			String callableName,
+			QueryOptions queryOptions,
+			QueryParameterBindings queryParameterBindings,
+			RowTransformer<T> rowTransformer,
+			Callback callback,
 			SessionImplementor session);
 }

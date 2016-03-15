@@ -6,7 +6,6 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -18,7 +17,7 @@ import org.hibernate.loader.spi.AfterLoadAction;
  * @author Steve Ebersole
  */
 public interface RowReader<R> {
-	R readRow(ResultSet resultSet, ResultSetProcessingContext context, ResultSetProcessingOptions options) throws SQLException;
+	R readRow(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
 
-	void finishUp(ResultSetProcessingContext context, List<AfterLoadAction> afterLoadActionList);
+	void finishUp(ResultSetProcessingState context, List<AfterLoadAction> afterLoadActionList);
 }

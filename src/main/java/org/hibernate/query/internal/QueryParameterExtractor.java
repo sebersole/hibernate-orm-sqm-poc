@@ -15,7 +15,6 @@ import java.util.Set;
 import org.hibernate.query.NamedQueryParameter;
 import org.hibernate.query.PositionalQueryParameter;
 import org.hibernate.query.QueryParameter;
-import org.hibernate.query.spi.QueryParameterBindings;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.query.Statement;
 import org.hibernate.sqm.query.expression.NamedParameterExpression;
@@ -25,9 +24,9 @@ import org.hibernate.sqm.query.order.OrderByClause;
 /**
  * @author Steve Ebersole
  */
-public class QueryParameterBindingsBuilder extends BaseSemanticQueryWalker {
-	public static QueryParameterBindings buildQueryParameterBindings(Statement statement) {
-		final QueryParameterBindingsBuilder walker = new QueryParameterBindingsBuilder();
+public class QueryParameterExtractor extends BaseSemanticQueryWalker {
+	static Set<QueryParameter> getQueryParameters(Statement statement) {
+		final QueryParameterExtractor walker = new QueryParameterExtractor();
 		walker.visitStatement( statement );
 
 		final Set<QueryParameter> queryParameters;
@@ -45,13 +44,13 @@ public class QueryParameterBindingsBuilder extends BaseSemanticQueryWalker {
 			}
 		}
 
-		return new QueryParameterBindings( queryParameters );
+		return queryParameters;
 	}
 
 	private Map<String,NamedQueryParameter> namedParamMap;
 	private Map<Integer,PositionalQueryParameter> positionParamMap;
 
-	private QueryParameterBindingsBuilder() {
+	private QueryParameterExtractor() {
 	}
 
 	@Override

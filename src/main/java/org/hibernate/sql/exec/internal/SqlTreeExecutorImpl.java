@@ -14,10 +14,11 @@ import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.query.spi.QueryParameterBindings;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
+import org.hibernate.result.Outputs;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.exec.spi.ExecutionOptions;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
+import org.hibernate.sql.exec.spi.QueryOptions;
 import org.hibernate.sql.exec.spi.RowTransformer;
 import org.hibernate.sql.exec.spi.SqlTreeExecutor;
 import org.hibernate.sql.gen.Callback;
@@ -36,7 +37,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 			SelectQuery sqlTree,
 			PreparedStatementCreator statementCreator,
 			PreparedStatementExecutor<R, T> preparedStatementExecutor,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			Callback callback,
@@ -63,14 +64,15 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 			logicalConnection.getResourceRegistry().register( ps, true );
 
 			// set options
-			if ( executionOptions.getFetchSize() != null ) {
-				ps.setFetchSize( executionOptions.getFetchSize() );
+			if ( queryOptions.getFetchSize() != null ) {
+				ps.setFetchSize( queryOptions.getFetchSize() );
 			}
-			if ( executionOptions.getTimeout() != null ) {
-				ps.setQueryTimeout( executionOptions.getTimeout() );
+			if ( queryOptions.getTimeout() != null ) {
+				ps.setQueryTimeout( queryOptions.getTimeout() );
 			}
 
 			// bind parameters
+			// 		todo : validate that all query parameters were bound?
 			int position = 1;
 			for ( ParameterBinder parameterBinder : sqlTreeWalker.getParameterBinders() ) {
 				position += parameterBinder.bindParameterValue(
@@ -81,7 +83,13 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 				);
 			}
 
-			return preparedStatementExecutor.execute( ps, sqlTreeWalker.getReturns(), rowTransformer, session );
+			return preparedStatementExecutor.execute(
+					ps,
+					queryOptions,
+					sqlTreeWalker.getReturns(),
+					rowTransformer,
+					session
+			);
 		}
 		catch (SQLException e) {
 			throw jdbcServices.getSqlExceptionHelper().convert(
@@ -98,7 +106,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 	public Object[] executeInsert(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session) {
 		throw new NotYetImplementedException( "DML execution is not yet implemented" );
@@ -108,7 +116,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 	public int executeUpdate(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session) {
 		throw new NotYetImplementedException( "DML execution is not yet implemented" );
@@ -118,9 +126,20 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 	public int executeDelete(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
-			ExecutionOptions executionOptions,
+			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			SessionImplementor session) {
 		throw new NotYetImplementedException( "DML execution is not yet implemented" );
+	}
+
+	@Override
+	public <T> Outputs executeCall(
+			String callableName,
+			QueryOptions queryOptions,
+			QueryParameterBindings queryParameterBindings,
+			RowTransformer<T> rowTransformer,
+			Callback callback,
+			SessionImplementor session) {
+		throw new NotYetImplementedException( "Procedure/function call execution is not yet implemented" );
 	}
 }

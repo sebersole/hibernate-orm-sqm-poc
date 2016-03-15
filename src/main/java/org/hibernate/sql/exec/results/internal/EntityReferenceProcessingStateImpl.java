@@ -10,13 +10,13 @@ import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
 import org.hibernate.loader.plan.spi.EntityReference;
 import org.hibernate.sql.exec.results.spi.EntityReferenceProcessingState;
-import org.hibernate.sql.exec.results.spi.ResultSetProcessingContext;
+import org.hibernate.sql.exec.results.spi.RowProcessingState;
 
 /**
  * @author Steve Ebersole
  */
 public class EntityReferenceProcessingStateImpl implements EntityReferenceProcessingState {
-	private final ResultSetProcessingContext sourceContext;
+	private final RowProcessingState rowProcessingState;
 	private final EntityReference entityReference;
 
 	private boolean wasMissingIdentifier;
@@ -26,9 +26,9 @@ public class EntityReferenceProcessingStateImpl implements EntityReferenceProces
 	private Object entityInstance;
 
 	public EntityReferenceProcessingStateImpl(
-			ResultSetProcessingContext sourceContext,
+			RowProcessingState rowProcessingState,
 			EntityReference entityReference) {
-		this.sourceContext = sourceContext;
+		this.rowProcessingState = rowProcessingState;
 		this.entityReference = entityReference;
 	}
 
@@ -42,7 +42,7 @@ public class EntityReferenceProcessingStateImpl implements EntityReferenceProces
 		if ( !EntityFetch.class.isInstance( entityReference ) ) {
 			throw new IllegalStateException( "Missing return row identifier" );
 		}
-		sourceContext.registerNonExists( (EntityFetch) entityReference );
+		rowProcessingState.registerNonExists( (EntityFetch) entityReference );
 		wasMissingIdentifier = true;
 	}
 

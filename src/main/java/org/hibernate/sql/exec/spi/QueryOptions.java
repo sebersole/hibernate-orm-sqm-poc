@@ -6,18 +6,26 @@
  */
 package org.hibernate.sql.exec.spi;
 
+import java.util.List;
+
 import org.hibernate.CacheMode;
-import org.hibernate.Incubating;
+import org.hibernate.FlushMode;
+import org.hibernate.LockOptions;
 
 /**
- * Access to options for query execution
- *
  * @author Steve Ebersole
  */
-@Incubating
-public interface ExecutionOptions {
+public interface QueryOptions {
 	Integer getTimeout();
+	FlushMode getFlushMode();
+	String getComment();
+	List<String> getSqlHints();
+
+	Limit getLimit();
+	LockOptions getLockOptions();
 	Integer getFetchSize();
+	Boolean isReadOnly();
 	CacheMode getCacheMode();
-	String getCacheRegion();
+	Boolean isResultCachingEnabled();
+	String getResultCacheRegionName();
 }

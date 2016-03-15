@@ -86,7 +86,6 @@ public class FullStackTest {
 
 		QueryImpl query = new QueryImpl(
 				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
-				null,
 				(SessionImplementor) session,
 				consumerContext
 		);

@@ -6,11 +6,9 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.hibernate.Incubating;
-import org.hibernate.engine.spi.SessionImplementor;
 
 /**
  * Contract for reading an individual return (selection) from the underlying ResultSet
@@ -20,7 +18,19 @@ import org.hibernate.engine.spi.SessionImplementor;
 @Incubating
 public interface ReturnReader {
 	// proposal for the contract for reading back values
-	// todo : maybe a 2-phase approach too
-	Object readResult(ResultSet resultSet, int startPosition, SessionImplementor session, Object owner) throws SQLException;
-	int getNumberOfColumnsRead(SessionImplementor session);
+
+	void readBasicValues(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
+	void resolveBasicValues(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
+	void assemble(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// TEMPORARY : Simple working contract assuming read of basic values...
+
+	Object readResult(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options,
+			int position,
+			Object owner) throws SQLException;
+
+	int getNumberOfColumnsRead(RowProcessingState processingState);
 }

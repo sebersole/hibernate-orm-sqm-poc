@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.exec.internal;
 
+import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,8 +15,13 @@ import java.util.List;
 
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
+import org.hibernate.sql.exec.results.internal.ResultSetProcessingStateStandardImpl;
+import org.hibernate.sql.exec.results.internal.RowReaderStandardImpl;
+import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.spi.ResultSetProcessingState;
+import org.hibernate.sql.exec.results.spi.RowReader;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
+import org.hibernate.sql.exec.spi.QueryOptions;
 import org.hibernate.sql.exec.spi.RowTransformer;
 import org.hibernate.sql.gen.Return;
 
@@ -33,9 +39,35 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 	 */
 	public static final PreparedStatementExecutorNormalImpl INSTANCE = new PreparedStatementExecutorNormalImpl();
 
+	/**
+	 * Processing options effectively are only used for entity loading.  Here we don't need these values.
+	 */
+	private final ResultSetProcessingOptions processingOptions = new ResultSetProcessingOptions() {
+		@Override
+		public Object getEffectiveOptionalObject() {
+			return null;
+		}
+
+		@Override
+		public String getEffectiveOptionalEntityName() {
+			return null;
+		}
+
+		@Override
+		public Serializable getEffectiveOptionalId() {
+			return null;
+		}
+
+		@Override
+		public boolean shouldReturnProxies() {
+			return true;
+		}
+	};
+
 	@Override
 	public List<T> execute(
 			PreparedStatement ps,
+			QueryOptions queryOptions,
 			List<Return> returns,
 			RowTransformer<T> rowTransformer,
 			SessionImplementor session) throws SQLException {
@@ -48,28 +80,36 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 		try {
 			int position = 1;
 
+			// Prepare the ResultSetProcessingState...
+			final ResultSetProcessingState resultSetProcessingState = new ResultSetProcessingStateStandardImpl(
+					resultSet,
+					queryOptions,
+					returns,
+					session
+			);
+
+			final RowReader<T> rowReader = new RowReaderStandardImpl<T>( returns, rowTransformer );
+
 			final List<T> results = new ArrayList<T>();
-			final int returnCount = returns.size();
+			final Integer maxRows = queryOptions.getLimit().getMaxRows();
 
-			while ( resultSet.next() ) {
-//			results.add(
-//					rowTransformer.transformRow(
-//							rowReader.read(.. )
-//			)
-//			);
-
-				final Object[] row = new Object[returnCount];
-				for ( int i = 0; i < returnCount; i++ ) {
-					final ReturnReader reader = returns.get( i ).getReturnReader();
-					row[i] = reader.readResult(
-							resultSet,
-							position,
-							session,
-							null
+			try {
+				while ( ( maxRows != null && position <= maxRows ) || resultSet.next() ) {
+					results.add(
+							rowReader.readRow(
+									resultSetProcessingState.getCurrentRowProcessingState(),
+									processingOptions
+							)
 					);
-					position += reader.getNumberOfColumnsRead( session );
+
+					position++;
+					resultSetProcessingState.getCurrentRowProcessingState().finishRowProcessing();
 				}
-				results.add( rowTransformer.transformRow( row ) );
+
+				resultSetProcessingState.finishResultSetProcessing();
+			}
+			finally {
+				resultSetProcessingState.release();
 			}
 
 			return results;

@@ -13,7 +13,10 @@ import java.sql.Types;
 import org.hibernate.EntityMode;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
+import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
+import org.hibernate.sql.exec.results.spi.RowProcessingState;
+import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
@@ -28,20 +31,44 @@ public abstract class SelfReadingExpressionSupport implements Expression, Return
 	}
 
 	@Override
-	public int getNumberOfColumnsRead(SessionImplementor session) {
+	public void readBasicValues(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
+		throw new NotYetImplementedException();
+	}
+
+	@Override
+	public void resolveBasicValues(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
+		throw new NotYetImplementedException();
+	}
+
+	@Override
+	public void assemble(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
+		throw new NotYetImplementedException();
+	}
+
+	@Override
+	public int getNumberOfColumnsRead(RowProcessingState processingState) {
 		assert getType() != null;
-		return getType().getColumnSpan( session.getFactory() );
+		return getType().getColumnSpan( processingState.getResultSetProcessingState().getSession().getFactory() );
 	}
 
 	@Override
 	public Object readResult(
-			ResultSet resultSet,
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options,
 			int startPosition,
-			SessionImplementor session,
 			Object owner) throws SQLException {
 		// for now we assume basic types with no attribute conversion etc.
 		// a more correct implementation requires the "positional read" changes to Type.
 		assert getType() != null;
+
+		final SessionImplementor session = processingState.getResultSetProcessingState().getSession();
+		final ResultSet resultSet = processingState.getResultSetProcessingState().getResultSet();
 
 		final int columnSpan = getType().getColumnSpan( session.getFactory() );
 		final int[] jdbcTypes = getType().sqlTypes( session.getFactory() );

@@ -15,6 +15,7 @@ import org.hibernate.ScrollableResults;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
+import org.hibernate.sql.exec.spi.QueryOptions;
 import org.hibernate.sql.exec.spi.RowTransformer;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.Return;
@@ -36,6 +37,7 @@ public class PreparedStatementExecutorScrollableImpl<T> implements PreparedState
 	@Override
 	public ScrollableResults execute(
 			PreparedStatement ps,
+			QueryOptions queryOptions,
 			List<Return> returns,
 			RowTransformer<T> rowTransformer,
 			SessionImplementor session) throws SQLException {

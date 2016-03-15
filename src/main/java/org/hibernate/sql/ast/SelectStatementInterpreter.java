@@ -25,6 +25,7 @@ import org.hibernate.sql.ast.predicate.InListPredicate;
 import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
+import org.hibernate.sql.exec.spi.QueryOptions;
 import org.hibernate.sql.gen.Callback;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
@@ -104,17 +105,17 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	 * Main entry point into SQM SelectStatement interpretation
 	 *
 	 * @param statement The SQM SelectStatement to interpret
-	 * @param interpretationOptions The options to be applied to the interpretation
+	 * @param queryOptions The options to be applied to the interpretation
 	 * @param callback to be formally defined
 	 *
 	 * @return The SQL AST
 	 */
-	public static SelectQuery interpret(SelectStatement statement, InterpretationOptions interpretationOptions, Callback callback) {
-		final SelectStatementInterpreter walker = new SelectStatementInterpreter( interpretationOptions, callback );
+	public static SelectQuery interpret(SelectStatement statement, QueryOptions queryOptions, Callback callback) {
+		final SelectStatementInterpreter walker = new SelectStatementInterpreter( queryOptions, callback );
 		return walker.interpret( statement );
 	}
 
-	private final InterpretationOptions interpretationOptions;
+	private final QueryOptions queryOptions;
 	private final Callback callback;
 
 	private final FromClauseIndex fromClauseIndex = new FromClauseIndex();
@@ -122,8 +123,8 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	private SelectQuery sqlAst;
 
-	public SelectStatementInterpreter(InterpretationOptions interpretationOptions, Callback callback) {
-		this.interpretationOptions = interpretationOptions;
+	public SelectStatementInterpreter(QueryOptions queryOptions, Callback callback) {
+		this.queryOptions = queryOptions;
 		this.callback = callback;
 	}
 

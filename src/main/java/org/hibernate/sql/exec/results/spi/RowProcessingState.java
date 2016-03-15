@@ -7,20 +7,17 @@
 package org.hibernate.sql.exec.results.spi;
 
 import org.hibernate.engine.spi.EntityKey;
-import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.loader.plan.spi.EntityFetch;
 import org.hibernate.loader.plan.spi.EntityReference;
 import org.hibernate.loader.plan.spi.Fetch;
 
 /**
- * Provides a context for processing a ResultSet.  Holds in-flight state
- * and provides access to environmental information needed to perform the
- * processing.
+ * State pertaining to the processing of a single row of a ResultSet
  *
  * @author Steve Ebersole
  */
-public interface ResultSetProcessingContext {
-	SessionImplementor getSession();
+public interface RowProcessingState {
+	ResultSetProcessingState getResultSetProcessingState();
 
 	void registerNonExists(EntityFetch fetch);
 	void registerHydratedEntity(EntityReference entityReference, EntityKey entityKey, Object entityInstance);
@@ -28,4 +25,5 @@ public interface ResultSetProcessingContext {
 	EntityReferenceProcessingState getProcessingState(EntityReference entityReference);
 	EntityReferenceProcessingState getOwnerProcessingState(Fetch fetch);
 
+	void finishRowProcessing();
 }

@@ -34,12 +34,16 @@ public interface PreparedStatementExecutor<R,T> {
 	 * used to interact with the ResourceRegistry)
 	 * @param returns
 	 * @param rowTransformer
+	 * @param queryOptions
 	 * @param session
+	 *
 	 * @return
+	 *
 	 * @throws SQLException
 	 */
 	R execute(
 			PreparedStatement ps,
+			QueryOptions queryOptions,
 			List<Return> returns,
 			RowTransformer<T> rowTransformer,
 			SessionImplementor session) throws SQLException;

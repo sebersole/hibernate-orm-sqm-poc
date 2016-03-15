@@ -6,13 +6,15 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
+import java.io.Serializable;
+
 /**
  * @author Steve Ebersole
  */
 public interface ResultSetProcessingOptions {
-	// todo : probably better to simply expose "effective" optional-object-info here
-
-	boolean shouldUseOptionalEntityInformation();
+	Object getEffectiveOptionalObject();
+	String getEffectiveOptionalEntityName();
+	Serializable getEffectiveOptionalId();
 
 	boolean shouldReturnProxies();
 }
