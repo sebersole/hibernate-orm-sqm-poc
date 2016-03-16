@@ -8,6 +8,7 @@ package org.hibernate.sql.gen;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Tuple;
@@ -25,6 +26,8 @@ import org.hibernate.query.internal.ConsumerContextImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.hamcrest.CoreMatchers;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -178,6 +181,46 @@ public class FullStackTest {
 		assertThat( person.id, is(nullValue()) );
 		assertThat( person.name, is("Steve") );
 		assertThat( person.age, is(20) );
+	}
+
+	@Test
+	public void testFullStackDynamicInstantiationList() throws SQLException {
+		final Session session = sessionFactory.openSession();
+
+		QueryImpl<List> query = new QueryImpl<List>(
+				"select new list(p.name, p.age) from Person p where p.age >= 20 and p.age <= ?1",
+				List.class,
+				(SessionImplementor) session,
+				consumerContext
+		);
+
+		query.setParameter( 1, 39 );
+		final List<List> results = query.list();
+		assertThat( results.size(), is( 1 ) );
+		List tuples = results.get( 0 );
+		assertThat( tuples.size(), is(2) );
+		assertThat( tuples.get(0), CoreMatchers.<Object>is("Steve") );
+		assertThat( tuples.get(1), CoreMatchers.<Object>is(20) );
+	}
+
+	@Test
+	public void testFullStackDynamicInstantiationMap() throws SQLException {
+		final Session session = sessionFactory.openSession();
+
+		QueryImpl<Map> query = new QueryImpl<Map>(
+				"select new map(p.name as name, p.age as age) from Person p where p.age >= 20 and p.age <= ?1",
+				Map.class,
+				(SessionImplementor) session,
+				consumerContext
+		);
+
+		query.setParameter( 1, 39 );
+		final List<Map> results = query.list();
+		assertThat( results.size(), is( 1 ) );
+		Map tuples = results.get( 0 );
+		assertThat( tuples.size(), is(2) );
+		assertThat( tuples.get("name"), CoreMatchers.<Object>is("Steve") );
+		assertThat( tuples.get("age"), CoreMatchers.<Object>is(20) );
 	}
 
 	@Entity(name="Person")
