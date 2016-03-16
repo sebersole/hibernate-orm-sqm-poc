@@ -12,44 +12,41 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
-import org.hibernate.sql.gen.NotYetImplementedException;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
-	private final List<EntryReader> entryReaders;
+	private final List<AliasedReturnReader> entryReaders;
+	private final int numberOfColumnsConsumed;
 
-	public ReturnReaderDynamicInstantiationMapImpl(List<DynamicInstantiationArgument> arguments) {
-		this.entryReaders = new ArrayList<EntryReader>();
+	public ReturnReaderDynamicInstantiationMapImpl(
+			List<DynamicInstantiationArgument> arguments,
+			int startPosition,
+			SessionFactoryImplementor sessionFactory) {
+		this.entryReaders = new ArrayList<AliasedReturnReader>();
+		int numberOfColumnsConsumed = 0;
+
 		for ( DynamicInstantiationArgument argument : arguments ) {
-			final ReturnReader reader = argument.getExpression().getReturnReader();
-			entryReaders.add( new EntryReader( argument.getAlias(), reader ) );
+			final ReturnReader reader = argument.getExpression().getReturnReader(
+					startPosition+numberOfColumnsConsumed,
+					true,
+					sessionFactory
+			);
+			numberOfColumnsConsumed += reader.getNumberOfColumnsRead( sessionFactory );
+			entryReaders.add( new AliasedReturnReader( argument.getAlias(), reader ) );
 		}
+
+		this.numberOfColumnsConsumed = numberOfColumnsConsumed;
 	}
 
 	@Override
-	public void readBasicValues(
-			RowProcessingState processingState,
-			ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException();
-	}
-
-	@Override
-	public void resolveBasicValues(
-			RowProcessingState processingState,
-			ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException();
-	}
-
-	@Override
-	public Object assemble(
-			RowProcessingState processingState,
-			ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException();
+	public int getNumberOfColumnsRead(SessionFactoryImplementor sessionFactory) {
+		return numberOfColumnsConsumed;
 	}
 
 	@Override
@@ -57,47 +54,38 @@ public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
 		return Map.class;
 	}
 
+
 	@Override
-	public Object readResult(
+	public void readBasicValues(
 			RowProcessingState processingState,
-			ResultSetProcessingOptions options,
-			int startPosition,
-			Object owner) throws SQLException {
+			ResultSetProcessingOptions options) throws SQLException {
+		for ( AliasedReturnReader entryReader : entryReaders ) {
+			entryReader.getReturnReader().readBasicValues( processingState, options );
+		}
+	}
+
+	@Override
+	public void resolveBasicValues(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
+		for ( AliasedReturnReader entryReader : entryReaders ) {
+			entryReader.getReturnReader().resolveBasicValues( processingState, options );
+		}
+	}
+
+	@Override
+	public Object assemble(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
 		final HashMap result = new HashMap();
 
-		int position = startPosition;
-		for ( EntryReader entryReader : entryReaders ) {
+		for ( AliasedReturnReader entryReader : entryReaders ) {
 			result.put(
-					entryReader.alias,
-					entryReader.reader.readResult(
-							processingState,
-							options,
-							position,
-							owner
-					)
+					entryReader.getAlias(),
+					entryReader.getReturnReader().assemble( processingState, options )
 			);
-			position += entryReader.reader.getNumberOfColumnsRead( processingState );
 		}
 
 		return result;
-	}
-
-	@Override
-	public int getNumberOfColumnsRead(RowProcessingState processingState) {
-		int i = 0;
-		for ( EntryReader entryReader : entryReaders ) {
-			i += entryReader.reader.getNumberOfColumnsRead( processingState );
-		}
-		return i;
-	}
-
-	private static class EntryReader {
-		private final String alias;
-		private final ReturnReader reader;
-
-		EntryReader(String alias, ReturnReader reader) {
-			this.alias = alias;
-			this.reader = reader;
-		}
 	}
 }

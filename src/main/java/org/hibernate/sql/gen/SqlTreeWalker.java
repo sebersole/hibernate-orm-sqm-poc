@@ -58,6 +58,7 @@ import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.query.spi.QueryParameterBindings;
+import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.type.LiteralType;
 import org.hibernate.type.Type;
 
@@ -72,6 +73,7 @@ public class SqlTreeWalker {
 	// pre-req state
 	private final SessionFactoryImplementor sessionFactory;
 	private final QueryParameterBindings parameterBindings;
+	private final boolean shallow = false; // for now always false, until Query#iterate support finalized
 
 	// In-flight state
 	private final StringBuilder sqlBuffer = new StringBuilder();
@@ -166,6 +168,7 @@ public class SqlTreeWalker {
 
 	private class SelectionProcessor {
 		private final SelectionProcessor parentSelectionProcessor;
+		private int numberOfColumnsConsumedSoFar = 0;
 
 		private SelectionProcessor(SelectionProcessor parentSelectionProcessor) {
 			this.parentSelectionProcessor = parentSelectionProcessor;
@@ -178,12 +181,11 @@ public class SqlTreeWalker {
 
 			// otherwise build a Return
 			// 		(atm only simple selection expressions are supported)
+			final ReturnReader reader = selection.getSelectExpression().getReturnReader( numberOfColumnsConsumedSoFar+1, shallow, sessionFactory );
 			returns.add(
-					new Return(
-							selection.getResultVariable(),
-							selection.getSelectExpression().getReturnReader()
-					)
+					new Return( selection.getResultVariable(), reader )
 			);
+			numberOfColumnsConsumedSoFar += reader.getNumberOfColumnsRead( sessionFactory );
 		}
 	}
 

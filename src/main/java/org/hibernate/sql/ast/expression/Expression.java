@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
@@ -26,7 +27,7 @@ public interface Expression {
 	 *
 	 * @return The Return
 	 */
-	ReturnReader getReturnReader();
+	ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory);
 
 	/**
 	 * Visitation by delegation

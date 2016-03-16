@@ -50,14 +50,15 @@ public class RowReaderStandardImpl<T> implements RowReader<T> {
 		final Object[] row = new Object[returnCount];
 
 		int position = 1;
+		// first phase of reading
+		for ( ReturnReader returnReader : returnReaders ) {
+			returnReader.readBasicValues( processingState, options );
+		}
+		for ( ReturnReader returnReader : returnReaders ) {
+			returnReader.resolveBasicValues( processingState, options );
+		}
 		for ( int i = 0; i < returnCount; i++ ) {
-			row[i] = returnReaders[i].readResult(
-					processingState,
-					options,
-					position,
-					null
-			);
-			position += returnReaders[i].getNumberOfColumnsRead( processingState );
+			row[i] = returnReaders[i].assemble( processingState, options );
 		}
 
 		return rowTransformer.transformRow( row );

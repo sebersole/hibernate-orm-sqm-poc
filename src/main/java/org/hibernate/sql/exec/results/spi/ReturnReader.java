@@ -9,6 +9,7 @@ package org.hibernate.sql.exec.results.spi;
 import java.sql.SQLException;
 
 import org.hibernate.Incubating;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 
 /**
  * Contract for reading an individual return (selection) from the underlying ResultSet
@@ -27,14 +28,5 @@ public interface ReturnReader<T> {
 
 	Class<T> getReturnedJavaType();
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// TEMPORARY : Simple working contract assuming read of basic values...
-
-	T readResult(
-			RowProcessingState processingState,
-			ResultSetProcessingOptions options,
-			int position,
-			Object owner) throws SQLException;
-
-	int getNumberOfColumnsRead(RowProcessingState processingState);
+	int getNumberOfColumnsRead(SessionFactoryImplementor sessionFactory);
 }

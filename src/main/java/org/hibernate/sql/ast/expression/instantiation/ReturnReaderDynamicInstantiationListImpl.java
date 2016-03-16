@@ -10,41 +10,34 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
-import org.hibernate.sql.gen.NotYetImplementedException;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnReaderDynamicInstantiationListImpl implements ReturnReader<List> {
 	private final List<ReturnReader> argumentReaders;
+	private final int startPosition;
+	private final int numberOfColumnsConsumed;
 
-	public ReturnReaderDynamicInstantiationListImpl(List<DynamicInstantiationArgument> arguments) {
+	public ReturnReaderDynamicInstantiationListImpl(
+			List<DynamicInstantiationArgument> arguments,
+			int startPosition,
+			SessionFactoryImplementor sessionFactory) {
+		this.startPosition = startPosition;
+		int numberOfColumnsConsumed = 0;
+
 		this.argumentReaders = new ArrayList<ReturnReader>();
 		for ( DynamicInstantiationArgument argument : arguments ) {
-			argumentReaders.add( argument.getExpression().getReturnReader() );
+			ReturnReader argumentReader = argument.getExpression().getReturnReader( startPosition+numberOfColumnsConsumed, true, sessionFactory );
+			argumentReaders.add( argumentReader );
+			numberOfColumnsConsumed += argumentReader.getNumberOfColumnsRead( sessionFactory );
 		}
-	}
 
-	@Override
-	public void readBasicValues(
-			RowProcessingState processingState,
-			ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException();
-	}
-
-	@Override
-	public void resolveBasicValues(
-			RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException();
-	}
-
-	@Override
-	public List assemble(
-			RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException();
+		this.numberOfColumnsConsumed = numberOfColumnsConsumed;
 	}
 
 	@Override
@@ -53,35 +46,35 @@ public class ReturnReaderDynamicInstantiationListImpl implements ReturnReader<Li
 	}
 
 	@Override
-	public List readResult(
-			RowProcessingState processingState,
-			ResultSetProcessingOptions options,
-			int startPosition,
-			Object owner) throws SQLException {
-		final ArrayList result = new ArrayList();
-
-		int position = startPosition;
-		for ( ReturnReader argumentReader : argumentReaders ) {
-			result.add(
-					argumentReader.readResult(
-							processingState,
-							options,
-							position,
-							owner
-					)
-			);
-			position += argumentReader.getNumberOfColumnsRead( processingState );
-		}
-
-		return result;
+	public int getNumberOfColumnsRead(SessionFactoryImplementor sessionFactory) {
+		return numberOfColumnsConsumed;
 	}
 
 	@Override
-	public int getNumberOfColumnsRead(RowProcessingState processingState) {
-		int i = 0;
+	public void readBasicValues(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
 		for ( ReturnReader argumentReader : argumentReaders ) {
-			i += argumentReader.getNumberOfColumnsRead( processingState );
+			argumentReader.readBasicValues( processingState, options );
 		}
-		return i;
+	}
+
+	@Override
+	public void resolveBasicValues(
+			RowProcessingState processingState,
+			ResultSetProcessingOptions options) throws SQLException {
+		for ( ReturnReader argumentReader : argumentReaders ) {
+			argumentReader.resolveBasicValues( processingState, options );
+		}
+	}
+
+	@Override
+	public List assemble(
+			RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException {
+		final ArrayList result = new ArrayList();
+		for ( ReturnReader argumentReader : argumentReaders ) {
+			result.add( argumentReader.assemble( processingState, options ) );
+		}
+		return result;
 	}
 }
