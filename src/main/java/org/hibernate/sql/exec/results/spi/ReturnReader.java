@@ -16,17 +16,21 @@ import org.hibernate.Incubating;
  * @author Steve Ebersole
  */
 @Incubating
-public interface ReturnReader {
+public interface ReturnReader<T> {
 	// proposal for the contract for reading back values
+	//		relies on Return/ReturnReader understanding the overall positions of its values
+	// 		in the ResultSet which may or may not be feasible.
 
 	void readBasicValues(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
 	void resolveBasicValues(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
-	void assemble(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
+	T assemble(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
+
+	Class<T> getReturnedJavaType();
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// TEMPORARY : Simple working contract assuming read of basic values...
 
-	Object readResult(
+	T readResult(
 			RowProcessingState processingState,
 			ResultSetProcessingOptions options,
 			int position,

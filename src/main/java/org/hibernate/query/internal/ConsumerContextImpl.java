@@ -43,6 +43,14 @@ public class ConsumerContextImpl implements ConsumerContext {
 			return classLoaderService.classForName( name );
 		}
 		catch (ClassLoadingException e) {
+			try {
+				final String importedName = sessionFactory.getImportedClassName( name );
+				if ( importedName != null ) {
+					return classLoaderService.classForName( importedName );
+				}
+			}
+			catch ( Exception ignore) {
+			}
 			throw new ClassNotFoundException( "Could not locate class : " + name, e );
 		}
 	}

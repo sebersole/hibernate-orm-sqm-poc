@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -137,6 +138,46 @@ public class FullStackTest {
 		assertThat( results.size(), is( 1 ) );
 		Tuple tuple = results.get( 0 );
 		assertThat( (String) tuple.get( "name" ), is("Steve") );
+	}
+
+	@Test
+	public void testFullStackDynamicInstantiation() throws SQLException {
+		final Session session = sessionFactory.openSession();
+
+		QueryImpl<Person> query = new QueryImpl<Person>(
+				"select new Person( p.id, p.name, p.age ) from Person p where p.age >= 20 and p.age <= ?1",
+				Person.class,
+				(SessionImplementor) session,
+				consumerContext
+		);
+
+		query.setParameter( 1, 39 );
+		final List<Person> results = query.list();
+		assertThat( results.size(), is( 1 ) );
+		Person person = results.get( 0 );
+		assertThat( person.name, is("Steve") );
+		assertThat( person.id, is(1) );
+		assertThat( person.age, is(20) );
+	}
+
+	@Test
+	public void testFullStackDynamicInstantiationInjection() throws SQLException {
+		final Session session = sessionFactory.openSession();
+
+		QueryImpl<Person> query = new QueryImpl<Person>(
+				"select new Person( p.name as name, p.age as age ) from Person p where p.age >= 20 and p.age <= ?1",
+				Person.class,
+				(SessionImplementor) session,
+				consumerContext
+		);
+
+		query.setParameter( 1, 39 );
+		final List<Person> results = query.list();
+		assertThat( results.size(), is( 1 ) );
+		Person person = results.get( 0 );
+		assertThat( person.id, is(nullValue()) );
+		assertThat( person.name, is("Steve") );
+		assertThat( person.age, is(20) );
 	}
 
 	@Entity(name="Person")

@@ -89,7 +89,15 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> BasicType<T> getBasicType(Class<T> javaType) {
-		return toSqmType( sessionFactory.getTypeResolver().basic( javaType.getName() ) );
+		final org.hibernate.type.BasicType ormType = sessionFactory.getTypeResolver().basic( javaType.getName() );
+		if ( ormType != null ) {
+			return toSqmType( ormType );
+		}
+
+		BasicType<T> type = new BasicTypeNonOrmImpl<T>( javaType );
+		basicTypeMap.put( javaType, type );
+
+		return type;
 	}
 
 	@Override

@@ -35,6 +35,8 @@ import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.expression.SumFunction;
 import org.hibernate.sql.ast.expression.UnaryOperationExpression;
+import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation;
+import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiationArgument;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableBinding;
@@ -333,6 +335,23 @@ public class SqlTreeWalker {
 			appendSql( "distinct " );
 		}
 		appendSql( "*)" );
+	}
+
+	public void visitDynamicInstantiation(DynamicInstantiation dynamicInstantiation) {
+		// this is highly optimistic in thinking that each argument expression renders values to the select, but for now...
+
+		String separator = "";
+// note sure why, but the compiler does not like this
+//		for ( DynamicInstantiationArgument argument : dynamicInstantiation.getArguments() ) {
+//			appendSql( separator );
+//			argument.getExpression().accept( this );
+//			separator = ", ";
+//		}
+		for ( Object o : dynamicInstantiation.getArguments() ) {
+			appendSql( separator );
+			( (DynamicInstantiationArgument) o ).getExpression().accept( this );
+			separator = ", ";
+		}
 	}
 
 	public void visitMaxFunction(MaxFunction maxFunction) {

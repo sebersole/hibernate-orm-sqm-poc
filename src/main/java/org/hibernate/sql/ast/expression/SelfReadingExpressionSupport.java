@@ -45,7 +45,7 @@ public abstract class SelfReadingExpressionSupport implements Expression, Return
 	}
 
 	@Override
-	public void assemble(
+	public Object assemble(
 			RowProcessingState processingState,
 			ResultSetProcessingOptions options) throws SQLException {
 		throw new NotYetImplementedException();
@@ -55,6 +55,12 @@ public abstract class SelfReadingExpressionSupport implements Expression, Return
 	public int getNumberOfColumnsRead(RowProcessingState processingState) {
 		assert getType() != null;
 		return getType().getColumnSpan( processingState.getResultSetProcessingState().getSession().getFactory() );
+	}
+
+	@Override
+	public Class getReturnedJavaType() {
+		assert getType() != null;
+		return getType().getReturnedClass();
 	}
 
 	@Override

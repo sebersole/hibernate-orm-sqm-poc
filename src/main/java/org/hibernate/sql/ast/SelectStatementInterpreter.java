@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.ast;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 import org.hibernate.AssertionFailure;
@@ -90,6 +92,9 @@ import org.hibernate.sqm.query.predicate.NegatedPredicate;
 import org.hibernate.sqm.query.predicate.NullnessPredicate;
 import org.hibernate.sqm.query.predicate.OrPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
+import org.hibernate.sqm.query.select.DynamicInstantiation;
+import org.hibernate.sqm.query.select.DynamicInstantiationArgument;
+import org.hibernate.sqm.query.select.DynamicInstantiationTarget;
 import org.hibernate.sqm.query.select.SelectClause;
 import org.hibernate.sqm.query.select.Selection;
 import org.hibernate.type.BasicType;
@@ -393,6 +398,32 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		currentQuerySpec().getSelectClause().selection( ormSelection );
 
 		return ormSelection;
+	}
+
+	@Override
+	public org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation visitDynamicInstantiation(DynamicInstantiation dynamicInstantiation) {
+		final Class target = interpret( dynamicInstantiation.getInstantiationTarget() );
+		org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation sqlTree =
+				new org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation( target );
+
+		for ( DynamicInstantiationArgument dynamicInstantiationArgument : dynamicInstantiation.getArguments() ) {
+			sqlTree.addArgument(
+					dynamicInstantiationArgument.getAlias(),
+					(org.hibernate.sql.ast.expression.Expression) dynamicInstantiationArgument.getExpression().accept( this )
+			);
+		}
+
+		return sqlTree;
+	}
+
+	private Class interpret(DynamicInstantiationTarget instantiationTarget) {
+		if ( instantiationTarget.getNature() == DynamicInstantiationTarget.Nature.LIST ) {
+			return List.class;
+		}
+		if ( instantiationTarget.getNature() == DynamicInstantiationTarget.Nature.MAP ) {
+			return Map.class;
+		}
+		return ( (org.hibernate.sqm.domain.BasicType) instantiationTarget.getTargetType() ).getJavaType();
 	}
 
 	@Override

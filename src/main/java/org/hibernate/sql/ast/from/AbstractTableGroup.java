@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.hibernate.persister.entity.internal.IdentifierSimple;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.EntityReference;
 import org.hibernate.sql.gen.NotYetImplementedException;
@@ -88,8 +89,11 @@ public abstract class AbstractTableGroup implements TableGroup {
 		else if ( attribute instanceof SingularAttributeEmbedded ) {
 			columns = ( (SingularAttributeEmbedded) attribute ).asManagedType().collectColumns();
 		}
+		else if ( attribute instanceof IdentifierSimple ) {
+			columns = ( (IdentifierSimple) attribute ).getColumns();
+		}
 		else {
-			throw new NotYetImplementedException();
+			throw new NotYetImplementedException( "resolveBindings() : " + attribute );
 		}
 
 		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
