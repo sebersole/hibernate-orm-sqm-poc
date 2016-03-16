@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.hibernate.AssertionFailure;
+import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.expression.NamedParameter;
@@ -32,10 +36,6 @@ import org.hibernate.sql.gen.Callback;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
 import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
-import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.PluralAttribute;
 import org.hibernate.sqm.domain.SingularAttribute;
@@ -423,7 +423,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		if ( instantiationTarget.getNature() == DynamicInstantiationTarget.Nature.MAP ) {
 			return Map.class;
 		}
-		return ( (org.hibernate.sqm.domain.BasicType) instantiationTarget.getTargetType() ).getJavaType();
+		return instantiationTarget.getJavaType();
 	}
 
 	@Override
