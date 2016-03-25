@@ -16,6 +16,8 @@ import java.util.Map;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
+import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.persister.entity.internal.ImprovedEntityPersisterImpl;
@@ -37,16 +39,20 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 
 	private final Map<Class, BasicType> basicTypeMap;
 
-	private final Map<EntityPersister, ImprovedEntityPersisterImpl> entityTypeDescriptorMap = new HashMap<EntityPersister, ImprovedEntityPersisterImpl>();
+	private final Map<EntityPersister, ImprovedEntityPersisterImpl> entityTypeDescriptorMap;
 	private Map<String,PolymorphicEntityTypeImpl> polymorphicEntityTypeDescriptorMap;
+
+	// FUGLY
+	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<CollectionPersister, ImprovedCollectionPersister>(  );
 
 	public DomainMetamodelImpl(SessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
-
 		this.basicTypeMap = buildBasicTypeMaps();
-
-		// todo : better account for inheritance
-		buildEntityTypeDescriptorMap();
+		this.entityTypeDescriptorMap = PersisterFactoryImpl.INSTANCE.getEntityPersisterMap();
+		PersisterFactoryImpl.INSTANCE.finishUp( databaseModel, this );
+		for ( ImprovedCollectionPersister improvedCollectionPersister : collectionPersisterMap.values() ) {
+			improvedCollectionPersister.finishInitialization( databaseModel, this );
+		}
 	}
 
 	public SessionFactoryImplementor getSessionFactory() {
@@ -72,18 +78,8 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		return map;
 	}
 
-	private void buildEntityTypeDescriptorMap() {
-		for ( EntityPersister entityPersister : sessionFactory.getEntityPersisters().values() ) {
-			entityTypeDescriptorMap.put(
-					entityPersister,
-					new ImprovedEntityPersisterImpl( databaseModel, this, entityPersister )
-			);
-		}
-
-		for ( ImprovedEntityPersisterImpl improvedEntityPersister : entityTypeDescriptorMap.values() ) {
-			improvedEntityPersister.afterInitialized( databaseModel, this );
-		}
-
+	public void registerCollectionPersister(ImprovedCollectionPersisterImpl persister) {
+		collectionPersisterMap.put( persister.getPersister(), persister );
 	}
 
 	@Override
@@ -210,8 +206,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	public ImprovedEntityPersisterImpl toSqmType(EntityPersister persister) {
 		ImprovedEntityPersisterImpl entityType = entityTypeDescriptorMap.get( persister );
 		if ( entityType == null ) {
-			entityType = new ImprovedEntityPersisterImpl( databaseModel, this, persister );
-			entityTypeDescriptorMap.put( persister, entityType );
+			throw new IllegalArgumentException( "No ImprovedEntityPersister known for " + persister );
 		}
 		return entityType;
 	}

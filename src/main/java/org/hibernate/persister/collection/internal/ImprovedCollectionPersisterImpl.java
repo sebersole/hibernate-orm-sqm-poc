@@ -40,18 +40,16 @@ import org.hibernate.type.EntityType;
  */
 public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl implements ImprovedCollectionPersister {
 	private final AbstractCollectionPersister persister;
-
 	private final CollectionClassification collectionClassification;
-	private final PluralAttributeKey foreignKeyDescriptor;
-	private final PluralAttributeId idDescriptor;
-	private final PluralAttributeElement elementDescriptor;
-	private final PluralAttributeIndex indexDescriptor;
 
-	private final AbstractTable separateCollectionTable;
+	private PluralAttributeKey foreignKeyDescriptor;
+	private PluralAttributeId idDescriptor;
+	private PluralAttributeElement elementDescriptor;
+	private PluralAttributeIndex indexDescriptor;
+
+	private AbstractTable separateCollectionTable;
 
 	public ImprovedCollectionPersisterImpl(
-			DatabaseModel databaseModel,
-			DomainMetamodelImpl domainMetamodel,
 			ManagedType declaringType,
 			String attributeName,
 			CollectionPersister persister,
@@ -61,7 +59,10 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 		this.persister = (AbstractCollectionPersister) persister;
 		this.collectionClassification = Helper.interpretCollectionClassification( persister.getCollectionType() );
 
+	}
 
+	@Override
+	public void finishInitialization(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
 		final AbstractTable collectionTable;
 		if ( persister.isOneToMany() ) {
 			collectionTable = domainMetamodel.toSqmType( this.persister.getElementPersister() ).getRootTable();

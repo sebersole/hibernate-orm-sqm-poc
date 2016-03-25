@@ -14,6 +14,7 @@ import org.hibernate.persister.common.internal.Helper;
 import org.hibernate.persister.common.spi.AbstractAttributeImpl;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.IdentifiableTypeImplementor;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
@@ -52,22 +53,36 @@ import org.jboss.logging.Logger;
 public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, EntityType {
 	private static final Logger log = Logger.getLogger( ImprovedEntityPersisterImpl.class );
 
-	private final DatabaseModel databaseModel;
-	private final DomainMetamodelImpl domainMetamodel;
 	private final EntityPersister persister;
-	private final Queryable queryable;
 
-	private final AbstractTable[] tables;
+	private AbstractTable[] tables;
 
+	private IdentifiableTypeImplementor superType;
 	private IdentifierDescriptorImplementor identifierDescriptor;
 
 	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<String, AbstractAttributeImpl>();
 
-	public ImprovedEntityPersisterImpl(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel, EntityPersister persister) {
-		this.databaseModel = databaseModel;
-		this.domainMetamodel = domainMetamodel;
+	public ImprovedEntityPersisterImpl(EntityPersister persister) {
 		this.persister = persister;
-		this.queryable = (Queryable) persister;
+	}
+
+	private boolean initComplete = false;
+
+	@Override
+	public void finishInitialization(
+			IdentifiableTypeImplementor superType,
+			Object typeSource,
+			DatabaseModel databaseModel,
+			DomainMetamodelImpl domainMetamodel) {
+		if ( initComplete ) {
+			throw new IllegalStateException( "Persister already completed initialization" );
+		}
+
+		// do init
+
+		this.superType = superType;
+		final Queryable queryable = (Queryable) persister;
+		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
 
 		if ( persister instanceof UnionSubclassEntityPersister ) {
 			tables = new AbstractTable[1];
@@ -84,10 +99,6 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 				tables[i] = makeTableReference( databaseModel, queryable.getSubclassTableName( i ) );
 			}
 		}
-	}
-
-	public void afterInitialized(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
-		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
 
 		final Column[] idColumns = Helper.makeValues(
 				domainMetamodel.getSessionFactory(),
@@ -177,6 +188,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 			attributeMap.put( attributeName, attribute );
 		}
+
+		initComplete = true;
 	}
 
 	private AbstractTable makeTableReference(DatabaseModel databaseModel, String tableExpression) {
@@ -303,9 +316,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	}
 
 	@Override
-	public IdentifiableType getSuperType() {
-		// todo : implement
-		throw new NotYetImplementedException();
+	public IdentifiableTypeImplementor getSuperType() {
+		return superType;
 	}
 
 	@Override

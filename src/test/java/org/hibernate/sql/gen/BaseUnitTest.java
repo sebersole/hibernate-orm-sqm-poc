@@ -11,6 +11,10 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.common.internal.DatabaseModel;
+import org.hibernate.persister.common.internal.PersisterFactoryImpl;
+import org.hibernate.persister.internal.PersisterFactoryInitiator;
+import org.hibernate.persister.spi.PersisterFactory;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.query.internal.ConsumerContextImpl;
@@ -34,6 +38,7 @@ public class BaseUnitTest {
 	public void before() throws Exception {
 		final StandardServiceRegistry ssr = new StandardServiceRegistryBuilder()
 				.applySetting( AvailableSettings.JPAQL_STRICT_COMPLIANCE, strictJpaCompliance() )
+				.applySetting( PersisterFactoryInitiator.IMPL_NAME, PersisterFactoryImpl.INSTANCE )
 				.build();
 
 		try {

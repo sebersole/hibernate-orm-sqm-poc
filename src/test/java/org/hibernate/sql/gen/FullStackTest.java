@@ -20,6 +20,8 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.persister.common.internal.PersisterFactoryImpl;
+import org.hibernate.persister.internal.PersisterFactoryInitiator;
 import org.hibernate.query.internal.QueryImpl;
 import org.hibernate.query.internal.ConsumerContextImpl;
 
@@ -45,6 +47,7 @@ public class FullStackTest {
 	public void before() throws Exception {
 		final StandardServiceRegistry ssr = new StandardServiceRegistryBuilder()
 				.applySetting( AvailableSettings.HBM2DDL_AUTO, "create-drop" )
+				.applySetting( PersisterFactoryInitiator.IMPL_NAME, PersisterFactoryImpl.INSTANCE )
 				.build();
 
 		try {

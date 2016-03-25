@@ -7,6 +7,8 @@
 package org.hibernate.persister.collection.spi;
 
 import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.common.internal.DatabaseModel;
+import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.gen.internal.FromClauseIndex;
@@ -19,6 +21,8 @@ import org.hibernate.sqm.query.from.JoinedFromElement;
  */
 public interface ImprovedCollectionPersister extends PluralAttribute {
 	CollectionPersister getPersister();
+
+	void finishInitialization(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel);
 
 	PluralAttributeKey getForeignKeyDescriptor();
 	PluralAttributeId getIdDescriptor();

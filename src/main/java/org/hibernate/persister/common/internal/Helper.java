@@ -296,15 +296,17 @@ public class Helper {
 		final CollectionType collectionType = (CollectionType) attributeType;
 		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getCollectionPersister( collectionType.getRole() );
 
-		return new ImprovedCollectionPersisterImpl(
-				databaseModel,
-				domainMetamodel,
+		final ImprovedCollectionPersisterImpl persister = new ImprovedCollectionPersisterImpl(
 				source,
 				subclassPropertyName,
 				collectionPersister,
 				columns
 		);
+
+		domainMetamodel.registerCollectionPersister( persister );
+		return persister;
 	}
+
 	public static interface CollectionMetadata {
 		CollectionClassification getCollectionClassification();
 		PluralAttribute.ElementClassification getElementClassification();
