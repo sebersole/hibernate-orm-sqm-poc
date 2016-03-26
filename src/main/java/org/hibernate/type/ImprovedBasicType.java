@@ -6,8 +6,16 @@
  */
 package org.hibernate.type;
 
+import javax.persistence.AttributeConverter;
+
+import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
+
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedBasicType extends ImprovedType {
+public interface ImprovedBasicType<T> extends ImprovedType, org.hibernate.sqm.domain.BasicType<T> {
+	SqlTypeDescriptor getSqlTypeDescriptor();
+	JavaTypeDescriptor<T> getJavaTypeDescriptor();
+	AttributeConverter<T,?> getAttributeConverter();
 }

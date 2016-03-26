@@ -42,9 +42,31 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	private final Map<EntityPersister, ImprovedEntityPersisterImpl> entityTypeDescriptorMap;
 	private Map<String,PolymorphicEntityTypeImpl> polymorphicEntityTypeDescriptorMap;
 
-	// FUGLY
-	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<CollectionPersister, ImprovedCollectionPersister>(  );
-
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// This section needs a bit of explanation...
+	//
+	// First, note too that it works on the assumption of PersisterFactoryImpl.INSTANCE having
+	// been specified as the PersisterFactory used to build the SessionFactory.
+	//
+	// From there the first thing we do is to ask the PersisterFactoryImpl to "finish up" its
+	// processing.  Internally PersisterFactoryImpl builds the legacy persisters and returns
+	// them to the caller as per its contracts.  However, additionally for entity persisters
+	// it will build the ImprovedEntityPersister variant*.  finishUp performs a second init
+	// phase on each of the ImprovedEntityPersister instances, part of which is to build
+	// its attribute descriptors.  When a plural attribute is processed, an ImprovedCollectionPersister
+	// instance is built, but much like with ImprovedEntityPersister that is just a "shell"; we delay
+	// most of its init until the ImprovedCollectionPersister.finishInitialization call done in
+	// the DomainMetamodelImpl ctor.
+	//
+	// So functionally we:
+	//		1) build all ImprovedEntityPersister instances
+	//		2) finalize all ImprovedEntityPersister instances (side effect being creation of ImprovedCollectionPersister instances)
+	//		3) finalize all ImprovedCollectionPersister instances.
+	//
+	// * - obviously a lot of this changes as we integrate this into ORM properly,  For example
+	// the improved persister contracts will just simply be part of the ORM persister contracts so
+	// no {persister}->{improved persister} mapping is needed.  Will need some thought on how to locate
+	// the "declaring ManagedType" for the improved CollectionPersister from the PersisterFactory
 	public DomainMetamodelImpl(SessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
 		this.basicTypeMap = buildBasicTypeMaps();
@@ -54,6 +76,13 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 			improvedCollectionPersister.finishInitialization( databaseModel, this );
 		}
 	}
+
+	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<CollectionPersister, ImprovedCollectionPersister>(  );
+
+	public void registerCollectionPersister(ImprovedCollectionPersisterImpl persister) {
+		collectionPersisterMap.put( persister.getPersister(), persister );
+	}
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	public SessionFactoryImplementor getSessionFactory() {
 		return sessionFactory;
@@ -76,10 +105,6 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		}
 
 		return map;
-	}
-
-	public void registerCollectionPersister(ImprovedCollectionPersisterImpl persister) {
-		collectionPersisterMap.put( persister.getPersister(), persister );
 	}
 
 	@Override

@@ -19,6 +19,11 @@ TODO Items
 	code.
 * Codify the concept of "comparable" types.  E.g. given 2 expressions being able to verify that they are valid *in relation to each other*.
 	The relation is important, as is possibly late verification to account for parameter bind values. 
+* Add "default SqlTypeDescriptor" to JavaTypeDescriptor.  We already have that code in place in
+	`org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings`, just need to decide what is the easiest way to 
+	get-at and consume that information.  We'd use this when building the ImprovedBasicType if no SqlTypeDescriptor
+	is specified.  And actually considering other type hints (@Nationalized, @Lob, etc) maybe its better to 
+	pass along access to all that info (param object).
 
 Keep track of downcasts on FromElement
 
