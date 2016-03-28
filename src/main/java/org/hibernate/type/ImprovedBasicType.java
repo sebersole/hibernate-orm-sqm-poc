@@ -12,10 +12,26 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 
 /**
+ * Redefines the Type contract in terms of "basic" or "value" types.  All Type methods are implemented
+ * using delegation with the bundled SqlTypeDescriptor, JavaTypeDescriptor and AttributeConverter.
+ *
  * @author Steve Ebersole
  */
 public interface ImprovedBasicType<T> extends ImprovedType, org.hibernate.sqm.domain.BasicType<T> {
-	SqlTypeDescriptor getSqlTypeDescriptor();
+	@Override
 	JavaTypeDescriptor<T> getJavaTypeDescriptor();
+
+	/**
+	 * The JDBC/SQL type descriptor.
+	 *
+	 * @return
+	 */
+	SqlTypeDescriptor getSqlTypeDescriptor();
+
+	/**
+	 * The converter applied to this type, if one.
+	 *
+	 * @return The applied converter.
+	 */
 	AttributeConverter<T,?> getAttributeConverter();
 }

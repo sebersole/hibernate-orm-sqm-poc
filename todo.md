@@ -23,7 +23,8 @@ TODO Items
 	`org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings`, just need to decide what is the easiest way to 
 	get-at and consume that information.  We'd use this when building the ImprovedBasicType if no SqlTypeDescriptor
 	is specified.  And actually considering other type hints (@Nationalized, @Lob, etc) maybe its better to 
-	pass along access to all that info (param object).
+	pass along access to all that info (param object).  See org.hibernate.type.sql.RecommendedJdbcTypeResolver and 
+	org.hibernate.type.sql.RecommendedJdbcTypeResolutionContext in this PoC for an initial design.
 
 Keep track of downcasts on FromElement
 
