@@ -192,7 +192,7 @@ public interface ImprovedType {
 	 *
 	 * @return The semi-resolved type
 	 */
-	public Type getSemiResolvedType(SessionFactoryImplementor factory);
+	public ImprovedType getSemiResolvedType(SessionFactoryImplementor factory);
 
 	/**
 	 * Generate a representation of the value for logging purposes.
