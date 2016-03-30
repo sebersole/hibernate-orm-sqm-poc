@@ -19,19 +19,19 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
- * Descriptor for {@link Types#NVARCHAR NVARCHAR} handling.
+ * Descriptor for {@link Types#DOUBLE DOUBLE} handling.
  *
  * @author Steve Ebersole
  */
-public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
-	public static final NVarcharTypeDescriptor INSTANCE = new NVarcharTypeDescriptor();
+public class DoubleTypeDescriptor implements SqlTypeDescriptor {
+	public static final DoubleTypeDescriptor INSTANCE = new DoubleTypeDescriptor();
 
-	public NVarcharTypeDescriptor() {
+	public DoubleTypeDescriptor() {
 	}
 
 	@Override
 	public int getSqlType() {
-		return Types.NVARCHAR;
+		return Types.DOUBLE;
 	}
 
 	@Override
@@ -41,7 +41,7 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 
 	@Override
 	public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
-		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( String.class );
+		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( Double.class );
 	}
 
 	@Override
@@ -49,13 +49,13 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 		return new BasicBinder<X>( javaTypeDescriptor, this ) {
 			@Override
 			protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options) throws SQLException {
-				st.setNString( index, javaTypeDescriptor.unwrap( value, String.class, options ) );
+				st.setDouble( index, javaTypeDescriptor.unwrap( value, Double.class, options ) );
 			}
 
 			@Override
 			protected void doBind(CallableStatement st, X value, String name, WrapperOptions options)
 					throws SQLException {
-				st.setNString( name, javaTypeDescriptor.unwrap( value, String.class, options ) );
+				st.setDouble( name, javaTypeDescriptor.unwrap( value, Double.class, options ) );
 			}
 		};
 	}
@@ -65,17 +65,17 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 		return new BasicExtractor<X>( javaTypeDescriptor, this ) {
 			@Override
 			protected X doExtract(ResultSet rs, String name, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( rs.getNString( name ), options );
+				return javaTypeDescriptor.wrap( rs.getDouble( name ), options );
 			}
 
 			@Override
 			protected X doExtract(CallableStatement statement, int index, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( statement.getNString( index ), options );
+				return javaTypeDescriptor.wrap( statement.getDouble( index ), options );
 			}
 
 			@Override
 			protected X doExtract(CallableStatement statement, String name, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( statement.getNString( name ), options );
+				return javaTypeDescriptor.wrap( statement.getDouble( name ), options );
 			}
 		};
 	}

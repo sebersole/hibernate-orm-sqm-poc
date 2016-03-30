@@ -7,12 +7,19 @@
 package org.hibernate.type.basic;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import javax.persistence.AttributeConverter;
 
 import org.hibernate.boot.spi.AttributeConverterDescriptor;
 import org.hibernate.type.ImprovedBasicType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
+import org.hibernate.type.descriptor.java.JdbcRecommendedSqlTypeMappingContext;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
+
+import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.TypeResolver;
 
 /**
  * Redesign of {@link org.hibernate.type.BasicTypeRegistry} based on idea of "composing"
@@ -21,17 +28,24 @@ import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
  * @author Steve Ebersole
  */
 public class BasicTypeFactory {
+	private final TypeResolver classmateTypeResolver = new TypeResolver();
 	private final Map<RegistryKey,ImprovedBasicType> registry = new HashMap<>();
 
 	@SuppressWarnings("unchecked")
 	public <T> ImprovedBasicType<T> resolveBasicType(
 			JavaTypeDescriptor<T> javaTypeDescriptor,
-			SqlTypeDescriptor sqlTypeDescriptor) {
-		final RegistryKey key = new RegistryKey(
-				javaTypeDescriptor.getJavaTypeClass(),
-				sqlTypeDescriptor.getSqlType(),
-				null
-		);
+			SqlTypeDescriptor sqlTypeDescriptor,
+			JdbcRecommendedSqlTypeMappingContext jdbcTypeResolutionContext) {
+		if ( javaTypeDescriptor == null ) {
+			assert sqlTypeDescriptor != null;
+			javaTypeDescriptor = sqlTypeDescriptor.getJdbcRecommendedJavaTypeMapping();
+		}
+		if ( sqlTypeDescriptor == null ) {
+			assert javaTypeDescriptor != null;
+			sqlTypeDescriptor = javaTypeDescriptor.getJdbcRecommendedSqlType( jdbcTypeResolutionContext );
+		}
+
+		final RegistryKey key = RegistryKey.from( javaTypeDescriptor, sqlTypeDescriptor, null );
 
 		ImprovedBasicType impl = registry.get( key );
 		if ( impl == null ) {
@@ -45,71 +59,86 @@ public class BasicTypeFactory {
 	public <T> ImprovedBasicType<T> resolveBasicType(
 			JavaTypeDescriptor<T> javaTypeDescriptor,
 			SqlTypeDescriptor sqlTypeDescriptor,
-			AttributeConverterDescriptor converterDescriptor) {
-		final RegistryKey key = RegistryKey.from( javaTypeDescriptor, sqlTypeDescriptor, converterDescriptor );
-
-		ImprovedBasicType impl = registry.get( key );
-		if ( impl == null ) {
-			impl = BasicTypeImpl.from( javaTypeDescriptor, sqlTypeDescriptor, converterDescriptor );
-			registry.put( key, impl );
+			AttributeConverterDescriptor converterDescriptor,
+			JdbcRecommendedSqlTypeMappingContext jdbcTypeResolutionContext) {
+		if ( converterDescriptor == null ) {
+			return resolveBasicType( javaTypeDescriptor, sqlTypeDescriptor, jdbcTypeResolutionContext );
 		}
-		return impl;
-	}
-
-	private static class RegistryKey {
-		private final Class javaTypeClass;
-		private final int jdbcCode;
-		private final Class attributeConverterClass;
-
-		public static RegistryKey from(
-				JavaTypeDescriptor javaTypeDescriptor,
-				SqlTypeDescriptor sqlTypeDescriptor,
-				AttributeConverterDescriptor converterDescriptor) {
-			return new RegistryKey(
-					javaTypeDescriptor.getJavaTypeClass(),
-					sqlTypeDescriptor.getSqlType(),
-					converterDescriptor == null ? null : converterDescriptor.getAttributeConverter().getClass()
+		else {
+			return resolveBasicType(
+					javaTypeDescriptor,
+					sqlTypeDescriptor,
+					converterDescriptor.getAttributeConverter(),
+					converterDescriptor.getDomainType(),
+					converterDescriptor.getJdbcType(),
+					jdbcTypeResolutionContext
 			);
 		}
+	}
 
-		private RegistryKey(Class javaTypeClass, int jdbcCode, Class attributeConverterClass) {
-			assert javaTypeClass != null;
 
-			this.javaTypeClass = javaTypeClass;
-			this.jdbcCode = jdbcCode;
-			this.attributeConverterClass = attributeConverterClass;
+	@SuppressWarnings("unchecked")
+	private  <T> ImprovedBasicType<T> resolveBasicType(
+			JavaTypeDescriptor<T> javaTypeDescriptor,
+			SqlTypeDescriptor sqlTypeDescriptor,
+			AttributeConverter converter,
+			Class converterDefinedDomainType,
+			Class converterDefinedJdbcType,
+			JdbcRecommendedSqlTypeMappingContext jdbcTypeResolutionContext) {
+
+		final JavaTypeDescriptor converterDefinedDomainTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( converterDefinedDomainType );
+		final JavaTypeDescriptor converterDefinedJdbcTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( converterDefinedJdbcType );
+
+		if ( javaTypeDescriptor == null ) {
+			javaTypeDescriptor = converterDefinedDomainTypeDescriptor;
+		}
+		else {
+			// todo : check that they match?
 		}
 
-		@Override
-		public boolean equals(Object o) {
-			if ( this == o ) {
-				return true;
-			}
-			if ( !( o instanceof RegistryKey ) ) {
-				return false;
-			}
-
-			final RegistryKey that = (RegistryKey) o;
-			return jdbcCode == that.jdbcCode
-					&& javaTypeClass.equals( that.javaTypeClass )
-					&& sameConversion( attributeConverterClass, that.attributeConverterClass );
+		if ( sqlTypeDescriptor == null ) {
+			sqlTypeDescriptor = converterDefinedJdbcTypeDescriptor.getJdbcRecommendedSqlType( jdbcTypeResolutionContext );
 		}
 
-		private boolean sameConversion(Class mine, Class yours) {
-			if ( mine == null ) {
-				return yours == null;
-			}
-			else {
-				return mine.equals( yours );
-			}
+		final RegistryKey key = RegistryKey.from( javaTypeDescriptor, sqlTypeDescriptor, converter );
+		final ImprovedBasicType existing = registry.get( key );
+		if ( existing != null ) {
+			return existing;
 		}
 
-		@Override
-		public int hashCode() {
-			int result = javaTypeClass.hashCode();
-			result = 31 * result + jdbcCode;
-			result = 31 * result + ( attributeConverterClass != null ? attributeConverterClass.hashCode() : 0 );
-			return result;
+		final BasicTypeImpl impl = new BasicTypeImpl(
+				javaTypeDescriptor,
+				sqlTypeDescriptor,
+				converter,
+				converterDefinedJdbcTypeDescriptor
+		);
+		registry.put( key, impl );
+		return impl;
+
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> ImprovedBasicType<T> resolveBasicType(
+			JavaTypeDescriptor<T> javaTypeDescriptor,
+			SqlTypeDescriptor sqlTypeDescriptor,
+			AttributeConverter converter,
+			JdbcRecommendedSqlTypeMappingContext jdbcTypeResolutionContext) {
+		if ( converter == null ) {
+			return resolveBasicType( javaTypeDescriptor, sqlTypeDescriptor, jdbcTypeResolutionContext );
+		}
+		else {
+			final ResolvedType resolvedConverterType = classmateTypeResolver.resolve( converter.getClass() );
+			final List<ResolvedType> converterParams = resolvedConverterType.typeParametersFor( AttributeConverter.class );
+			assert converterParams.size() == 2;
+
+			return resolveBasicType(
+					javaTypeDescriptor,
+					sqlTypeDescriptor,
+					converter,
+					converterParams.get( 0 ).getErasedType(),
+					converterParams.get( 1 ).getErasedType(),
+					jdbcTypeResolutionContext
+			);
 		}
 	}
 

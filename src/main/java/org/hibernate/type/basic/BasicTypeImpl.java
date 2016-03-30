@@ -11,41 +11,43 @@ import java.sql.SQLException;
 import javax.persistence.AttributeConverter;
 
 import org.hibernate.HibernateException;
-import org.hibernate.boot.spi.AttributeConverterDescriptor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.type.ImprovedBasicType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
-import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 
 /**
  * @author Steve Ebersole
  */
 public class BasicTypeImpl<T,D> implements ImprovedBasicType<T> {
-	@SuppressWarnings("unchecked")
-	public static BasicTypeImpl from(
-			JavaTypeDescriptor domainJavaType,
-			SqlTypeDescriptor sqlType,
-			AttributeConverterDescriptor converterDescriptor) {
-		if ( converterDescriptor == null ) {
-			return new BasicTypeImpl( domainJavaType, sqlType );
-		}
-		else {
-			final JavaTypeDescriptor intermediateJavaType = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( converterDescriptor.getJdbcType() );
-			return new BasicTypeImpl( domainJavaType, sqlType, converterDescriptor.getAttributeConverter(), intermediateJavaType );
-		}
-	}
-
 	private final SqlTypeDescriptor sqlType;
 	private final JavaTypeDescriptor<T> domainJavaType;
 
 	private final AttributeConverter<T,D> converter;
 	private final JavaTypeDescriptor intermediateJavaType;
 
+	/**
+	 * Constructor form for building a basic type without an AttributeConverter
+	 *
+	 * @param domainJavaType The descriptor for the domain model Java type.
+	 * @param sqlType The descriptor for the JDBC type.
+	 */
 	public BasicTypeImpl(JavaTypeDescriptor<T> domainJavaType, SqlTypeDescriptor sqlType) {
 		this( domainJavaType, sqlType, null, null );
 	}
 
+	/**
+	 * Constructor form for building a basic type with an AttributeConverter.
+	 * <p/>
+	 * Notice that 2 different JavaTypeDescriptor instances are passed in here.  {@code domainJavaType} represents
+	 * the Java type in the user's domain model.  {@code intermediateJavaType} represens the Java type expressed
+	 * by the AttributeConverter as the "database type".  We will read the database value initially using the
+	 * {@code sqlType} + {@code intermediateJavaType}.  We then pass that value along to the AttributeConverter
+	 * to convert to the domain Java type.
+	 *
+	 * @param domainJavaType The descriptor for the domain model Java type.
+	 * @param sqlType The descriptor for the JDBC type.
+	 */
 	public BasicTypeImpl(
 			JavaTypeDescriptor<T> domainJavaType,
 			SqlTypeDescriptor sqlType,

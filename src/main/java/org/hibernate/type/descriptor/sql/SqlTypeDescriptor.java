@@ -6,8 +6,6 @@
  */
 package org.hibernate.type.descriptor.sql;
 
-import javax.persistence.AttributeConverter;
-
 import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
@@ -33,6 +31,15 @@ public interface SqlTypeDescriptor {
 	 * @see org.hibernate.dialect.Dialect#remapSqlTypeDescriptor
 	 */
 	boolean canBeRemapped();
+
+	/**
+	 * Get the JavaTypeDescriptor for the Java type recommended by the JDBC spec for mapping the
+	 * given JDBC/SQL type.  The standard implementations honor the JDBC recommended mapping as per
+	 * http://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
+	 *
+	 * @return the recommended Java type descriptor.
+	 */
+	JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping();
 
 	/**
 	 * Get the binder (setting JDBC in-going parameter values) capable of handling values of the type described by the

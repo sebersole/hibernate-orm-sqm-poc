@@ -16,6 +16,7 @@ import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
  * Descriptor for {@link Types#BIT BIT} handling.
@@ -38,6 +39,11 @@ public class BitTypeDescriptor implements SqlTypeDescriptor {
 	@Override
 	public boolean canBeRemapped() {
 		return true;
+	}
+
+	@Override
+	public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
+		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( Boolean.class );
 	}
 
 	@Override

@@ -23,7 +23,11 @@ import org.jboss.logging.Logger;
 
 /**
  * @author Steve Ebersole
+ *
+ * @deprecated See {@link org.hibernate.type.descriptor.sql.SqlTypeDescriptor#getJdbcRecommendedJavaTypeMapping()}
+ * and {@link org.hibernate.type.descriptor.java.JavaTypeDescriptor#getJdbcRecommendedSqlType} instead.
  */
+@Deprecated
 public class RecommendedJdbcTypeMappings {
 	// todo : port to org.hibernate.type.descriptor.sql.JdbcTypeJavaClassMappings
 
@@ -129,6 +133,10 @@ public class RecommendedJdbcTypeMappings {
 		jdbcTypeCodeToJavaClassMap.put( Types.TIME, Time.class );
 		jdbcTypeCodeToJavaClassMap.put( Types.TIMESTAMP, Timestamp.class );
 		jdbcTypeCodeToJavaClassMap.put( Types.JAVA_OBJECT, Class.class );
+
+		// additional mappings
+		jdbcTypeCodeToJavaClassMap.put( Types.VARBINARY, byte[].class );
+		jdbcTypeCodeToJavaClassMap.put( Types.BINARY, byte[].class );
 
 		return jdbcTypeCodeToJavaClassMap;
 	}

@@ -18,6 +18,7 @@ import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
  * Descriptor for {@link Types#TIMESTAMP TIMESTAMP} handling.
@@ -38,6 +39,11 @@ public class TimestampTypeDescriptor implements SqlTypeDescriptor {
 	@Override
 	public boolean canBeRemapped() {
 		return true;
+	}
+
+	@Override
+	public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
+		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( Timestamp.class );
 	}
 
 	@Override

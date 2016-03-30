@@ -18,6 +18,7 @@ import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
  * Descriptor for {@link Types#CLOB CLOB} handling.
@@ -68,6 +69,11 @@ public abstract class ClobTypeDescriptor implements SqlTypeDescriptor {
 
 	public static final ClobTypeDescriptor DEFAULT = new ClobTypeDescriptor() {
 		@Override
+		public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
+			return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( Clob.class );
+		}
+
+		@Override
 		public <X> BasicBinder<X> getClobBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
 			return new BasicBinder<X>( javaTypeDescriptor, this ) {
 				@Override
@@ -97,6 +103,11 @@ public abstract class ClobTypeDescriptor implements SqlTypeDescriptor {
 
 	public static final ClobTypeDescriptor CLOB_BINDING = new ClobTypeDescriptor() {
 		@Override
+		public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
+			return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( Clob.class );
+		}
+
+		@Override
 		public <X> BasicBinder<X> getClobBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
 			return new BasicBinder<X>( javaTypeDescriptor, this ) {
 				@Override
@@ -115,6 +126,11 @@ public abstract class ClobTypeDescriptor implements SqlTypeDescriptor {
 	};
 
 	public static final ClobTypeDescriptor STREAM_BINDING = new ClobTypeDescriptor() {
+		@Override
+		public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
+			return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( String.class );
+		}
+
 		@Override
 		public <X> BasicBinder<X> getClobBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
 			return new BasicBinder<X>( javaTypeDescriptor, this ) {
@@ -144,6 +160,11 @@ public abstract class ClobTypeDescriptor implements SqlTypeDescriptor {
 	};
 
 	public static final ClobTypeDescriptor STREAM_BINDING_EXTRACTING = new ClobTypeDescriptor() {
+		@Override
+		public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
+			return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( String.class );
+		}
+
 		@Override
 		public <X> BasicBinder<X> getClobBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
 			return new BasicBinder<X>( javaTypeDescriptor, this ) {

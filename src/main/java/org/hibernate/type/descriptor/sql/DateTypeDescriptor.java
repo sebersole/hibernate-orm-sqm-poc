@@ -7,10 +7,12 @@
 package org.hibernate.type.descriptor.sql;
 
 import java.sql.CallableStatement;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Calendar;
 
 import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
@@ -19,19 +21,19 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
- * Descriptor for {@link Types#NVARCHAR NVARCHAR} handling.
+ * Descriptor for {@link Types#DATE DATE} handling.
  *
  * @author Steve Ebersole
  */
-public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
-	public static final NVarcharTypeDescriptor INSTANCE = new NVarcharTypeDescriptor();
+public class DateTypeDescriptor implements SqlTypeDescriptor {
+	public static final DateTypeDescriptor INSTANCE = new DateTypeDescriptor();
 
-	public NVarcharTypeDescriptor() {
+	public DateTypeDescriptor() {
 	}
 
 	@Override
 	public int getSqlType() {
-		return Types.NVARCHAR;
+		return Types.DATE;
 	}
 
 	@Override
@@ -41,7 +43,7 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 
 	@Override
 	public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
-		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( String.class );
+		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( Date.class );
 	}
 
 	@Override
@@ -49,13 +51,25 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 		return new BasicBinder<X>( javaTypeDescriptor, this ) {
 			@Override
 			protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options) throws SQLException {
-				st.setNString( index, javaTypeDescriptor.unwrap( value, String.class, options ) );
+				final Date date = javaTypeDescriptor.unwrap( value, Date.class, options );
+				if ( value instanceof Calendar ) {
+					st.setDate( index, date, (Calendar) value );
+				}
+				else {
+					st.setDate( index, date );
+				}
 			}
 
 			@Override
 			protected void doBind(CallableStatement st, X value, String name, WrapperOptions options)
 					throws SQLException {
-				st.setNString( name, javaTypeDescriptor.unwrap( value, String.class, options ) );
+				final Date date = javaTypeDescriptor.unwrap( value, Date.class, options );
+				if ( value instanceof Calendar ) {
+					st.setDate( name, date, (Calendar) value );
+				}
+				else {
+					st.setDate( name, date );
+				}
 			}
 		};
 	}
@@ -65,17 +79,17 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 		return new BasicExtractor<X>( javaTypeDescriptor, this ) {
 			@Override
 			protected X doExtract(ResultSet rs, String name, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( rs.getNString( name ), options );
+				return javaTypeDescriptor.wrap( rs.getDate( name ), options );
 			}
 
 			@Override
 			protected X doExtract(CallableStatement statement, int index, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( statement.getNString( index ), options );
+				return javaTypeDescriptor.wrap( statement.getDate( index ), options );
 			}
 
 			@Override
 			protected X doExtract(CallableStatement statement, String name, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( statement.getNString( name ), options );
+				return javaTypeDescriptor.wrap( statement.getDate( name ), options );
 			}
 		};
 	}

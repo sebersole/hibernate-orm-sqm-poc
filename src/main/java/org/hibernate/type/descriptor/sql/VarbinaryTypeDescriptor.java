@@ -19,19 +19,18 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
- * Descriptor for {@link Types#NVARCHAR NVARCHAR} handling.
+ * Descriptor for {@link Types#VARBINARY VARBINARY} handling.
  *
  * @author Steve Ebersole
  */
-public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
-	public static final NVarcharTypeDescriptor INSTANCE = new NVarcharTypeDescriptor();
+public class VarbinaryTypeDescriptor implements SqlTypeDescriptor {
+	public static final VarbinaryTypeDescriptor INSTANCE = new VarbinaryTypeDescriptor();
 
-	public NVarcharTypeDescriptor() {
+	public VarbinaryTypeDescriptor() {
 	}
 
-	@Override
 	public int getSqlType() {
-		return Types.NVARCHAR;
+		return Types.VARBINARY;
 	}
 
 	@Override
@@ -41,41 +40,40 @@ public class NVarcharTypeDescriptor implements SqlTypeDescriptor {
 
 	@Override
 	public JavaTypeDescriptor getJdbcRecommendedJavaTypeMapping() {
-		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( String.class );
+		return JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( byte[].class );
 	}
 
-	@Override
 	public <X> ValueBinder<X> getBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
 		return new BasicBinder<X>( javaTypeDescriptor, this ) {
+
 			@Override
 			protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options) throws SQLException {
-				st.setNString( index, javaTypeDescriptor.unwrap( value, String.class, options ) );
+				st.setBytes( index, javaTypeDescriptor.unwrap( value, byte[].class, options ) );
 			}
 
 			@Override
 			protected void doBind(CallableStatement st, X value, String name, WrapperOptions options)
 					throws SQLException {
-				st.setNString( name, javaTypeDescriptor.unwrap( value, String.class, options ) );
+				st.setBytes( name, javaTypeDescriptor.unwrap( value, byte[].class, options ) );
 			}
 		};
 	}
 
-	@Override
 	public <X> ValueExtractor<X> getExtractor(final JavaTypeDescriptor<X> javaTypeDescriptor) {
 		return new BasicExtractor<X>( javaTypeDescriptor, this ) {
 			@Override
 			protected X doExtract(ResultSet rs, String name, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( rs.getNString( name ), options );
+				return javaTypeDescriptor.wrap( rs.getBytes( name ), options );
 			}
 
 			@Override
 			protected X doExtract(CallableStatement statement, int index, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( statement.getNString( index ), options );
+				return javaTypeDescriptor.wrap( statement.getBytes( index ), options );
 			}
 
 			@Override
 			protected X doExtract(CallableStatement statement, String name, WrapperOptions options) throws SQLException {
-				return javaTypeDescriptor.wrap( statement.getNString( name ), options );
+				return javaTypeDescriptor.wrap( statement.getBytes( name ), options );
 			}
 		};
 	}
