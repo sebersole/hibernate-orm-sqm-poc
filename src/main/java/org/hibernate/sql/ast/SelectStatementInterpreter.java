@@ -16,19 +16,39 @@ import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.common.spi.SqmTypeImplementor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.AvgFunction;
+import org.hibernate.sql.ast.expression.BinaryArithmeticExpression;
+import org.hibernate.sql.ast.expression.CaseSearchedExpression;
+import org.hibernate.sql.ast.expression.CaseSimpleExpression;
+import org.hibernate.sql.ast.expression.CoalesceExpression;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
+import org.hibernate.sql.ast.expression.ConcatExpression;
+import org.hibernate.sql.ast.expression.CountFunction;
+import org.hibernate.sql.ast.expression.CountStarFunction;
+import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.ast.expression.MaxFunction;
+import org.hibernate.sql.ast.expression.MinFunction;
 import org.hibernate.sql.ast.expression.NamedParameter;
 import org.hibernate.sql.ast.expression.NonStandardFunctionExpression;
+import org.hibernate.sql.ast.expression.NullifExpression;
 import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.ast.expression.QueryLiteral;
+import org.hibernate.sql.ast.expression.SumFunction;
+import org.hibernate.sql.ast.expression.UnaryOperationExpression;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
 import org.hibernate.sql.ast.from.TableSpace;
+import org.hibernate.sql.ast.predicate.BetweenPredicate;
+import org.hibernate.sql.ast.predicate.GroupedPredicate;
 import org.hibernate.sql.ast.predicate.InListPredicate;
+import org.hibernate.sql.ast.predicate.InSubQueryPredicate;
 import org.hibernate.sql.ast.predicate.Junction;
+import org.hibernate.sql.ast.predicate.LikePredicate;
+import org.hibernate.sql.ast.predicate.NegatedPredicate;
+import org.hibernate.sql.ast.predicate.NullnessPredicate;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.exec.spi.QueryOptions;
@@ -44,36 +64,36 @@ import org.hibernate.sqm.query.InsertSelectStatement;
 import org.hibernate.sqm.query.QuerySpec;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.UpdateStatement;
-import org.hibernate.sqm.query.expression.AttributeReferenceExpression;
-import org.hibernate.sqm.query.expression.AvgFunction;
-import org.hibernate.sqm.query.expression.BinaryArithmeticExpression;
-import org.hibernate.sqm.query.expression.CaseSearchedExpression;
-import org.hibernate.sqm.query.expression.CaseSimpleExpression;
-import org.hibernate.sqm.query.expression.CoalesceExpression;
-import org.hibernate.sqm.query.expression.ConcatExpression;
-import org.hibernate.sqm.query.expression.ConstantEnumExpression;
-import org.hibernate.sqm.query.expression.ConstantFieldExpression;
-import org.hibernate.sqm.query.expression.CountFunction;
-import org.hibernate.sqm.query.expression.CountStarFunction;
-import org.hibernate.sqm.query.expression.Expression;
-import org.hibernate.sqm.query.expression.LiteralBigDecimalExpression;
-import org.hibernate.sqm.query.expression.LiteralBigIntegerExpression;
-import org.hibernate.sqm.query.expression.LiteralCharacterExpression;
-import org.hibernate.sqm.query.expression.LiteralDoubleExpression;
-import org.hibernate.sqm.query.expression.LiteralFalseExpression;
-import org.hibernate.sqm.query.expression.LiteralFloatExpression;
-import org.hibernate.sqm.query.expression.LiteralIntegerExpression;
-import org.hibernate.sqm.query.expression.LiteralLongExpression;
-import org.hibernate.sqm.query.expression.LiteralNullExpression;
-import org.hibernate.sqm.query.expression.LiteralStringExpression;
-import org.hibernate.sqm.query.expression.LiteralTrueExpression;
-import org.hibernate.sqm.query.expression.MaxFunction;
-import org.hibernate.sqm.query.expression.MinFunction;
-import org.hibernate.sqm.query.expression.NamedParameterExpression;
-import org.hibernate.sqm.query.expression.NullifExpression;
-import org.hibernate.sqm.query.expression.PositionalParameterExpression;
-import org.hibernate.sqm.query.expression.SumFunction;
-import org.hibernate.sqm.query.expression.UnaryOperationExpression;
+import org.hibernate.sqm.query.expression.AttributeReferenceSqmExpression;
+import org.hibernate.sqm.query.expression.BinaryArithmeticSqmExpression;
+import org.hibernate.sqm.query.expression.CaseSearchedSqmExpression;
+import org.hibernate.sqm.query.expression.CaseSimpleSqmExpression;
+import org.hibernate.sqm.query.expression.CoalesceSqmExpression;
+import org.hibernate.sqm.query.expression.ConcatSqmExpression;
+import org.hibernate.sqm.query.expression.ConstantEnumSqmExpression;
+import org.hibernate.sqm.query.expression.ConstantFieldSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralBigDecimalSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralBigIntegerSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralCharacterSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralDoubleSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralFalseSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralFloatSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralIntegerSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralLongSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralNullSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralStringSqmExpression;
+import org.hibernate.sqm.query.expression.LiteralTrueSqmExpression;
+import org.hibernate.sqm.query.expression.NamedParameterSqmExpression;
+import org.hibernate.sqm.query.expression.NullifSqmExpression;
+import org.hibernate.sqm.query.expression.PositionalParameterSqmExpression;
+import org.hibernate.sqm.query.expression.SqmExpression;
+import org.hibernate.sqm.query.expression.UnaryOperationSqmExpression;
+import org.hibernate.sqm.query.expression.function.AvgFunctionSqmExpression;
+import org.hibernate.sqm.query.expression.function.CountFunctionSqmExpression;
+import org.hibernate.sqm.query.expression.function.CountStarFunctionSqmExpression;
+import org.hibernate.sqm.query.expression.function.MaxFunctionSqmExpression;
+import org.hibernate.sqm.query.expression.function.MinFunctionSqmExpression;
+import org.hibernate.sqm.query.expression.function.SumFunctionSqmExpression;
 import org.hibernate.sqm.query.from.CrossJoinedFromElement;
 import org.hibernate.sqm.query.from.FromClause;
 import org.hibernate.sqm.query.from.FromElementSpace;
@@ -83,14 +103,16 @@ import org.hibernate.sqm.query.from.QualifiedEntityJoinFromElement;
 import org.hibernate.sqm.query.from.RootEntityFromElement;
 import org.hibernate.sqm.query.order.OrderByClause;
 import org.hibernate.sqm.query.order.SortSpecification;
-import org.hibernate.sqm.query.predicate.AndPredicate;
-import org.hibernate.sqm.query.predicate.BetweenPredicate;
-import org.hibernate.sqm.query.predicate.GroupedPredicate;
-import org.hibernate.sqm.query.predicate.InSubQueryPredicate;
-import org.hibernate.sqm.query.predicate.LikePredicate;
-import org.hibernate.sqm.query.predicate.NegatedPredicate;
-import org.hibernate.sqm.query.predicate.NullnessPredicate;
-import org.hibernate.sqm.query.predicate.OrPredicate;
+import org.hibernate.sqm.query.predicate.AndSqmPredicate;
+import org.hibernate.sqm.query.predicate.BetweenSqmPredicate;
+import org.hibernate.sqm.query.predicate.GroupedSqmPredicate;
+import org.hibernate.sqm.query.predicate.InListSqmPredicate;
+import org.hibernate.sqm.query.predicate.InSubQuerySqmPredicate;
+import org.hibernate.sqm.query.predicate.LikeSqmPredicate;
+import org.hibernate.sqm.query.predicate.NegatedSqmPredicate;
+import org.hibernate.sqm.query.predicate.NullnessSqmPredicate;
+import org.hibernate.sqm.query.predicate.OrSqmPredicate;
+import org.hibernate.sqm.query.predicate.RelationalSqmPredicate;
 import org.hibernate.sqm.query.predicate.WhereClause;
 import org.hibernate.sqm.query.select.DynamicInstantiation;
 import org.hibernate.sqm.query.select.DynamicInstantiationArgument;
@@ -427,7 +449,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public AttributeReference visitAttributeReferenceExpression(AttributeReferenceExpression expression) {
+	public AttributeReference visitAttributeReferenceExpression(AttributeReferenceSqmExpression expression) {
 		// WARNING : works on the assumption that the referenced attribute is always singular.
 		// I believe that is valid, but we will need to test
 		// todo : verify if this is a valid assumption
@@ -437,7 +459,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralStringExpression(LiteralStringExpression expression) {
+	public QueryLiteral visitLiteralStringExpression(LiteralStringSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -453,7 +475,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralCharacterExpression(LiteralCharacterExpression expression) {
+	public QueryLiteral visitLiteralCharacterExpression(LiteralCharacterSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -461,7 +483,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralDoubleExpression(LiteralDoubleExpression expression) {
+	public QueryLiteral visitLiteralDoubleExpression(LiteralDoubleSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -469,7 +491,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralIntegerExpression(LiteralIntegerExpression expression) {
+	public QueryLiteral visitLiteralIntegerExpression(LiteralIntegerSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -477,7 +499,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralBigIntegerExpression(LiteralBigIntegerExpression expression) {
+	public QueryLiteral visitLiteralBigIntegerExpression(LiteralBigIntegerSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -485,7 +507,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralBigDecimalExpression(LiteralBigDecimalExpression expression) {
+	public QueryLiteral visitLiteralBigDecimalExpression(LiteralBigDecimalSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -493,7 +515,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralFloatExpression(LiteralFloatExpression expression) {
+	public QueryLiteral visitLiteralFloatExpression(LiteralFloatSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -501,7 +523,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralLongExpression(LiteralLongExpression expression) {
+	public QueryLiteral visitLiteralLongExpression(LiteralLongSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -509,7 +531,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralTrueExpression(LiteralTrueExpression expression) {
+	public QueryLiteral visitLiteralTrueExpression(LiteralTrueSqmExpression expression) {
 		return new QueryLiteral(
 				Boolean.TRUE,
 				extractOrmType( expression.getExpressionType() )
@@ -517,7 +539,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralFalseExpression(LiteralFalseExpression expression) {
+	public QueryLiteral visitLiteralFalseExpression(LiteralFalseSqmExpression expression) {
 		return new QueryLiteral(
 				Boolean.FALSE,
 				extractOrmType( expression.getExpressionType() )
@@ -525,7 +547,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public QueryLiteral visitLiteralNullExpression(LiteralNullExpression expression) {
+	public QueryLiteral visitLiteralNullExpression(LiteralNullSqmExpression expression) {
 		return new QueryLiteral(
 				null,
 				extractOrmType( expression.getExpressionType() )
@@ -533,7 +555,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitConstantEnumExpression(ConstantEnumExpression expression) {
+	public Object visitConstantEnumExpression(ConstantEnumSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -541,7 +563,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitConstantFieldExpression(ConstantFieldExpression expression) {
+	public Object visitConstantFieldExpression(ConstantFieldSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
 				extractOrmType( expression.getExpressionType() )
@@ -549,7 +571,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public NamedParameter visitNamedParameterExpression(NamedParameterExpression expression) {
+	public NamedParameter visitNamedParameterExpression(NamedParameterSqmExpression expression) {
 		return new NamedParameter(
 				expression.getName(),
 				extractOrmType( expression.getExpressionType() )
@@ -557,7 +579,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public PositionalParameter visitPositionalParameterExpression(PositionalParameterExpression expression) {
+	public PositionalParameter visitPositionalParameterExpression(PositionalParameterSqmExpression expression) {
 		return new PositionalParameter(
 				expression.getPosition(),
 				extractOrmType( expression.getExpressionType() )
@@ -565,74 +587,74 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.AvgFunction visitAvgFunction(AvgFunction expression) {
-		return new org.hibernate.sql.ast.expression.AvgFunction(
-				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+	public AvgFunction visitAvgFunction(AvgFunctionSqmExpression expression) {
+		return new AvgFunction(
+				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.MaxFunction visitMaxFunction(MaxFunction expression) {
-		return new org.hibernate.sql.ast.expression.MaxFunction(
-				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+	public MaxFunction visitMaxFunction(MaxFunctionSqmExpression expression) {
+		return new MaxFunction(
+				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.MinFunction visitMinFunction(MinFunction expression) {
-		return new org.hibernate.sql.ast.expression.MinFunction(
-				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+	public MinFunction visitMinFunction(MinFunctionSqmExpression expression) {
+		return new MinFunction(
+				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.SumFunction visitSumFunction(SumFunction expression) {
-		return new org.hibernate.sql.ast.expression.SumFunction(
-				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+	public SumFunction visitSumFunction(SumFunctionSqmExpression expression) {
+		return new SumFunction(
+				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.CountFunction visitCountFunction(CountFunction expression) {
-		return new org.hibernate.sql.ast.expression.CountFunction(
-				(org.hibernate.sql.ast.expression.Expression) expression.getArgument().accept( this ),
+	public CountFunction visitCountFunction(CountFunctionSqmExpression expression) {
+		return new CountFunction(
+				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.CountStarFunction visitCountStarFunction(CountStarFunction expression) {
-		return new org.hibernate.sql.ast.expression.CountStarFunction(
+	public CountStarFunction visitCountStarFunction(CountStarFunctionSqmExpression expression) {
+		return new CountStarFunction(
 				expression.isDistinct(),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
 	@Override
-	public Object visitUnaryOperationExpression(UnaryOperationExpression expression) {
-		return new org.hibernate.sql.ast.expression.UnaryOperationExpression(
+	public Object visitUnaryOperationExpression(UnaryOperationSqmExpression expression) {
+		return new UnaryOperationExpression(
 				interpret( expression.getOperation() ),
-				(org.hibernate.sql.ast.expression.Expression) expression.getOperand().accept( this ),
+				(Expression) expression.getOperand().accept( this ),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
-	private org.hibernate.sql.ast.expression.UnaryOperationExpression.Operation interpret(UnaryOperationExpression.Operation operation) {
+	private UnaryOperationExpression.Operation interpret(UnaryOperationSqmExpression.Operation operation) {
 		switch ( operation ) {
 			case PLUS: {
-				return org.hibernate.sql.ast.expression.UnaryOperationExpression.Operation.PLUS;
+				return UnaryOperationExpression.Operation.PLUS;
 			}
 			case MINUS: {
-				return org.hibernate.sql.ast.expression.UnaryOperationExpression.Operation.MINUS;
+				return UnaryOperationExpression.Operation.MINUS;
 			}
 		}
 
@@ -640,39 +662,39 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.Expression visitBinaryArithmeticExpression(BinaryArithmeticExpression expression) {
-		if ( expression.getOperation() == BinaryArithmeticExpression.Operation.MODULO ) {
+	public Expression visitBinaryArithmeticExpression(BinaryArithmeticSqmExpression expression) {
+		if ( expression.getOperation() == BinaryArithmeticSqmExpression.Operation.MODULO ) {
 			return new NonStandardFunctionExpression(
 					"mod",
 					(BasicType) extractOrmType( expression.getExpressionType() ),
-					(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
-					(org.hibernate.sql.ast.expression.Expression) expression.getRightHandOperand().accept( this )
+					(Expression) expression.getLeftHandOperand().accept( this ),
+					(Expression) expression.getRightHandOperand().accept( this )
 			);
 		}
-		return new org.hibernate.sql.ast.expression.BinaryArithmeticExpression(
+		return new BinaryArithmeticExpression(
 				interpret( expression.getOperation() ),
-				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) expression.getRightHandOperand().accept( this ),
+				(Expression) expression.getLeftHandOperand().accept( this ),
+				(Expression) expression.getRightHandOperand().accept( this ),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
-	private org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation interpret(BinaryArithmeticExpression.Operation operation) {
+	private BinaryArithmeticExpression.Operation interpret(BinaryArithmeticSqmExpression.Operation operation) {
 		switch ( operation ) {
 			case ADD: {
-				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.ADD;
+				return BinaryArithmeticExpression.Operation.ADD;
 			}
 			case SUBTRACT: {
-				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.SUBTRACT;
+				return BinaryArithmeticExpression.Operation.SUBTRACT;
 			}
 			case MULTIPLY: {
-				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.MULTIPLY;
+				return BinaryArithmeticExpression.Operation.MULTIPLY;
 			}
 			case DIVIDE: {
-				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.DIVIDE;
+				return BinaryArithmeticExpression.Operation.DIVIDE;
 			}
 			case QUOT: {
-				return org.hibernate.sql.ast.expression.BinaryArithmeticExpression.Operation.QUOT;
+				return BinaryArithmeticExpression.Operation.QUOT;
 			}
 		}
 
@@ -680,71 +702,63 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitCoalesceExpression(CoalesceExpression expression) {
-		final org.hibernate.sql.ast.expression.CoalesceExpression result = new org.hibernate.sql.ast.expression.CoalesceExpression();
-		for ( Expression value : expression.getValues() ) {
-			result.value(
-					(org.hibernate.sql.ast.expression.Expression) value.accept( this )
-			);
+	public CoalesceExpression visitCoalesceExpression(CoalesceSqmExpression expression) {
+		final CoalesceExpression result = new CoalesceExpression();
+		for ( SqmExpression value : expression.getValues() ) {
+			result.value( (Expression) value.accept( this ) );
 		}
 
 		return result;
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.CaseSimpleExpression visitSimpleCaseExpression(CaseSimpleExpression expression) {
-		final org.hibernate.sql.ast.expression.CaseSimpleExpression result = new org.hibernate.sql.ast.expression.CaseSimpleExpression(
+	public CaseSimpleExpression visitSimpleCaseExpression(CaseSimpleSqmExpression expression) {
+		final CaseSimpleExpression result = new CaseSimpleExpression(
 				extractOrmType( expression.getExpressionType() ),
-				(org.hibernate.sql.ast.expression.Expression) expression.getFixture().accept( this )
+				(Expression) expression.getFixture().accept( this )
 		);
 
-		for ( CaseSimpleExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
+		for ( CaseSimpleSqmExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
 			result.when(
-					(org.hibernate.sql.ast.expression.Expression) whenFragment.getCheckValue().accept( this ),
-					(org.hibernate.sql.ast.expression.Expression) whenFragment.getResult().accept( this )
+					(Expression) whenFragment.getCheckValue().accept( this ),
+					(Expression) whenFragment.getResult().accept( this )
 			);
 		}
 
-		result.otherwise(
-				(org.hibernate.sql.ast.expression.Expression) expression.getOtherwise().accept( this )
-		);
+		result.otherwise( (Expression) expression.getOtherwise().accept( this ) );
 
 		return result;
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.CaseSearchedExpression visitSearchedCaseExpression(CaseSearchedExpression expression) {
-		final org.hibernate.sql.ast.expression.CaseSearchedExpression result = new org.hibernate.sql.ast.expression.CaseSearchedExpression(
-				extractOrmType( expression.getExpressionType() )
-		);
+	public CaseSearchedExpression visitSearchedCaseExpression(CaseSearchedSqmExpression expression) {
+		final CaseSearchedExpression result = new CaseSearchedExpression( extractOrmType( expression.getExpressionType() ) );
 
-		for ( CaseSearchedExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
+		for ( CaseSearchedSqmExpression.WhenFragment whenFragment : expression.getWhenFragments() ) {
 			result.when(
-					(org.hibernate.sql.ast.predicate.Predicate) whenFragment.getPredicate().accept( this ),
-					(org.hibernate.sql.ast.expression.Expression) whenFragment.getResult().accept( this )
+					(Predicate) whenFragment.getPredicate().accept( this ),
+					(Expression) whenFragment.getResult().accept( this )
 			);
 		}
 
-		result.otherwise(
-				(org.hibernate.sql.ast.expression.Expression) expression.getOtherwise().accept( this )
-		);
+		result.otherwise( (Expression) expression.getOtherwise().accept( this ) );
 
 		return result;
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.NullifExpression visitNullifExpression(NullifExpression expression) {
-		return new org.hibernate.sql.ast.expression.NullifExpression(
-				(org.hibernate.sql.ast.expression.Expression) expression.getFirstArgument().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) expression.getSecondArgument().accept( this )
+	public NullifExpression visitNullifExpression(NullifSqmExpression expression) {
+		return new NullifExpression(
+				(Expression) expression.getFirstArgument().accept( this ),
+				(Expression) expression.getSecondArgument().accept( this )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.expression.ConcatExpression visitConcatExpression(ConcatExpression expression) {
-		return new org.hibernate.sql.ast.expression.ConcatExpression(
-				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) expression.getLeftHandOperand().accept( this ),
+	public ConcatExpression visitConcatExpression(ConcatSqmExpression expression) {
+		return new ConcatExpression(
+				(Expression) expression.getLeftHandOperand().accept( this ),
+				(Expression) expression.getLeftHandOperand().accept( this ),
 				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
@@ -754,14 +768,12 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 
 	@Override
-	public org.hibernate.sql.ast.predicate.GroupedPredicate visitGroupedPredicate(GroupedPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.GroupedPredicate(
-				(org.hibernate.sql.ast.predicate.Predicate) predicate.getSubPredicate().accept( this )
-		);
+	public GroupedPredicate visitGroupedPredicate(GroupedSqmPredicate predicate) {
+		return new GroupedPredicate ( (Predicate ) predicate.getSubPredicate().accept( this ) );
 	}
 
 	@Override
-	public Junction visitAndPredicate(AndPredicate predicate) {
+	public Junction visitAndPredicate(AndSqmPredicate predicate) {
 		final Junction conjunction = new Junction( Junction.Nature.CONJUNCTION );
 		conjunction.add( (Predicate) predicate.getLeftHandPredicate().accept( this ) );
 		conjunction.add( (Predicate) predicate.getRightHandPredicate().accept( this ) );
@@ -769,7 +781,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Junction visitOrPredicate(OrPredicate predicate) {
+	public Junction visitOrPredicate(OrSqmPredicate predicate) {
 		final Junction disjunction = new Junction( Junction.Nature.DISJUNCTION );
 		disjunction.add( (Predicate) predicate.getLeftHandPredicate().accept( this ) );
 		disjunction.add( (Predicate) predicate.getRightHandPredicate().accept( this ) );
@@ -777,22 +789,22 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.NegatedPredicate visitNegatedPredicate(NegatedPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.NegatedPredicate(
+	public NegatedPredicate visitNegatedPredicate(NegatedSqmPredicate predicate) {
+		return new NegatedPredicate(
 				(Predicate) predicate.getWrappedPredicate().accept( this )
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.RelationalPredicate visitRelationalPredicate(org.hibernate.sqm.query.predicate.RelationalPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.RelationalPredicate(
+	public RelationalPredicate visitRelationalPredicate(RelationalSqmPredicate predicate) {
+		return new RelationalPredicate(
 				interpret( predicate.getOperator() ),
-				(org.hibernate.sql.ast.expression.Expression) predicate.getLeftHandExpression().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) predicate.getRightHandExpression().accept( this )
+				(Expression) predicate.getLeftHandExpression().accept( this ),
+				(Expression) predicate.getRightHandExpression().accept( this )
 		);
 	}
 
-	private RelationalPredicate.Operator interpret(org.hibernate.sqm.query.predicate.RelationalPredicate.Operator operator) {
+	private RelationalPredicate.Operator interpret(RelationalSqmPredicate.Operator operator) {
 		switch ( operator ) {
 			case EQUAL: {
 				return RelationalPredicate.Operator.EQUAL;
@@ -800,16 +812,16 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			case NOT_EQUAL: {
 				return RelationalPredicate.Operator.NOT_EQUAL;
 			}
-			case GE: {
+			case GREATER_THAN_OR_EQUAL: {
 				return RelationalPredicate.Operator.GE;
 			}
-			case GT: {
+			case GREATER_THAN: {
 				return RelationalPredicate.Operator.GT;
 			}
-			case LE: {
+			case LESS_THAN_OR_EQUAL: {
 				return RelationalPredicate.Operator.LE;
 			}
-			case LT: {
+			case LESS_THAN: {
 				return RelationalPredicate.Operator.LT;
 			}
 		}
@@ -818,53 +830,53 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.Predicate visitBetweenPredicate(BetweenPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.BetweenPredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) predicate.getLowerBound().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) predicate.getUpperBound().accept( this ),
+	public BetweenPredicate visitBetweenPredicate(BetweenSqmPredicate predicate) {
+		return new BetweenPredicate(
+				(Expression) predicate.getExpression().accept( this ),
+				(Expression) predicate.getLowerBound().accept( this ),
+				(Expression) predicate.getUpperBound().accept( this ),
 				predicate.isNegated()
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.Predicate visitLikePredicate(LikePredicate predicate) {
-		final org.hibernate.sql.ast.expression.Expression escapeExpression = predicate.getEscapeCharacter() == null
+	public LikePredicate visitLikePredicate(LikeSqmPredicate predicate) {
+		final Expression escapeExpression = predicate.getEscapeCharacter() == null
 				? null
-				: (org.hibernate.sql.ast.expression.Expression) predicate.getEscapeCharacter().accept( this );
+				: (Expression) predicate.getEscapeCharacter().accept( this );
 
-		return new org.hibernate.sql.ast.predicate.LikePredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getMatchExpression().accept( this ),
-				(org.hibernate.sql.ast.expression.Expression) predicate.getPattern().accept( this ),
+		return new LikePredicate(
+				(Expression) predicate.getMatchExpression().accept( this ),
+				(Expression) predicate.getPattern().accept( this ),
 				escapeExpression,
 				predicate.isNegated()
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.Predicate visitIsNullPredicate(NullnessPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.NullnessPredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getExpression().accept( this ),
+	public NullnessPredicate visitIsNullPredicate(NullnessSqmPredicate predicate) {
+		return new NullnessPredicate(
+				(Expression) predicate.getExpression().accept( this ),
 				predicate.isNegated()
 		);
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.Predicate visitInListPredicate(org.hibernate.sqm.query.predicate.InListPredicate predicate) {
+	public InListPredicate visitInListPredicate(InListSqmPredicate predicate) {
 		final InListPredicate inPredicate = new InListPredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this ),
+				(Expression) predicate.getTestExpression().accept( this ),
 				predicate.isNegated()
 		);
-		for ( org.hibernate.sqm.query.expression.Expression expression : predicate.getListExpressions() ) {
-			inPredicate.addExpression( (org.hibernate.sql.ast.expression.Expression) expression.accept( this ) );
+		for ( SqmExpression expression : predicate.getListExpressions() ) {
+			inPredicate.addExpression( (Expression) expression.accept( this ) );
 		}
 		return inPredicate;
 	}
 
 	@Override
-	public org.hibernate.sql.ast.predicate.Predicate visitInSubQueryPredicate(InSubQueryPredicate predicate) {
-		return new org.hibernate.sql.ast.predicate.InSubQueryPredicate(
-				(org.hibernate.sql.ast.expression.Expression) predicate.getTestExpression().accept( this ),
+	public InSubQueryPredicate visitInSubQueryPredicate(InSubQuerySqmPredicate predicate) {
+		return new InSubQueryPredicate(
+				(Expression) predicate.getTestExpression().accept( this ),
 				(org.hibernate.sql.ast.QuerySpec) predicate.getSubQueryExpression().accept( this ),
 				predicate.isNegated()
 		);

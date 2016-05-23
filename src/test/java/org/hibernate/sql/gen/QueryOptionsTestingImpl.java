@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.gen;
 
-import org.hibernate.query.internal.QueryOptionsImpl;
+import org.hibernate.query.proposed.internal.QueryOptionsImpl;
 
 public class QueryOptionsTestingImpl extends QueryOptionsImpl {
 }

@@ -22,8 +22,8 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.persister.common.internal.PersisterFactoryImpl;
 import org.hibernate.persister.internal.PersisterFactoryInitiator;
-import org.hibernate.query.internal.QueryImpl;
-import org.hibernate.query.internal.ConsumerContextImpl;
+import org.hibernate.query.proposed.internal.QueryProposedImpl;
+import org.hibernate.query.proposed.internal.ConsumerContextImpl;
 
 import org.junit.After;
 import org.junit.Before;
@@ -91,7 +91,7 @@ public class FullStackTest {
 	public void testFullStack() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl query = new QueryImpl(
+		QueryProposedImpl query = new QueryProposedImpl(
 				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
 				(SessionImplementor) session,
 				consumerContext
@@ -112,7 +112,7 @@ public class FullStackTest {
 	public void testFullStackTyped() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl<String> query = new QueryImpl<String>(
+		QueryProposedImpl<String> query = new QueryProposedImpl<String>(
 				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
 				String.class,
 				(SessionImplementor) session,
@@ -132,7 +132,7 @@ public class FullStackTest {
 	public void testFullStackTupleTyped() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl<Tuple> query = new QueryImpl<Tuple>(
+		QueryProposedImpl<Tuple> query = new QueryProposedImpl<Tuple>(
 				"select p.name as name from Person p where p.age >= 20 and p.age <= ?1",
 				Tuple.class,
 				(SessionImplementor) session,
@@ -150,7 +150,7 @@ public class FullStackTest {
 	public void testFullStackDynamicInstantiation() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl<Person> query = new QueryImpl<Person>(
+		QueryProposedImpl<Person> query = new QueryProposedImpl<Person>(
 				"select new Person( p.id, p.name, p.age ) from Person p where p.age >= 20 and p.age <= ?1",
 				Person.class,
 				(SessionImplementor) session,
@@ -170,7 +170,7 @@ public class FullStackTest {
 	public void testFullStackDynamicInstantiationInjection() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl<Person> query = new QueryImpl<Person>(
+		QueryProposedImpl<Person> query = new QueryProposedImpl<Person>(
 				"select new Person( p.name as name, p.age as age ) from Person p where p.age >= 20 and p.age <= ?1",
 				Person.class,
 				(SessionImplementor) session,
@@ -190,7 +190,7 @@ public class FullStackTest {
 	public void testFullStackDynamicInstantiationList() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl<List> query = new QueryImpl<List>(
+		QueryProposedImpl<List> query = new QueryProposedImpl<List>(
 				"select new list(p.name, p.age) from Person p where p.age >= 20 and p.age <= ?1",
 				List.class,
 				(SessionImplementor) session,
@@ -210,7 +210,7 @@ public class FullStackTest {
 	public void testFullStackDynamicInstantiationMap() throws SQLException {
 		final Session session = sessionFactory.openSession();
 
-		QueryImpl<Map> query = new QueryImpl<Map>(
+		QueryProposedImpl<Map> query = new QueryProposedImpl<Map>(
 				"select new map(p.name as name, p.age as age) from Person p where p.age >= 20 and p.age <= ?1",
 				Map.class,
 				(SessionImplementor) session,

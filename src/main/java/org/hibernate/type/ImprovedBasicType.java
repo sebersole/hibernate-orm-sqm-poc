@@ -16,7 +16,6 @@ import org.hibernate.engine.jdbc.Size;
 import org.hibernate.engine.spi.Mapping;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.internal.WrapperOptionsImpl;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 
@@ -106,7 +105,7 @@ public interface ImprovedBasicType<T> extends ImprovedType, org.hibernate.sqm.do
 		return getSqlTypeDescriptor().getExtractor( getJavaTypeDescriptor() ).extract(
 				rs,
 				names[0],
-				new WrapperOptionsImpl( session )
+				session
 		);
 	}
 

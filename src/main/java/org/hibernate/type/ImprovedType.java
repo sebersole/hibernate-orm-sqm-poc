@@ -20,7 +20,7 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedType {
+public interface ImprovedType extends org.hibernate.sqm.domain.Type {
 	/**
 	 * Enumerated values for the classification of the Type.
 	 */

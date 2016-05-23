@@ -4,7 +4,7 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.query.internal;
+package org.hibernate.query.proposed.internal;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,13 +12,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.query.NamedQueryParameter;
-import org.hibernate.query.PositionalQueryParameter;
-import org.hibernate.query.QueryParameter;
+import org.hibernate.query.proposed.NamedQueryParameter;
+import org.hibernate.query.proposed.PositionalQueryParameter;
+import org.hibernate.query.proposed.QueryParameter;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.query.Statement;
-import org.hibernate.sqm.query.expression.NamedParameterExpression;
-import org.hibernate.sqm.query.expression.PositionalParameterExpression;
+import org.hibernate.sqm.query.expression.NamedParameterSqmExpression;
+import org.hibernate.sqm.query.expression.PositionalParameterSqmExpression;
 import org.hibernate.sqm.query.order.OrderByClause;
 
 /**
@@ -54,7 +54,7 @@ public class QueryParameterExtractor extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitNamedParameterExpression(NamedParameterExpression expression) {
+	public Object visitNamedParameterExpression(NamedParameterSqmExpression expression) {
 		super.visitNamedParameterExpression( expression );
 
 		boolean create;
@@ -74,7 +74,7 @@ public class QueryParameterExtractor extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitPositionalParameterExpression(PositionalParameterExpression expression) {
+	public Object visitPositionalParameterExpression(PositionalParameterSqmExpression expression) {
 		super.visitPositionalParameterExpression( expression );
 
 		boolean create;

@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.query.spi.QueryParameterBindings;
+import org.hibernate.query.proposed.spi.QueryParameterBindings;
 
 /**
  * Performs parameter value binding to a JDBC PreparedStatement.

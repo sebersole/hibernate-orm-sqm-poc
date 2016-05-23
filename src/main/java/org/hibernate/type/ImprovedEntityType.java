@@ -9,5 +9,5 @@ package org.hibernate.type;
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedEntityType extends ImprovedType {
+public interface ImprovedEntityType extends ImprovedType, org.hibernate.sqm.domain.Type {
 }

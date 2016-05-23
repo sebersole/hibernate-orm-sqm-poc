@@ -4,7 +4,7 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.query.spi;
+package org.hibernate.query.proposed.spi;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,11 +12,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.Incubating;
-import org.hibernate.query.QueryParameter;
-import org.hibernate.query.UnknownParameterException;
-import org.hibernate.query.NamedQueryParameter;
-import org.hibernate.query.PositionalQueryParameter;
-import org.hibernate.query.internal.QueryParameterBindingImpl;
+import org.hibernate.query.proposed.QueryParameter;
+import org.hibernate.query.proposed.UnknownParameterException;
+import org.hibernate.query.proposed.NamedQueryParameter;
+import org.hibernate.query.proposed.PositionalQueryParameter;
+import org.hibernate.query.proposed.internal.QueryParameterBindingImpl;
 
 /**
  * Manages the group of QueryParameterBinding for a particular query.

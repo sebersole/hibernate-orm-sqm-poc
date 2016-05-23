@@ -77,7 +77,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		}
 	}
 
-	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<CollectionPersister, ImprovedCollectionPersister>(  );
+	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<>();
 
 	public void registerCollectionPersister(ImprovedCollectionPersisterImpl persister) {
 		collectionPersisterMap.put( persister.getPersister(), persister );
@@ -89,7 +89,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	}
 
 	private static Map<Class, BasicType> buildBasicTypeMaps() {
-		final Map<Class,BasicType> map = new HashMap<Class,BasicType>();
+		final Map<Class,BasicType> map = new HashMap<>();
 
 		for ( Field field : StandardBasicTypes.class.getDeclaredFields() ) {
 			if ( org.hibernate.type.BasicType.class.isAssignableFrom( field.getType() ) ) {
@@ -133,13 +133,13 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 
 	@Override
 	public org.hibernate.sqm.domain.EntityType resolveEntityType(String name) {
-		final String importedName = sessionFactory.getImportedClassName( name );
+		final String importedName = sessionFactory.getMetamodel().getImportedClassName( name );
 		if ( importedName != null ) {
 			name = importedName;
 		}
 
 		// look at existing non-polymorphic descriptors
-		final EntityPersister persister = sessionFactory.getEntityPersister( name );
+		final EntityPersister persister = sessionFactory.getMetamodel().entityPersister( name );
 		if ( persister != null ) {
 			return entityTypeDescriptorMap.get( persister );
 		}
@@ -153,20 +153,20 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		}
 
 
-		final String[] implementors = sessionFactory.getImplementors( name );
+		final String[] implementors = sessionFactory.getMetamodel().getImplementors( name );
 		if ( implementors != null ) {
 			if ( implementors.length == 1 ) {
-				return entityTypeDescriptorMap.get( sessionFactory.getEntityPersister( implementors[0] ) );
+				return entityTypeDescriptorMap.get( sessionFactory.getMetamodel().entityPersister( implementors[0] ) );
 			}
 			else if ( implementors.length > 1 ) {
-				final List<org.hibernate.sqm.domain.EntityType> implementDescriptors = new ArrayList<org.hibernate.sqm.domain.EntityType>();
+				final List<org.hibernate.sqm.domain.EntityType> implementDescriptors = new ArrayList<>();
 				for ( String implementor : implementors ) {
 					implementDescriptors.add(
-							entityTypeDescriptorMap.get( sessionFactory.getEntityPersister( implementor ) )
+							entityTypeDescriptorMap.get( sessionFactory.getMetamodel().entityPersister( implementor ) )
 					);
 				}
 				if ( polymorphicEntityTypeDescriptorMap == null ) {
-					polymorphicEntityTypeDescriptorMap = new HashMap<String, PolymorphicEntityTypeImpl>();
+					polymorphicEntityTypeDescriptorMap = new HashMap<>();
 				}
 				PolymorphicEntityTypeImpl descriptor = new PolymorphicEntityTypeImpl(
 						this,
@@ -181,11 +181,16 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		throw new HibernateException( "Could not resolve entity reference [" + name + "] from query" );
 	}
 
+	@Override
+	public BasicType resolveCastTargetType(String name) {
+		return toSqmType( (org.hibernate.type.BasicType) sessionFactory.getTypeHelper().heuristicType( name ) );
+	}
+
 	public org.hibernate.sqm.domain.Type toSqmType(Type ormType) {
-		if(ormType == null){
+		if ( ormType == null ) {
 			return null;
 		}
-		if ( ormType.isAnyType() ) {
+		else if ( ormType.isAnyType() ) {
 			return toSqmType( (AnyType) ormType );
 		}
 		else if ( ormType.isEntityType() ) {

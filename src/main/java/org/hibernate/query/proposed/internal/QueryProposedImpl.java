@@ -4,7 +4,7 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
  */
-package org.hibernate.query.internal;
+package org.hibernate.query.proposed.internal;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,11 +21,11 @@ import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.persister.common.spi.SqmTypeImplementor;
-import org.hibernate.query.IllegalQueryOperationException;
-import org.hibernate.query.Query;
-import org.hibernate.query.QueryParameter;
-import org.hibernate.query.spi.QueryParameterBindings;
-import org.hibernate.query.spi.QueryPlan;
+import org.hibernate.query.proposed.IllegalQueryOperationException;
+import org.hibernate.query.proposed.Query;
+import org.hibernate.query.proposed.QueryParameter;
+import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.query.proposed.spi.QueryPlan;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableForwardOnlyImpl;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableInsensitiveImpl;
@@ -37,8 +37,8 @@ import org.hibernate.sql.exec.internal.SqlTreeExecutorImpl;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.RowTransformer;
 import org.hibernate.sql.gen.Callback;
+import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.sqm.ConsumerContext;
-import org.hibernate.sqm.parser.NotYetImplementedException;
 import org.hibernate.sqm.query.NonSelectStatement;
 import org.hibernate.sqm.query.SelectStatement;
 import org.hibernate.sqm.query.Statement;
@@ -52,8 +52,8 @@ import static org.hibernate.sql.ast.SelectStatementInterpreter.interpret;
 /**
  * @author Steve Ebersole
  */
-public class QueryImpl<R> extends AbstractBasicQueryContract<Query> implements Query<Query,R> {
-	private static final Logger log = Logger.getLogger( QueryImpl.class );
+public class QueryProposedImpl<R> extends AbstractBasicQueryContract<Query> implements Query<Query,R> {
+	private static final Logger log = Logger.getLogger( QueryProposedImpl.class );
 
 	private final String queryString;
 	private final SessionImplementor session;
@@ -66,14 +66,14 @@ public class QueryImpl<R> extends AbstractBasicQueryContract<Query> implements Q
 	// todo : these ctor contracts will change as we integrate this into ORM
 	// 	ultimately the SessionFactory will implement (or provide access to) ConsumerContext
 
-	public QueryImpl(
+	public QueryProposedImpl(
 			String queryString,
 			SessionImplementor session,
 			ConsumerContext consumerContext) {
 		this( queryString, null, session, consumerContext );
 	}
 
-	public QueryImpl(
+	public QueryProposedImpl(
 			String queryString,
 			Class<R> resultType,
 			SessionImplementor session,
@@ -105,7 +105,7 @@ public class QueryImpl<R> extends AbstractBasicQueryContract<Query> implements Q
 			}
 
 			if ( Tuple.class.isAssignableFrom( resultType ) ) {
-				List<TupleElement<?>> tupleElements = new ArrayList<TupleElement<?>>();
+				List<TupleElement<?>> tupleElements = new ArrayList<>();
 				int i = 0;
 				for ( Selection selection : sqm.getQuerySpec().getSelectClause().getSelections() ) {
 					tupleElements.add(
@@ -293,7 +293,7 @@ public class QueryImpl<R> extends AbstractBasicQueryContract<Query> implements Q
 
 	@Override
 	public ScrollableResults scroll() {
-		return scroll( session.getFactory().getDialect().defaultScrollMode() );
+		return scroll( session.getFactory().getJdbcServices().getJdbcEnvironment().getDialect().defaultScrollMode() );
 	}
 
 	@Override

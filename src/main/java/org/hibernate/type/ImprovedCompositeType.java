@@ -9,5 +9,5 @@ package org.hibernate.type;
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedCompositeType extends ImprovedType {
+public interface ImprovedCompositeType extends ImprovedType, org.hibernate.sqm.domain.EmbeddableType {
 }

@@ -12,7 +12,7 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.query.spi.QueryParameterBindings;
+import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
 import org.hibernate.result.Outputs;
 import org.hibernate.sql.ast.SelectQuery;
