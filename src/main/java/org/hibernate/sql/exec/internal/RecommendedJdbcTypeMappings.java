@@ -18,14 +18,16 @@ import java.util.Calendar;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.hibernate.mapping.Array;
+import org.hibernate.type.proposed.spi.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.proposed.spi.descriptor.sql.SqlTypeDescriptor;
 
 import org.jboss.logging.Logger;
 
 /**
  * @author Steve Ebersole
  *
- * @deprecated See {@link org.hibernate.type.descriptor.sql.SqlTypeDescriptor#getJdbcRecommendedJavaTypeMapping()}
- * and {@link org.hibernate.type.descriptor.java.JavaTypeDescriptor#getJdbcRecommendedSqlType} instead.
+ * @deprecated See {@link SqlTypeDescriptor#getJdbcRecommendedJavaTypeMapping()}
+ * and {@link JavaTypeDescriptor#getJdbcRecommendedSqlType} instead.
  */
 @Deprecated
 public class RecommendedJdbcTypeMappings {

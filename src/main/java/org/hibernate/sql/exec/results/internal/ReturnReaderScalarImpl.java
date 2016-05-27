@@ -19,8 +19,8 @@ import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.Type;
-import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
-import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
+import org.hibernate.type.proposed.spi.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.proposed.spi.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
  * @author Steve Ebersole
