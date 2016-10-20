@@ -335,7 +335,10 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void testSimpleAttributeReference() {
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( "select p.email from Person p" );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		final SelectClause selectClause = interpreter.getSelectQuery().getQuerySpec().getSelectClause();

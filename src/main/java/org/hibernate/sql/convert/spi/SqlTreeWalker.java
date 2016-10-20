@@ -211,6 +211,7 @@ public class SqlTreeWalker {
 		visitTableGroup( tableSpace.getRootTableGroup() );
 
 		for ( TableGroupJoin tableGroupJoin : tableSpace.getJoinedTableGroups() ) {
+			appendSql( " " );
 			appendSql( tableGroupJoin.getJoinType().getText() );
 			appendSql( " join " );
 			visitTableGroup( tableGroupJoin.getJoinedGroup() );
@@ -234,6 +235,7 @@ public class SqlTreeWalker {
 		visitTableBinding( tableGroup.getRootTableBinding() );
 
 		for ( TableJoin tableJoin : tableGroup.getTableJoins() ) {
+			appendSql( " " );
 			appendSql( tableJoin.getJoinType().getText() );
 			appendSql( " join " );
 			visitTableBinding( tableJoin.getJoinedTableBinding() );
@@ -253,6 +255,10 @@ public class SqlTreeWalker {
 	// Expressions
 
 	public void visitAttributeReference(AttributeReference attributeReference) {
+		// todo : this needs to operate differently in different contexts (mainly for associations)
+		//		e.g...
+		//			1) In the select clause we should render the complete column bindings for associations
+		//			2) In join predicates
 		renderColumnBindings( attributeReference.getColumnBindings() );
 	}
 

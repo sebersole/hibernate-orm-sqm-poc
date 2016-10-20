@@ -11,5 +11,5 @@ import org.hibernate.sqm.domain.AttributeReference;
 /**
  * @author Steve Ebersole
  */
-public interface AttributeImplementor extends AttributeReference {
+public interface AttributeImplementor extends AttributeReference, SqmTypeImplementor {
 }

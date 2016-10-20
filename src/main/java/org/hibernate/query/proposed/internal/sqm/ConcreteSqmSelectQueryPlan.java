@@ -43,6 +43,7 @@ import org.hibernate.sql.exec.internal.SqlTreeExecutorImpl;
 import org.hibernate.sql.exec.internal.TupleElementImpl;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.RowTransformer;
+import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.query.SqmSelectStatement;
 import org.hibernate.sqm.query.select.SqmSelection;
 
@@ -51,15 +52,18 @@ import org.hibernate.sqm.query.select.SqmSelection;
  */
 public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 	private final SqmSelectStatement sqm;
+	private final DomainMetamodel domainMetamodel;
 	private final EntityGraphQueryHint entityGraphHint;
 	private final RowTransformer<R> rowTransformer;
 
 	public ConcreteSqmSelectQueryPlan(
 			SqmSelectStatement sqm,
+			DomainMetamodel domainMetamodel,
 			EntityGraphQueryHint entityGraphHint,
 			Class<R> resultType,
 			QueryOptions queryOptions) {
 		this.sqm = sqm;
+		this.domainMetamodel = domainMetamodel;
 		this.entityGraphHint = entityGraphHint;
 
 		this.rowTransformer = determineRowTransformer( sqm, resultType, queryOptions );
@@ -158,7 +162,13 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		final Callback callback = new Callback() {};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
-		final SelectQuery sqlTree = SelectStatementInterpreter.interpret( sqm, queryOptions, callback );
+		final SelectQuery sqlTree = SelectStatementInterpreter.interpret(
+				sqm,
+				persistenceContext.getFactory(),
+				domainMetamodel,
+				queryOptions,
+				callback
+		);
 		return (List<R>) new SqlTreeExecutorImpl().executeSelect(
 				sqlTree,
 				PreparedStatementCreatorStandardImpl.INSTANCE,
@@ -205,7 +215,13 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		final Callback callback = new Callback() {};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
-		final SelectQuery sqlTree = SelectStatementInterpreter.interpret( sqm, queryOptions, callback );
+		final SelectQuery sqlTree = SelectStatementInterpreter.interpret(
+				sqm,
+				persistenceContext.getFactory(),
+				domainMetamodel,
+				queryOptions,
+				callback
+		);
 
 		final PreparedStatementCreator creator;
 		if ( scrollMode == ScrollMode.FORWARD_ONLY ) {

@@ -21,7 +21,6 @@ import org.hibernate.persister.common.internal.PhysicalColumn;
 import org.hibernate.persister.common.internal.PhysicalTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.AttributeReference;
@@ -256,7 +255,10 @@ public class EmbeddedTableSpaceGenerationTest extends BaseUnitTest {
 	private SelectClause getSelectClause(String query) {
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( query );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		return interpreter.getSelectQuery().getQuerySpec().getSelectClause();

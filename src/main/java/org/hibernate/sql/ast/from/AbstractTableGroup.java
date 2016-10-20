@@ -22,6 +22,7 @@ import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.common.spi.Table;
+import org.hibernate.sql.convert.spi.Helper;
 import org.hibernate.sql.convert.spi.NotYetImplementedException;
 
 import org.jboss.logging.Logger;

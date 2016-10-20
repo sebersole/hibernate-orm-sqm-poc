@@ -84,7 +84,10 @@ public class BaseUnitTest {
 	protected SelectQuery interpretSelectQuery(String query) {
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( query );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		return interpreter.getSelectQuery();

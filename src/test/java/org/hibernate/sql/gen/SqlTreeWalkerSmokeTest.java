@@ -18,7 +18,6 @@ import java.util.Set;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
-import org.hibernate.query.proposed.ParameterMetadata;
 import org.hibernate.query.proposed.QueryParameter;
 import org.hibernate.query.proposed.internal.ParameterMetadataImpl;
 import org.hibernate.query.proposed.internal.QueryParameterBindingsImpl;
@@ -55,7 +54,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking1() {
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( "select p.name from Person p" );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 
 		SelectQuery sqlTree = interpreter.getSelectQuery();
@@ -113,7 +115,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		final String qryStr = "select p.name, p2.name from Person p, Person p2";
 
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -132,7 +137,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking3() {
 		final String qryStr = "select p.name from Person p where p.age between 20 and 39";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -154,7 +162,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking4() {
 		final String qryStr = "select p.name from Person p where (p.age <= 20 and p.age >= 39)";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -176,7 +187,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking5() {
 		final String qryStr = "select p.age from Person p where p.name like 'Steve%'";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -198,7 +212,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking6() {
 		final String qryStr = "select p.age from Person p where p.name like 'Steve%' escape '/'";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -220,7 +237,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking7() {
 		final String qryStr = "select p.age from Person p where p.name is null";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -242,7 +262,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking8() {
 		final String qryStr =  "select p.age from Person p where p.name is not null";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -264,7 +287,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking9() {
 		final String qryStr = "select p.age from Person p where not p.name is not null";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -286,7 +312,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking10() {
 		final String qryStr = "from Person p";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -309,7 +338,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking11() {
 		final String qryStr = "select a from Person p join p.address a";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -331,7 +363,10 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	public void testSqlTreeWalking12() {
 		final String qryStr =  "select r from Person p join p.roles r";
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+				getSessionFactory(),
+				getConsumerContext().getDomainMetamodel(),
+				queryOptions(), callBack() );
 		interpreter.interpret( statement );
 		final SelectQuery sqlTree = interpreter.getSelectQuery();
 		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
@@ -350,6 +385,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	}
 
 	@Entity(name="Person")
+	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class Person {
 		@Id
 		Integer id;
@@ -361,10 +397,11 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 		@OneToMany
 		@JoinColumn
-		Set<Role> roles = new HashSet<Role>();
+		Set<Role> roles = new HashSet<>();
 	}
 
 	@Entity(name="Address")
+	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class Address {
 		@Id
 		Integer id;
@@ -373,6 +410,7 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	}
 
 	@Entity(name="Role")
+	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class Role {
 		@Id
 		Integer id;

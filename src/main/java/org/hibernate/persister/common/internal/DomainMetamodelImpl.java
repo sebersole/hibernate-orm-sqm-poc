@@ -185,6 +185,10 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 			return ( (AttributeReferenceSource) sourceBinding ).findAttribute( attributeName );
 		}
 
+		if ( sourceBinding instanceof SingularAttributeEmbedded ) {
+			return ( (SingularAttributeEmbedded) sourceBinding ).getEmbeddablePersister().findAttribute( attributeName );
+		}
+
 		if ( sourceBinding instanceof SqmTypeImplementor ) {
 			return resolveAttributeReferenceSource( ( (SqmTypeImplementor) sourceBinding ) ).findAttribute( attributeName );
 		}
@@ -203,7 +207,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 			);
 		}
 		else if ( type instanceof CompositeType ) {
-			throw new org.hibernate.cfg.NotYetImplementedException( "Resolving CompositeType atttribute references is not yet implemented; requires Type system changes" );
+			throw new org.hibernate.cfg.NotYetImplementedException( "Resolving CompositeType attribute references is not yet implemented; requires Type system changes" );
 		}
 
 		throw new IllegalArgumentException( "Unexpected type [" + typeAccess + "] passed" );
@@ -225,6 +229,29 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	public BasicType resolveArithmeticType(
 			DomainReference firstType,
 			DomainReference secondType,
+			BinaryArithmeticSqmExpression.Operation operation) {
+		return resolveArithmeticType( toBasicType( firstType ), toBasicType( secondType ), operation );
+	}
+
+	private BasicType toBasicType(DomainReference domainReference) {
+		if ( domainReference == null ) {
+			return null;
+		}
+
+		if ( domainReference instanceof BasicType ) {
+			return (BasicType) domainReference;
+		}
+
+		if ( domainReference instanceof SqmTypeImplementor ) {
+			return resolveBasicType( ( (SqmTypeImplementor) domainReference ).getOrmType().getReturnedClass() );
+		}
+
+		throw new IllegalArgumentException( "Unexpected type [" + domainReference + "]" );
+	}
+
+	private BasicType resolveArithmeticType(
+			BasicType firstType,
+			BasicType secondType,
 			BinaryArithmeticSqmExpression.Operation operation) {
 		throw new org.hibernate.cfg.NotYetImplementedException( "DomainMetamodelImpl#resolveArithmeticType" );
 	}

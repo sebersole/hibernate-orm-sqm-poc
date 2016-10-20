@@ -132,6 +132,7 @@ public class FullStackTest {
 				SemanticQueryInterpreter.interpret( qryStr, consumerContext ),
 				resultType,
 				session,
+				consumerContext.getDomainMetamodel(),
 				new QueryProducerTestImpl( session ),
 				new ExecutionContextTestImpl( session )
 		);
@@ -172,7 +173,7 @@ public class FullStackTest {
 					final List<Tuple> results = query.list();
 					assertThat( results.size(), is( 1 ) );
 					Tuple tuple = results.get( 0 );
-					assertThat( (String) tuple.get( "name" ), is("Steve") );
+					assertThat( tuple.get( "name" ), is( "Steve") );
 				}
 		);
 	}
@@ -264,6 +265,7 @@ public class FullStackTest {
 	}
 
 	@Entity(name="Person")
+	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class Person {
 		@Id
 		Integer id;

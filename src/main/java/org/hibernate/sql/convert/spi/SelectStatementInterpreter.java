@@ -6,11 +6,14 @@
  */
 package org.hibernate.sql.convert.spi;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
 import org.hibernate.AssertionFailure;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.common.spi.SqmTypeImplementor;
@@ -59,6 +62,7 @@ import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
+import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.PluralAttributeReference;
 import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
@@ -124,6 +128,7 @@ import org.hibernate.sqm.query.select.SqmDynamicInstantiationArgument;
 import org.hibernate.sqm.query.select.SqmDynamicInstantiationTarget;
 import org.hibernate.sqm.query.select.SqmSelectClause;
 import org.hibernate.sqm.query.select.SqmSelection;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
@@ -147,11 +152,23 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	 *
 	 * @return The SQL AST
 	 */
-	public static SelectQuery interpret(SqmSelectStatement statement, QueryOptions queryOptions, Callback callback) {
-		final SelectStatementInterpreter walker = new SelectStatementInterpreter( queryOptions, callback );
+	public static SelectQuery interpret(
+			SqmSelectStatement statement,
+			SessionFactoryImplementor factory,
+			DomainMetamodel sqmDomainMetamodel,
+			QueryOptions queryOptions,
+			Callback callback) {
+		final SelectStatementInterpreter walker = new SelectStatementInterpreter(
+				factory,
+				sqmDomainMetamodel,
+				queryOptions,
+				callback
+		);
 		return walker.interpret( statement );
 	}
 
+	private final SessionFactoryImplementor factory;
+	private final DomainMetamodel sqmDomainMetamodel;
 	private final QueryOptions queryOptions;
 	private final Callback callback;
 
@@ -160,7 +177,13 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	private SelectQuery sqlAst;
 
-	public SelectStatementInterpreter(QueryOptions queryOptions, Callback callback) {
+	public SelectStatementInterpreter(
+			SessionFactoryImplementor factory,
+			DomainMetamodel sqmDomainMetamodel,
+			QueryOptions queryOptions,
+			Callback callback) {
+		this.factory = factory;
+		this.sqmDomainMetamodel = sqmDomainMetamodel;
 		this.queryOptions = queryOptions;
 		this.callback = callback;
 	}
@@ -313,7 +336,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		final TableGroup group;
 
 		if ( joinedFromElement.getAttributeBinding().getAttribute() instanceof PluralAttributeReference ) {
-			final ImprovedCollectionPersister improvedCollectionPersister = (ImprovedCollectionPersister) joinedFromElement.getAttributeBinding();
+			final ImprovedCollectionPersister improvedCollectionPersister = (ImprovedCollectionPersister) joinedFromElement.getAttributeBinding().getAttribute();
 			group = improvedCollectionPersister.buildTableGroup(
 					joinedFromElement,
 					tableSpace,
@@ -350,7 +373,11 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 				group = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
 			}
 			else {
-				final ImprovedEntityPersister entityPersister = (ImprovedEntityPersister) joinedFromElement.getIntrinsicSubclassIndicator();
+				final ImprovedEntityPersister entityPersister = Helper.extractEntityPersister(
+						joinedFromElement,
+						factory,
+						sqmDomainMetamodel
+				);
 				group = entityPersister.buildTableGroup(
 						joinedFromElement,
 						tableSpace,
@@ -466,8 +493,13 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 
 	@Override
 	public Object visitAttributeReferenceExpression(AttributeBinding expression) {
+		if ( expression.getAttribute() instanceof PluralAttributeReference ) {
+			throw new NotYetImplementedException( "resolving AttributeBinding for plural-attributes" );
+		}
+
 		final SingularAttributeImplementor attribute = (SingularAttributeImplementor) expression.getAttribute();
 		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( expression.getLhs() );
+
 		return tableGroup.resolve( attribute );
 	}
 
@@ -475,7 +507,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralStringExpression(LiteralStringSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), String.class )
 		);
 	}
 
@@ -487,11 +519,19 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return ( (SqmTypeImplementor) sqmType ).getOrmType();
 	}
 
+	protected Type extractOrmType(DomainReference expressionType, Class javaType) {
+		Type type = extractOrmType( expressionType );
+		if ( type == null ) {
+			type = factory.getTypeHelper().basic( javaType );
+		}
+		return type;
+	}
+
 	@Override
 	public QueryLiteral visitLiteralCharacterExpression(LiteralCharacterSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Character.class )
 		);
 	}
 
@@ -499,7 +539,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralDoubleExpression(LiteralDoubleSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Double.class )
 		);
 	}
 
@@ -507,7 +547,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralIntegerExpression(LiteralIntegerSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Integer.class )
 		);
 	}
 
@@ -515,7 +555,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralBigIntegerExpression(LiteralBigIntegerSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), BigInteger.class )
 		);
 	}
 
@@ -523,7 +563,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralBigDecimalExpression(LiteralBigDecimalSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), BigDecimal.class )
 		);
 	}
 
@@ -531,7 +571,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralFloatExpression(LiteralFloatSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Float.class )
 		);
 	}
 
@@ -539,7 +579,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralLongExpression(LiteralLongSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Long.class )
 		);
 	}
 
@@ -547,7 +587,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralTrueExpression(LiteralTrueSqmExpression expression) {
 		return new QueryLiteral(
 				Boolean.TRUE,
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Boolean.class )
 		);
 	}
 
@@ -555,7 +595,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralFalseExpression(LiteralFalseSqmExpression expression) {
 		return new QueryLiteral(
 				Boolean.FALSE,
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), Boolean.class )
 		);
 	}
 
@@ -571,7 +611,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public Object visitConstantEnumExpression(ConstantEnumSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), expression.getValue().getClass() )
 		);
 	}
 
@@ -579,7 +619,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public Object visitConstantFieldExpression(ConstantFieldSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType(), expression.getValue().getClass() )
 		);
 	}
 
@@ -604,7 +644,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new AvgFunction(
 				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -613,7 +653,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new MaxFunction(
 				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -622,7 +662,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new MinFunction(
 				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -631,7 +671,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new SumFunction(
 				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -640,7 +680,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new CountFunction(
 				(Expression) expression.getArgument().accept( this ),
 				expression.isDistinct(),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -648,7 +688,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 	public CountStarFunction visitCountStarFunction(CountStarFunctionSqmExpression expression) {
 		return new CountStarFunction(
 				expression.isDistinct(),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 
@@ -657,7 +697,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 		return new UnaryOperationExpression(
 				interpret( expression.getOperation() ),
 				(Expression) expression.getOperand().accept( this ),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
+				(BasicType) extractOrmType( expression.getExpressionType() )
 		);
 	}
 

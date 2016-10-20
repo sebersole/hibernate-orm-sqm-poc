@@ -11,10 +11,13 @@ import java.util.Map;
 
 import org.hibernate.AssertionFailure;
 import org.hibernate.internal.util.StringHelper;
+import org.hibernate.persister.common.spi.AttributeImplementor;
 import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.sqm.query.from.SqmFrom;
+import org.hibernate.type.EntityType;
+import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
@@ -71,14 +74,7 @@ public class SqlAliasBaseManager {
 	}
 
 	private String entityNameToAcronym(String entityName) {
-		String simpleName = StringHelper.unqualify( entityName );
-		if ( simpleName.contains( "$" ) ) {
-			// inner class
-			simpleName = simpleName.substring( simpleName.lastIndexOf( '$' ) + 1 );
-		}
-		if ( StringHelper.isEmpty( simpleName ) ) {
-			throw new AssertionFailure( "Could not determine simple name as base for alias [" + entityName + "]" );
-		}
+		final String simpleName = toSimpleEntityName( entityName );
 
 		// ideally I'd like to build the alias base from acronym form of the name.  E.g.
 		// 'TransportationMethod` becomes 'tm', 'ShippingDestination` becomes 'sd', etc
@@ -87,12 +83,34 @@ public class SqlAliasBaseManager {
 		return Character.toString( Character.toLowerCase( simpleName.charAt( 0 ) ) );
 	}
 
+	private String toSimpleEntityName(String entityName) {
+		String simpleName = StringHelper.unqualify( entityName );
+		if ( simpleName.contains( "$" ) ) {
+			// inner class
+			simpleName = simpleName.substring( simpleName.lastIndexOf( '$' ) + 1 );
+		}
+		if ( StringHelper.isEmpty( simpleName ) ) {
+			throw new AssertionFailure( "Could not determine simple name as base for alias [" + entityName + "]" );
+		}
+		return simpleName;
+	}
+
 	private String determineAcronym(AttributeReference attrRef) {
-		String acronym = nameAcronymMap.get( attrRef.getAttributeName() );
+		final String acronymBase;
+		final Type attrType = ( (AttributeImplementor) attrRef ).getOrmType();
+		if ( attrType.isEntityType() && !attrType.isAnyType() ) {
+			// use the entity name as the base
+			acronymBase = toSimpleEntityName( ( (EntityType) attrType ).getAssociatedEntityName() );
+		}
+		else {
+			acronymBase = attrRef.getAttributeName();
+		}
+
+		String acronym = nameAcronymMap.get( acronymBase );
 		if ( acronym == null ) {
 			// see note above, again for now just use the first letter
-			acronym = Character.toString( Character.toLowerCase( attrRef.getAttributeName().charAt( 0 ) ) );
-			nameAcronymMap.put( attrRef.getAttributeName(), acronym );
+			acronym = Character.toString( Character.toLowerCase( acronymBase.charAt( 0 ) ) );
+			nameAcronymMap.put( acronymBase, acronym );
 		}
 		return acronym;
 	}

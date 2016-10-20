@@ -39,6 +39,7 @@ import org.hibernate.query.proposed.spi.QueryProducerImplementor;
 import org.hibernate.query.proposed.spi.ScrollableResultsImplementor;
 import org.hibernate.query.proposed.spi.SelectQueryPlan;
 import org.hibernate.sqm.QuerySplitter;
+import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.query.SqmSelectStatement;
 import org.hibernate.sqm.query.SqmStatement;
 import org.hibernate.sqm.query.SqmStatementNonSelect;
@@ -58,6 +59,7 @@ public class QuerySqmImpl<R> extends AbstractQuery<R> {
 
 	private final QueryOptionsImpl queryOptions = new QueryOptionsImpl();
 	private final SharedSessionContractImplementor persistenceContext;
+	private final DomainMetamodel domainMetamodel;
 
 	private EntityGraphQueryHint entityGraphQueryHint;
 
@@ -66,10 +68,12 @@ public class QuerySqmImpl<R> extends AbstractQuery<R> {
 			SqmStatement sqmStatement,
 			Class resultType,
 			SharedSessionContractImplementor persistenceContext,
+			DomainMetamodel domainMetamodel,
 			QueryProducerImplementor producer,
 			ExecutionContext executionContext) {
 		super( producer, executionContext );
 		this.persistenceContext = persistenceContext;
+		this.domainMetamodel = domainMetamodel;
 
 		if ( resultType != null ) {
 			if ( sqmStatement instanceof SqmStatementNonSelect ) {
@@ -310,6 +314,7 @@ public class QuerySqmImpl<R> extends AbstractQuery<R> {
 			QueryOptions queryOptions) {
 		return new ConcreteSqmSelectQueryPlan<>(
 				concreteSqmStatement,
+				domainMetamodel,
 				entityGraphHint,
 				resultType,
 				queryOptions
