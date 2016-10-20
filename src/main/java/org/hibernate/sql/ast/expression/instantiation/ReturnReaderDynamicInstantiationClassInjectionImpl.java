@@ -6,7 +6,6 @@
  */
 package org.hibernate.sql.ast.expression.instantiation;
 
-import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -28,6 +27,7 @@ public class ReturnReaderDynamicInstantiationClassInjectionImpl<T> implements Re
 	private final List<BeanInjection> beanInjections;
 	private final int numberOfColumnsConsumed;
 
+	@SuppressWarnings("unchecked")
 	public ReturnReaderDynamicInstantiationClassInjectionImpl(
 			final Class<T> target,
 			final List<AliasedReturnReader> aliasedArgumentReaders,
@@ -35,58 +35,54 @@ public class ReturnReaderDynamicInstantiationClassInjectionImpl<T> implements Re
 		this.target = target;
 		this.numberOfColumnsConsumed = numberOfColumnsConsumed;
 
-		this.beanInjections = new ArrayList<BeanInjection>();
+		this.beanInjections = new ArrayList<>();
 
 		BeanInfoHelper.visitBeanInfo(
 				target,
-				new BeanInfoHelper.BeanInfoDelegate() {
-					@Override
-					@SuppressWarnings("unchecked")
-					public void processBeanInfo(BeanInfo beanInfo) throws Exception {
-						// needs to be ordered by argument order!
-						for ( AliasedReturnReader aliasedReturnReader : aliasedArgumentReaders ) {
-							boolean found = false;
-							for ( PropertyDescriptor propertyDescriptor : beanInfo.getPropertyDescriptors() ) {
-								if ( aliasedReturnReader.getAlias().equals( propertyDescriptor.getName() ) ) {
-									if ( propertyDescriptor.getWriteMethod() != null ) {
-										final boolean assignmentCompatible = Compatibility.areAssignmentCompatible(
-												propertyDescriptor.getWriteMethod().getParameterTypes()[0],
-												aliasedReturnReader.getReturnReader().getReturnedJavaType()
+				beanInfo -> {
+					// needs to be ordered by argument order!
+					for ( AliasedReturnReader aliasedReturnReader : aliasedArgumentReaders ) {
+						boolean found = false;
+						for ( PropertyDescriptor propertyDescriptor : beanInfo.getPropertyDescriptors() ) {
+							if ( aliasedReturnReader.getAlias().equals( propertyDescriptor.getName() ) ) {
+								if ( propertyDescriptor.getWriteMethod() != null ) {
+									final boolean assignmentCompatible = Compatibility.areAssignmentCompatible(
+											propertyDescriptor.getWriteMethod().getParameterTypes()[0],
+											aliasedReturnReader.getReturnReader().getReturnedJavaType()
+									);
+									if ( assignmentCompatible ) {
+										propertyDescriptor.getWriteMethod().setAccessible( true );
+										beanInjections.add(
+												new BeanInjection(
+														new BeanInjectorSetter( propertyDescriptor.getWriteMethod() ),
+														aliasedReturnReader.getReturnReader()
+												)
 										);
-										if ( assignmentCompatible ) {
-											propertyDescriptor.getWriteMethod().setAccessible( true );
-											beanInjections.add(
-													new BeanInjection(
-															new BeanInjectorSetter( propertyDescriptor.getWriteMethod() ),
-															aliasedReturnReader.getReturnReader()
-													)
-											);
-											found = true;
-											break;
-										}
+										found = true;
+										break;
 									}
 								}
 							}
-							if ( found ) {
-								continue;
-							}
+						}
+						if ( found ) {
+							continue;
+						}
 
-							// see if we can find a Field with the given name...
-							final Field field = findField( target, aliasedReturnReader.getAlias(), aliasedReturnReader.getReturnReader().getReturnedJavaType() );
-							if ( field != null ) {
-								beanInjections.add(
-										new BeanInjection(
-												new BeanInjectorField( field ),
-												aliasedReturnReader.getReturnReader()
-										)
-								);
-							}
-							else {
-								throw new InstantiationException(
-										"Unable to determine dynamic instantiation injection strategy for " +
-												target.getName() + "#" + aliasedReturnReader.getAlias()
-								);
-							}
+						// see if we can find a Field with the given name...
+						final Field field = findField( target, aliasedReturnReader.getAlias(), aliasedReturnReader.getReturnReader().getReturnedJavaType() );
+						if ( field != null ) {
+							beanInjections.add(
+									new BeanInjection(
+											new BeanInjectorField( field ),
+											aliasedReturnReader.getReturnReader()
+									)
+							);
+						}
+						else {
+							throw new InstantiationException(
+									"Unable to determine dynamic instantiation injection strategy for " +
+											target.getName() + "#" + aliasedReturnReader.getAlias()
+							);
 						}
 					}
 				}
@@ -129,6 +125,7 @@ public class ReturnReaderDynamicInstantiationClassInjectionImpl<T> implements Re
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public T assemble(
 			RowProcessingState processingState,
 			ResultSetProcessingOptions options) throws SQLException {

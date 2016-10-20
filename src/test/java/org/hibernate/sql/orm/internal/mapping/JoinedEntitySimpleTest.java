@@ -19,10 +19,10 @@ import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;
+import org.hibernate.sql.convert.internal.FromClauseIndex;
+import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.gen.internal.FromClauseIndex;
-import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sqm.query.SelectStatement;
+import org.hibernate.sqm.query.SqmSelectStatement;
 
 import org.junit.Test;
 
@@ -37,10 +37,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class JoinedEntitySimpleTest extends BaseUnitTest {
 	@Test
 	public void testSingleSpaceBase() {
-		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityBase" );
+		SqmSelectStatement sqm = (SqmSelectStatement) interpret( "from JoinedEntityBase" );
 
 		final ImprovedEntityPersister improvedEntityPersister =
-				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBase" );
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityReference( "JoinedEntityBase" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
 		// interpreter set up
@@ -84,10 +84,10 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 
 	@Test
 	public void testSingleSpaceBranch() {
-		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityBranch" );
+		SqmSelectStatement sqm = (SqmSelectStatement) interpret( "from JoinedEntityBranch" );
 
 		final ImprovedEntityPersister improvedEntityPersister =
-				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityBranch" );
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityReference( "JoinedEntityBranch" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
 		// interpreter set up
@@ -131,10 +131,10 @@ public class JoinedEntitySimpleTest extends BaseUnitTest {
 
 	@Test
 	public void testSingleSpaceLeaf() {
-		SelectStatement sqm = (SelectStatement) interpret( "from JoinedEntityLeaf" );
+		SqmSelectStatement sqm = (SqmSelectStatement) interpret( "from JoinedEntityLeaf" );
 
 		final ImprovedEntityPersister improvedEntityPersister =
-				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "JoinedEntityLeaf" );
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityReference( "JoinedEntityLeaf" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( JoinedSubclassEntityPersister.class ) );
 
 		// interpreter set up

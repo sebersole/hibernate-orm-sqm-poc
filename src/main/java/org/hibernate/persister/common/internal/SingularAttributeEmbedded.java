@@ -8,9 +8,9 @@ package org.hibernate.persister.common.internal;
 
 import org.hibernate.persister.common.spi.AbstractAttributeImpl;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
-import org.hibernate.sqm.domain.ManagedType;
 import org.hibernate.type.Type;
 
 /**
@@ -23,41 +23,20 @@ public class SingularAttributeEmbedded
 	private final EmbeddablePersister embeddablePersister;
 
 	public SingularAttributeEmbedded(
-			ManagedType declaringType,
+			DomainReferenceImplementor declaringType,
 			String attributeName,
 			EmbeddablePersister embeddablePersister) {
 		super( declaringType, attributeName );
 		this.embeddablePersister = embeddablePersister;
 	}
 
-	@Override
-	public Classification getAttributeTypeClassification() {
-		return Classification.EMBEDDED;
-	}
-
-	@Override
-	public org.hibernate.sqm.domain.Type getType() {
-		return null;
-	}
-
-	@Override
-	public boolean isId() {
-		return false;
-	}
-
-	@Override
-	public boolean isVersion() {
-		return false;
-	}
-
-	@Override
-	public org.hibernate.sqm.domain.Type getBoundType() {
+	public EmbeddablePersister getEmbeddablePersister() {
 		return embeddablePersister;
 	}
 
 	@Override
-	public EmbeddablePersister asManagedType() {
-		return (EmbeddablePersister) getBoundType();
+	public SingularAttributeClassification getAttributeTypeClassification() {
+		return SingularAttributeClassification.EMBEDDED;
 	}
 
 	@Override
@@ -68,5 +47,10 @@ public class SingularAttributeEmbedded
 	@Override
 	public Column[] getColumns() {
 		return embeddablePersister.collectColumns();
+	}
+
+	@Override
+	public String asLoggableText() {
+		return toString();
 	}
 }

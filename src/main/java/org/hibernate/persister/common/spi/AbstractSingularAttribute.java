@@ -6,39 +6,24 @@
  */
 package org.hibernate.persister.common.spi;
 
-import org.hibernate.sqm.domain.ManagedType;
-
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractSingularAttribute<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type>
+public abstract class AbstractSingularAttribute<O extends org.hibernate.type.Type>
 		extends AbstractAttributeImpl
 		implements SingularAttributeImplementor {
 	private final O ormType;
-	private final S sqmType;
 
 	public AbstractSingularAttribute(
-			ManagedType declaringType,
+			DomainReferenceImplementor declaringType,
 			String name,
-			O ormType,
-			S sqmType) {
+			O ormType) {
 		super( declaringType, name );
 		this.ormType = ormType;
-		this.sqmType = sqmType;
 	}
 
 	@Override
 	public O getOrmType() {
 		return ormType;
-	}
-
-	@Override
-	public S getType() {
-		return sqmType;
-	}
-
-	@Override
-	public S getBoundType() {
-		return getType();
 	}
 }

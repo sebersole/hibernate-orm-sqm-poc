@@ -7,20 +7,20 @@
 package org.hibernate.persister.common.internal;
 
 import org.hibernate.persister.common.spi.SqmTypeImplementor;
-import org.hibernate.sqm.domain.BasicType;
+import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class BasicTypeImpl<X> implements BasicType<X>, SqmTypeImplementor {
-	private org.hibernate.type.BasicType ormBasicType;
+public class BasicTypeImpl<X> implements org.hibernate.sqm.domain.BasicType, SqmTypeImplementor {
+	private BasicType ormBasicType;
 
-	public BasicTypeImpl(org.hibernate.type.BasicType ormBasicType) {
+	public BasicTypeImpl(BasicType ormBasicType) {
 		this.ormBasicType = ormBasicType;
 	}
 
 	@Override
-	public org.hibernate.type.BasicType getOrmType() {
+	public BasicType getOrmType() {
 		return ormBasicType;
 	}
 
@@ -31,7 +31,7 @@ public class BasicTypeImpl<X> implements BasicType<X>, SqmTypeImplementor {
 	}
 
 	@Override
-	public String getTypeName() {
-		return getJavaType().getName();
+	public String asLoggableText() {
+		return "BasicType( " + ormBasicType.getName() + ")";
 	}
 }

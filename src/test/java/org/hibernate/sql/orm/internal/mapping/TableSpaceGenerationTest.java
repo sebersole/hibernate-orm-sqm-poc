@@ -37,10 +37,10 @@ import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
+import org.hibernate.sql.convert.spi.SelectStatementInterpreter;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.ast.SelectStatementInterpreter;
 import org.hibernate.sqm.query.JoinType;
-import org.hibernate.sqm.query.SelectStatement;
+import org.hibernate.sqm.query.SqmSelectStatement;
 
 import org.junit.Test;
 
@@ -333,7 +333,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void testSimpleAttributeReference() {
-		final SelectStatement statement = (SelectStatement) interpret( "select p.email from Person p" );
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( "select p.email from Person p" );
 
 		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
 		interpreter.interpret( statement );

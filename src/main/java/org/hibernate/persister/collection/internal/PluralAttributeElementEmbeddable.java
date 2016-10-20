@@ -8,23 +8,29 @@ package org.hibernate.persister.collection.internal;
 
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
-import org.hibernate.sqm.domain.EmbeddableType;
-import org.hibernate.sqm.domain.PluralAttribute;
+import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.PluralAttributeReference.ElementReference.ElementClassification;
 import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementEmbeddable implements PluralAttributeElement<CompositeType, EmbeddableType> {
+public class PluralAttributeElementEmbeddable implements PluralAttributeElement<CompositeType> {
+	private final ImprovedCollectionPersisterImpl collectionPersister;
 	private final EmbeddablePersister embeddablePersister;
 
-	public PluralAttributeElementEmbeddable(EmbeddablePersister embeddablePersister) {
+	public PluralAttributeElementEmbeddable(ImprovedCollectionPersisterImpl collectionPersister, EmbeddablePersister embeddablePersister) {
+		this.collectionPersister = collectionPersister;
 		this.embeddablePersister = embeddablePersister;
 	}
 
+	public EmbeddablePersister getEmbeddablePersister() {
+		return embeddablePersister;
+	}
+
 	@Override
-	public PluralAttribute.ElementClassification getElementClassification() {
-		return PluralAttribute.ElementClassification.EMBEDDABLE;
+	public ElementClassification getClassification() {
+		return ElementClassification.EMBEDDABLE;
 	}
 
 	@Override
@@ -33,11 +39,12 @@ public class PluralAttributeElementEmbeddable implements PluralAttributeElement<
 	}
 
 	@Override
-	public EmbeddableType getSqmType() {
-		return embeddablePersister;
+	public DomainReference getType() {
+		return this;
 	}
 
-	public EmbeddablePersister getEmbeddablePersister() {
-		return embeddablePersister;
+	@Override
+	public String asLoggableText() {
+		return "PluralAttributeElement(" + collectionPersister.getPersister().getRole() + " [" + getOrmType().getName() + "])" ;
 	}
 }

@@ -13,17 +13,19 @@ import java.util.List;
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
 import org.hibernate.LockOptions;
-import org.hibernate.sql.exec.spi.Limit;
-import org.hibernate.sql.exec.spi.QueryOptions;
+import org.hibernate.query.proposed.Limit;
+import org.hibernate.query.proposed.ResultListTransformer;
+import org.hibernate.query.proposed.TupleTransformer;
+import org.hibernate.query.proposed.spi.MutableQueryOptions;
 
 /**
  * @author Steve Ebersole
  */
-public class QueryOptionsImpl implements QueryOptions {
+public class QueryOptionsImpl implements MutableQueryOptions {
 	private Integer timeout;
 	private FlushMode flushMode;
 	private String comment;
-	private List<String> sqlHints;
+	private List<String> databaseHints;
 
 	// only valid for (non-native) select queries
 	private final Limit limit = new Limit();
@@ -33,6 +35,9 @@ public class QueryOptionsImpl implements QueryOptions {
 	private Boolean resultCachingEnabled;
 	private String resultCacheRegionName;
 	private Boolean readOnlyEnabled;
+
+	private TupleTransformer tupleTransformer;
+	private ResultListTransformer resultListTransformer;
 
 	@Override
 	public Integer getTimeout() {
@@ -62,15 +67,26 @@ public class QueryOptionsImpl implements QueryOptions {
 	}
 
 	@Override
-	public List<String> getSqlHints() {
-		return sqlHints == null ? Collections.<String>emptyList() : sqlHints;
+	public List<String> getDatabaseHints() {
+		return databaseHints == null ? Collections.emptyList() : databaseHints;
 	}
 
-	public void addSqlHint(String hint) {
-		if ( sqlHints == null ) {
-			sqlHints = new ArrayList<String>();
+	@Override
+	public void addDatabaseHint(String hint) {
+		if ( databaseHints == null ) {
+			databaseHints = new ArrayList<String>();
 		}
-		sqlHints.add( hint );
+		databaseHints.add( hint );
+	}
+
+	@Override
+	public void setTupleTransformer(TupleTransformer transformer) {
+		this.tupleTransformer = transformer;
+	}
+
+	@Override
+	public void setResultListTransformer(ResultListTransformer transformer) {
+		this.resultListTransformer = transformer;
 	}
 
 	@Override
@@ -110,10 +126,19 @@ public class QueryOptionsImpl implements QueryOptions {
 		this.resultCachingEnabled = resultCachingEnabled;
 	}
 
-
 	@Override
 	public String getResultCacheRegionName() {
 		return resultCacheRegionName;
+	}
+
+	@Override
+	public TupleTransformer getTupleTransformer() {
+		return tupleTransformer;
+	}
+
+	@Override
+	public ResultListTransformer getResultListTransformer() {
+		return resultListTransformer;
 	}
 
 	public void setResultCacheRegionName(String resultCacheRegionName) {
@@ -121,11 +146,22 @@ public class QueryOptionsImpl implements QueryOptions {
 	}
 
 	@Override
-	public Boolean isReadOnly() {
-		return readOnlyEnabled;
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 
-	public void setReadOnlyEnabled(boolean readOnlyEnabled) {
-		this.readOnlyEnabled = readOnlyEnabled;
+	@Override
+	public void setFetchSize(int fetchSize) {
+		this.fetchSize = fetchSize;
+	}
+
+	@Override
+	public void setReadOnly(boolean readOnly) {
+		this.readOnlyEnabled = readOnly;
+	}
+
+	@Override
+	public Boolean isReadOnly() {
+		return readOnlyEnabled;
 	}
 }

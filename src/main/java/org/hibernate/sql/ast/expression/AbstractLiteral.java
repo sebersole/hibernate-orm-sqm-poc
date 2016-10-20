@@ -9,9 +9,9 @@ package org.hibernate.sql.ast.expression;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.sql.gen.ParameterBinder;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.spi.ParameterBinder;
 import org.hibernate.type.Type;
 
 /**
@@ -45,7 +45,7 @@ public abstract class AbstractLiteral extends SelfReadingExpressionSupport imple
 			PreparedStatement statement,
 			int startPosition,
 			QueryParameterBindings queryParameterBindings,
-			SessionImplementor session) throws SQLException {
+			SharedSessionContractImplementor session) throws SQLException {
 		getType().nullSafeSet( statement, getValue(), startPosition, session );
 		return getType().getColumnSpan( session.getFactory() );
 	}

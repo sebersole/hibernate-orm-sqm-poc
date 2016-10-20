@@ -9,14 +9,14 @@ package org.hibernate.sql.ast.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
 public class CoalesceExpression extends SelfReadingExpressionSupport {
-	private List<Expression> values = new ArrayList<Expression>();
+	private List<Expression> values = new ArrayList<>();
 
 	public List<Expression> getValues() {
 		return values;

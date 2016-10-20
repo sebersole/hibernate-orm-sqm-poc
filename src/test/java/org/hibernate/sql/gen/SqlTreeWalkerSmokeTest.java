@@ -11,13 +11,26 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
+import org.hibernate.query.proposed.ParameterMetadata;
+import org.hibernate.query.proposed.QueryParameter;
+import org.hibernate.query.proposed.internal.ParameterMetadataImpl;
+import org.hibernate.query.proposed.internal.QueryParameterBindingsImpl;
+import org.hibernate.query.proposed.internal.QueryParameterNamedImpl;
+import org.hibernate.query.proposed.internal.QueryParameterPositionalImpl;
+import org.hibernate.sql.QueryParameterBindingTypeResolverImpl;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.convert.spi.SelectStatementInterpreter;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sqm.query.SqmSelectStatement;
+import org.hibernate.sqm.query.SqmStatement;
 
 import org.junit.Test;
 
@@ -40,8 +53,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking1() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.name from Person p" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( "select p.name from Person p" );
+
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+
+		SelectQuery sqlTree = interpreter.getSelectQuery();
+
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
@@ -50,10 +72,54 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 		assertThat( sqlTreeWalker.getReturns().size(), is(1) );
 	}
 
+	private QueryParameterBindings buildQueryParameterBindings(SqmSelectStatement statement) {
+		return QueryParameterBindingsImpl.from(
+				buildParameterMetadata( statement ),
+				new QueryParameterBindingTypeResolverImpl( getSessionFactory() )
+		);
+	}
+
+
+	private static ParameterMetadataImpl buildParameterMetadata(SqmStatement sqm) {
+		Map<String, QueryParameter> namedQueryParameters = null;
+		Map<Integer, QueryParameter> positionalQueryParameters = null;
+
+		for ( org.hibernate.sqm.query.Parameter parameter : sqm.getQueryParameters() ) {
+			if ( parameter.getName() != null ) {
+				if ( namedQueryParameters == null ) {
+					namedQueryParameters = new HashMap<>();
+				}
+				namedQueryParameters.put(
+						parameter.getName(),
+						QueryParameterNamedImpl.fromSqm( parameter )
+				);
+			}
+			else if ( parameter.getPosition() != null ) {
+				if ( positionalQueryParameters == null ) {
+					positionalQueryParameters = new HashMap<>();
+				}
+				positionalQueryParameters.put(
+						parameter.getPosition(),
+						QueryParameterPositionalImpl.fromSqm( parameter )
+				);
+			}
+		}
+
+		return new ParameterMetadataImpl( namedQueryParameters, positionalQueryParameters );
+	}
+
 	@Test
 	public void testSqlTreeWalking2() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.name, p2.name from Person p, Person p2" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.name, p2.name from Person p, Person p2";
+
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
@@ -64,9 +130,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking3() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.name from Person p where p.age between 20 and 39" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.name from Person p where p.age between 20 and 39";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -78,9 +152,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking4() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.name from Person p where (p.age <= 20 and p.age >= 39)" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.name from Person p where (p.age <= 20 and p.age >= 39)";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -92,9 +174,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking5() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name like 'Steve%'" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.age from Person p where p.name like 'Steve%'";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -106,9 +196,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking6() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name like 'Steve%' escape '/'" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.age from Person p where p.name like 'Steve%' escape '/'";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -120,9 +218,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking7() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name is null" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.age from Person p where p.name is null";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -134,9 +240,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking8() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where p.name is not null" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr =  "select p.age from Person p where p.name is not null";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -148,9 +262,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking9() {
-		SelectQuery sqlTree = interpretSelectQuery( "select p.age from Person p where not p.name is not null" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select p.age from Person p where not p.name is not null";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -162,9 +284,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking10() {
-		SelectQuery sqlTree = interpretSelectQuery( "from Person p" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "from Person p";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -177,9 +307,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking11() {
-		SelectQuery sqlTree = interpretSelectQuery( "select a from Person p join p.address a" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr = "select a from Person p join p.address a";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 
@@ -191,9 +329,17 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 
 	@Test
 	public void testSqlTreeWalking12() {
-		SelectQuery sqlTree = interpretSelectQuery( "select r from Person p join p.roles r" );
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( getSessionFactory(), new QueryParameterBindings() );
+		final String qryStr =  "select r from Person p join p.roles r";
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
+		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
+		interpreter.interpret( statement );
+		final SelectQuery sqlTree = interpreter.getSelectQuery();
+		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				getSessionFactory(),
+				buildQueryParameterBindings( statement )
+		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
+
 
 		System.out.println( FormatStyle.BASIC.getFormatter().format( sqlTreeWalker.getSql() ) );
 

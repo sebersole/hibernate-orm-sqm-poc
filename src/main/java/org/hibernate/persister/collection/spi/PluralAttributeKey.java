@@ -7,32 +7,25 @@
 package org.hibernate.persister.collection.spi;
 
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.SqmTypeImplementor;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeKey {
+public class PluralAttributeKey implements SqmTypeImplementor {
 	private final Type type;
-	private final org.hibernate.sqm.domain.Type sqmType;
 	private final Column[] foreignKeyColumns;
 	// todo : referenced values?
 
-	public PluralAttributeKey(
-			Type type,
-			org.hibernate.sqm.domain.Type sqmType,
-			Column[] foreignKeyValues) {
+	public PluralAttributeKey(Type type, Column[] foreignKeyValues) {
 		this.type = type;
-		this.sqmType = sqmType;
 		this.foreignKeyColumns = foreignKeyValues;
 	}
 
-	public Type getType() {
+	@Override
+	public Type getOrmType() {
 		return type;
-	}
-
-	public org.hibernate.sqm.domain.Type getSqmType() {
-		return sqmType;
 	}
 
 	public Column[] getForeignKeyColumns() {

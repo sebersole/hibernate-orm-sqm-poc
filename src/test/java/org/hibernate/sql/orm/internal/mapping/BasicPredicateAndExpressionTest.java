@@ -105,13 +105,13 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 		BetweenPredicate betweenPredicate = (BetweenPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
 		assertThat( betweenPredicate.getExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) betweenPredicate.getExpression() ).getReferencedAttribute().getName(), is( "age" ) );
+		assertThat( ( (AttributeReference) betweenPredicate.getExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( betweenPredicate.getLowerBound(), instanceOf( QueryLiteral.class ) );
-		assertThat( ( (QueryLiteral) betweenPredicate.getLowerBound() ).getValue(), CoreMatchers.<Object>is(20) );
+		assertThat( ( (QueryLiteral) betweenPredicate.getLowerBound() ).getValue(), CoreMatchers.is( 20) );
 
 		assertThat( betweenPredicate.getUpperBound(), instanceOf( QueryLiteral.class ) );
-		assertThat( ( (QueryLiteral) betweenPredicate.getUpperBound() ).getValue(), CoreMatchers.<Object>is(39) );
+		assertThat( ( (QueryLiteral) betweenPredicate.getUpperBound() ).getValue(), CoreMatchers.is( 39) );
 	}
 
 	@Test
@@ -123,7 +123,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 		BetweenPredicate betweenPredicate = (BetweenPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
 		assertThat( betweenPredicate.getExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) betweenPredicate.getExpression() ).getReferencedAttribute().getName(), is( "age" ) );
+		assertThat( ( (AttributeReference) betweenPredicate.getExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( betweenPredicate.getLowerBound(), instanceOf( NamedParameter.class ) );
 
@@ -139,7 +139,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 		InListPredicate inPredicate = (InListPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
 		assertThat( inPredicate.getTestExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) inPredicate.getTestExpression() ).getReferencedAttribute().getName(), is( "age" ) );
+		assertThat( ( (AttributeReference) inPredicate.getTestExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( inPredicate.getListExpressions().size(), is( 5) );
 		for ( Expression expression : inPredicate.getListExpressions() ) {
@@ -156,7 +156,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 		InListPredicate inPredicate = (InListPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
 		assertThat( inPredicate.getTestExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) inPredicate.getTestExpression() ).getReferencedAttribute().getName(), is( "age" ) );
+		assertThat( ( (AttributeReference) inPredicate.getTestExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( inPredicate.getListExpressions().size(), is( 3 ) );
 		for ( Expression expression : inPredicate.getListExpressions() ) {

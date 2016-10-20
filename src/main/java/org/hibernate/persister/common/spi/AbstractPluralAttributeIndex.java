@@ -6,21 +6,21 @@
  */
 package org.hibernate.persister.common.spi;
 
+import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.collection.spi.PluralAttributeIndex;
+import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractPluralAttributeIndex<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type>
-		implements PluralAttributeIndex<O,S> {
-
+public abstract class AbstractPluralAttributeIndex<O extends Type> implements PluralAttributeIndex {
+	private final ImprovedCollectionPersisterImpl persister;
 	private final O ormType;
-	private final S sqmType;
 	private final Column[] columns;
 
-	public AbstractPluralAttributeIndex(O ormType, S sqmType, Column[] columns) {
+	public AbstractPluralAttributeIndex(ImprovedCollectionPersisterImpl persister, O ormType, Column[] columns) {
+		this.persister = persister;
 		this.ormType = ormType;
-		this.sqmType = sqmType;
 		this.columns = columns;
 	}
 
@@ -30,12 +30,12 @@ public abstract class AbstractPluralAttributeIndex<O extends org.hibernate.type.
 	}
 
 	@Override
-	public S getSqmType() {
-		return sqmType;
+	public Column[] getColumns() {
+		return columns;
 	}
 
 	@Override
-	public Column[] getColumns() {
-		return columns;
+	public String asLoggableText() {
+		return "PluralAttributeIndex(" + persister.getPersister().getRole() + " [" + getOrmType().getName() + "])";
 	}
 }

@@ -10,16 +10,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.hibernate.persister.common.internal.DatabaseModel;
+import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
 import org.hibernate.persister.common.spi.AbstractAttributeImpl;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.IdentifiableTypeImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
 import org.hibernate.persister.entity.UnionSubclassEntityPersister;
-import org.hibernate.persister.entity.spi.IdentifierDescriptorImplementor;
+import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
@@ -30,18 +31,11 @@ import org.hibernate.sql.ast.from.TableJoin;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
-import org.hibernate.sql.gen.NotYetImplementedException;
-import org.hibernate.sql.gen.internal.FromClauseIndex;
-import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.persister.common.internal.DomainMetamodelImpl;
-import org.hibernate.sqm.domain.Attribute;
-import org.hibernate.sqm.domain.EntityType;
-import org.hibernate.sqm.domain.IdentifiableType;
-import org.hibernate.sqm.domain.ManagedType;
-import org.hibernate.sqm.domain.SingularAttribute;
-import org.hibernate.sqm.domain.Type;
+import org.hibernate.sql.convert.internal.FromClauseIndex;
+import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
+import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.query.JoinType;
-import org.hibernate.sqm.query.from.FromElement;
+import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.CompositeType;
 
@@ -50,17 +44,17 @@ import org.jboss.logging.Logger;
 /**
  * @author Steve Ebersole
  */
-public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, EntityType {
+public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	private static final Logger log = Logger.getLogger( ImprovedEntityPersisterImpl.class );
 
 	private final EntityPersister persister;
 
 	private AbstractTable[] tables;
 
-	private IdentifiableTypeImplementor superType;
-	private IdentifierDescriptorImplementor identifierDescriptor;
+	private ImprovedEntityPersister superType;
+	private IdentifierDescriptor identifierDescriptor;
 
-	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<String, AbstractAttributeImpl>();
+	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<>();
 
 	public ImprovedEntityPersisterImpl(EntityPersister persister) {
 		this.persister = persister;
@@ -70,7 +64,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 	@Override
 	public void finishInitialization(
-			IdentifiableTypeImplementor superType,
+			ImprovedEntityPersister superType,
 			Object typeSource,
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel) {
@@ -113,7 +107,6 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 					this,
 					persister.getIdentifierPropertyName(),
 					(BasicType) persister.getIdentifierType(),
-					domainMetamodel.toSqmType( (BasicType) persister.getIdentifierType() ),
 					idColumns
 			);
 		}
@@ -135,6 +128,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 			}
 			else {
 				identifierDescriptor = new IdentifierCompositeNonAggregated(
+						this,
 						Helper.INSTANCE.buildEmbeddablePersister(
 								databaseModel,
 								domainMetamodel,
@@ -208,13 +202,18 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 	}
 
 	@Override
+	public IdentifierDescriptor getIdentifierDescriptor() {
+		return identifierDescriptor;
+	}
+
+	@Override
 	public AbstractTable getRootTable() {
 		return tables[0];
 	}
 
 	@Override
 	public EntityTableGroup buildTableGroup(
-			FromElement fromElement,
+			SqmFrom fromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex) {
@@ -295,60 +294,19 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 		addNonRootTables( group, joinType, baseAdjust, drivingTableBinding );
 	}
 
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// SQM EntityType impl
-
-
 	@Override
-	public String getName() {
-		return getTypeName();
-	}
-
-	@Override
-	public Type getBoundType() {
-		return this;
-	}
-
-	@Override
-	public ManagedType asManagedType() {
-		return this;
-	}
-
-	@Override
-	public IdentifiableTypeImplementor getSuperType() {
-		return superType;
-	}
-
-	@Override
-	public IdentifierDescriptorImplementor getIdentifierDescriptor() {
-		return identifierDescriptor;
-	}
-
-	@Override
-	public SingularAttribute getVersionAttribute() {
-		// todo : implement
-		throw new NotYetImplementedException();
-	}
-
-	@Override
-	public Attribute findAttribute(String name) {
+	public AttributeReference findAttribute(String name) {
 		if ( attributeMap.containsKey( name ) ) {
 			return attributeMap.get( name );
 		}
 
+		// we know its not a "normal" attribute, otherwise the attributeMap lookup would have hit
+		// so see if it could refer to the identifier
+		if ( "id".equals( name ) || identifierDescriptor.getIdAttribute().getAttributeName().equals( name ) ) {
+			return identifierDescriptor.getIdAttribute();
+		}
+
 		return null;
-	}
-
-	@Override
-	public Attribute findDeclaredAttribute(String name) {
-		// todo : implement
-		throw new NotYetImplementedException();
-	}
-
-	@Override
-	public String getTypeName() {
-		return persister.getEntityName();
 	}
 
 	public Map<String, AbstractAttributeImpl> getAttributeMap() {
@@ -357,11 +315,21 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister, Ent
 
 	@Override
 	public String toString() {
-		return "ImprovedEntityPersister(" + getTypeName() + ")";
+		return "ImprovedEntityPersister(" + getEntityName() + ")";
 	}
 
 	@Override
 	public org.hibernate.type.Type getOrmType() {
 		return getEntityPersister().getEntityMetamodel().getEntityType();
+	}
+
+	@Override
+	public String getEntityName() {
+		return persister.getEntityName();
+	}
+
+	@Override
+	public String asLoggableText() {
+		return toString();
 	}
 }

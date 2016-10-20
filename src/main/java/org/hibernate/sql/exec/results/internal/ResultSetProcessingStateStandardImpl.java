@@ -10,17 +10,18 @@ import java.sql.ResultSet;
 import java.util.List;
 
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.query.proposed.QueryOptions;
+import org.hibernate.sql.convert.spi.Return;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingState;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
-import org.hibernate.sql.exec.spi.QueryOptions;
-import org.hibernate.sql.gen.Return;
 
 /**
  * @author Steve Ebersole
  */
 public class ResultSetProcessingStateStandardImpl implements ResultSetProcessingState {
 	private final ResultSet resultSet;
-	private final SessionImplementor session;
+	private final SharedSessionContractImplementor session;
 
 	private RowProcessingState currentRowState;
 
@@ -28,7 +29,7 @@ public class ResultSetProcessingStateStandardImpl implements ResultSetProcessing
 			ResultSet resultSet,
 			QueryOptions queryOptions,
 			List<Return> returns,
-			SessionImplementor session) {
+			SharedSessionContractImplementor session) {
 		this.resultSet = resultSet;
 		this.session = session;
 
@@ -41,7 +42,7 @@ public class ResultSetProcessingStateStandardImpl implements ResultSetProcessing
 	}
 
 	@Override
-	public SessionImplementor getSession() {
+	public SharedSessionContractImplementor getSession() {
 		return session;
 	}
 

@@ -15,7 +15,7 @@ import org.hibernate.MappingException;
  * @author Steve Ebersole
  */
 public class DatabaseModel {
-	private final Map<String,PhysicalTable> tableMap = new TreeMap<String, PhysicalTable>( String.CASE_INSENSITIVE_ORDER );
+	private final Map<String,PhysicalTable> tableMap = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
 
 	public PhysicalTable findPhysicalTable(String name) {
 		final PhysicalTable match = tableMap.get( name );

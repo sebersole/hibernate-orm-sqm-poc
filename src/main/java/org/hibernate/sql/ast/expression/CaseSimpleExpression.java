@@ -9,7 +9,7 @@ package org.hibernate.sql.ast.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**
@@ -19,7 +19,7 @@ public class CaseSimpleExpression extends SelfReadingExpressionSupport implement
 	private final Type type;
 	private final Expression fixture;
 
-	private List<WhenFragment> whenFragments = new ArrayList<WhenFragment>();
+	private List<WhenFragment> whenFragments = new ArrayList<>();
 	private Expression otherwise;
 
 	public CaseSimpleExpression(Type type, Expression fixture) {

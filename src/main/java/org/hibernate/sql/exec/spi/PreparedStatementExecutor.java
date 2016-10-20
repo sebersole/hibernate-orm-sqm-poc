@@ -12,8 +12,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.Incubating;
-import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.sql.gen.Return;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.query.proposed.QueryOptions;
+import org.hibernate.sql.convert.spi.Return;
 
 /**
  * General contract for executing a PreparedStatement and consuming the "results" of that
@@ -46,5 +47,5 @@ public interface PreparedStatementExecutor<R,T> {
 			QueryOptions queryOptions,
 			List<Return> returns,
 			RowTransformer<T> rowTransformer,
-			SessionImplementor session) throws SQLException;
+			SharedSessionContractImplementor session) throws SQLException;
 }

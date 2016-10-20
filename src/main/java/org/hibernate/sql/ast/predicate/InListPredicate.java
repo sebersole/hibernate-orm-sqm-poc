@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.sqm.Helper;
 
 /**
@@ -22,11 +22,11 @@ public class InListPredicate implements Predicate {
 	private final boolean negated;
 
 	public InListPredicate(Expression testExpression) {
-		this( testExpression, new ArrayList<Expression>() );
+		this( testExpression, new ArrayList<>() );
 	}
 
 	public InListPredicate(Expression testExpression, boolean negated) {
-		this( testExpression, new ArrayList<Expression>(), negated );
+		this( testExpression, new ArrayList<>(), negated );
 	}
 
 	public InListPredicate(Expression testExpression, Expression... listExpressions) {

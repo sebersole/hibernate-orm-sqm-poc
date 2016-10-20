@@ -8,29 +8,27 @@ package org.hibernate.persister.common.internal;
 
 import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.sqm.domain.BasicType;
-import org.hibernate.sqm.domain.ManagedType;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class SingularAttributeBasic
-		extends AbstractSingularAttribute<org.hibernate.type.BasicType, BasicType> {
+public class SingularAttributeBasic extends AbstractSingularAttribute<BasicType> {
 	private final Column[] columns;
 
 	public SingularAttributeBasic(
-			ManagedType declaringType,
+			DomainReferenceImplementor declaringType,
 			String name,
-			org.hibernate.type.BasicType ormType,
-			BasicType sqmType,
+			BasicType ormType,
 			Column[] columns) {
-		super( declaringType, name, ormType, sqmType );
+		super( declaringType, name, ormType );
 		this.columns = columns;
 	}
 
 	@Override
-	public Classification getAttributeTypeClassification() {
-		return Classification.BASIC;
+	public SingularAttributeClassification getAttributeTypeClassification() {
+		return SingularAttributeClassification.BASIC;
 	}
 
 	public Column[] getColumns() {
@@ -38,17 +36,7 @@ public class SingularAttributeBasic
 	}
 
 	@Override
-	public boolean isId() {
-		return false;
-	}
-
-	@Override
-	public boolean isVersion() {
-		return false;
-	}
-
-	@Override
-	public ManagedType asManagedType() {
-		return null;
+	public String asLoggableText() {
+		return "SingularAttributeBasic(" + getLeftHandSide().asLoggableText() + '.' + getAttributeName() + ')';
 	}
 }

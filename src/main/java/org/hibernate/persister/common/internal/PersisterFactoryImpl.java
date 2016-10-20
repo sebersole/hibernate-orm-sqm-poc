@@ -23,9 +23,9 @@ import org.hibernate.mapping.RootClass;
 import org.hibernate.mapping.Subclass;
 import org.hibernate.mapping.UnionSubclass;
 import org.hibernate.persister.collection.CollectionPersister;
-import org.hibernate.persister.common.spi.IdentifiableTypeImplementor;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.internal.ImprovedEntityPersisterImpl;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.persister.entity.spi.InheritanceType;
 import org.hibernate.persister.spi.PersisterCreationContext;
 import org.hibernate.persister.spi.PersisterFactory;
@@ -200,7 +200,7 @@ public class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAw
 		private final String name;
 		private final Object typeSource;
 
-		private IdentifiableTypeImplementor type;
+		private ImprovedEntityPersister type;
 		private Set<TypeHierarchyNode> subTypeNodes = new HashSet<TypeHierarchyNode>();
 
 		public TypeHierarchyNode(String name, Object typeSource) {
@@ -208,13 +208,13 @@ public class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAw
 			this.typeSource = typeSource;
 		}
 
-		public TypeHierarchyNode(String name, Object typeSource, IdentifiableTypeImplementor type) {
+		public TypeHierarchyNode(String name, Object typeSource, ImprovedEntityPersister type) {
 			this.name = name;
 			this.typeSource = typeSource;
 			this.type = type;
 		}
 
-		public void setType(IdentifiableTypeImplementor type) {
+		public void setType(ImprovedEntityPersister type) {
 			if ( this.type != null ) {
 				throw new IllegalStateException( "TypeHierarchyNode.type ws already defined" );
 			}
@@ -225,7 +225,7 @@ public class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAw
 			subTypeNodes.add( subTypeNode );
 		}
 
-		public void finishUp(IdentifiableTypeImplementor superType, DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
+		public void finishUp(ImprovedEntityPersister superType, DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
 			type.finishInitialization( superType, typeSource , databaseModel, domainMetamodel );
 			for ( TypeHierarchyNode subTypeNode : subTypeNodes ) {
 				subTypeNode.finishUp( type, databaseModel, domainMetamodel );

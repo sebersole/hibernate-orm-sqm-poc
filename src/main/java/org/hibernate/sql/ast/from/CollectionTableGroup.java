@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.from;
 
 
+import org.hibernate.persister.collection.internal.PluralAttributeElementEntity;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
@@ -44,6 +45,10 @@ public class CollectionTableGroup extends AbstractTableGroup {
 
 	@Override
 	protected ImprovedEntityPersister resolveEntityReferenceBase() {
-		return (ImprovedEntityPersister) persister.getElementDescriptor().getSqmType();
+		if ( persister.getElementReference() instanceof PluralAttributeElementEntity ) {
+			return ( (PluralAttributeElementEntity) persister.getElementReference() ).getElementPersister();
+		}
+
+		return null;
 	}
 }

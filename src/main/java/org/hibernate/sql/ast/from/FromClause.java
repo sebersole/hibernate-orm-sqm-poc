@@ -14,7 +14,7 @@ import java.util.List;
  * @author Steve Ebersole
  */
 public class FromClause {
-	private final List<TableSpace> tableSpaces = new ArrayList<TableSpace>();
+	private final List<TableSpace> tableSpaces = new ArrayList<>();
 
 	public FromClause() {
 	}

@@ -13,23 +13,23 @@ import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
 import org.hibernate.persister.common.spi.AbstractAttributeImpl;
+import org.hibernate.persister.common.spi.AttributeImplementor;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.sqm.domain.Attribute;
-import org.hibernate.sqm.domain.EmbeddableType;
-import org.hibernate.sqm.domain.ManagedType;
-import org.hibernate.sqm.domain.Type;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.entity.spi.AttributeReferenceSource;
 import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
-public class EmbeddablePersister implements EmbeddableType {
+public class EmbeddablePersister implements SqmTypeImplementor, DomainReferenceImplementor, AttributeReferenceSource {
 	private final String compositeName;
 	private final String roleName;
 	private final CompositeType ormType;
 	private final Column[] allColumns;
 
-	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<String, AbstractAttributeImpl>();
+	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<>();
 
 	public EmbeddablePersister(
 			String compositeName,
@@ -74,37 +74,18 @@ public class EmbeddablePersister implements EmbeddableType {
 		return allColumns;
 	}
 
+	@Override
+	public AttributeImplementor findAttribute(String name) {
+		return attributeMap.get( name );
+	}
+
+	@Override
 	public CompositeType getOrmType() {
 		return ormType;
 	}
 
 	@Override
-	public Type getBoundType() {
-		return this;
-	}
-
-	@Override
-	public ManagedType asManagedType() {
-		return this;
-	}
-
-	@Override
-	public ManagedType getSuperType() {
-		return null;
-	}
-
-	@Override
-	public Attribute findAttribute(String name) {
-		return attributeMap.get( name );
-	}
-
-	@Override
-	public Attribute findDeclaredAttribute(String name) {
-		return findAttribute( name );
-	}
-
-	@Override
-	public String getTypeName() {
-		return roleName;
+	public String asLoggableText() {
+		return "EmdeddablePersister(" + roleName + " [" + compositeName + "])";
 	}
 }

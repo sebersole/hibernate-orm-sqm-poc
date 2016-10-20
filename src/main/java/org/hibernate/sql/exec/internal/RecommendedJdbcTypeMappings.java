@@ -18,8 +18,6 @@ import java.util.Calendar;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.hibernate.mapping.Array;
-import org.hibernate.type.proposed.spi.descriptor.java.JavaTypeDescriptor;
-import org.hibernate.type.proposed.spi.descriptor.sql.SqlTypeDescriptor;
 
 import org.jboss.logging.Logger;
 

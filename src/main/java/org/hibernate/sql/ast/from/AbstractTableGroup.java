@@ -15,7 +15,6 @@ import java.util.List;
 import org.hibernate.persister.entity.internal.IdentifierSimple;
 import org.hibernate.sql.ast.expression.AttributeReference;
 import org.hibernate.sql.ast.expression.EntityReference;
-import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.persister.common.internal.SingularAttributeBasic;
@@ -23,7 +22,7 @@ import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.common.spi.Table;
-import org.hibernate.sqm.domain.SingularAttribute;
+import org.hibernate.sql.convert.spi.NotYetImplementedException;
 
 import org.jboss.logging.Logger;
 
@@ -78,19 +77,19 @@ public abstract class AbstractTableGroup implements TableGroup {
 	}
 
 	@Override
-	public ColumnBinding[] resolveBindings(SingularAttribute attribute) {
+	public ColumnBinding[] resolveBindings(SingularAttributeImplementor attribute) {
 		final Column[] columns;
 		if ( attribute instanceof SingularAttributeBasic ) {
-			columns = ( (SingularAttributeBasic) attribute ).getColumns();
+			columns = attribute.getColumns();
 		}
 		else if ( attribute instanceof SingularAttributeEntity ) {
-			columns = ( (SingularAttributeEntity) attribute ).getColumns();
+			columns = attribute.getColumns();
 		}
 		else if ( attribute instanceof SingularAttributeEmbedded ) {
-			columns = ( (SingularAttributeEmbedded) attribute ).asManagedType().collectColumns();
+			columns = ( (SingularAttributeEmbedded) attribute ).getEmbeddablePersister().collectColumns();
 		}
 		else if ( attribute instanceof IdentifierSimple ) {
-			columns = ( (IdentifierSimple) attribute ).getColumns();
+			columns = attribute.getColumns();
 		}
 		else {
 			throw new NotYetImplementedException( "resolveBindings() : " + attribute );
@@ -106,8 +105,8 @@ public abstract class AbstractTableGroup implements TableGroup {
 	}
 
 	@Override
-	public AttributeReference resolve(SingularAttribute attribute) {
-		return new AttributeReference( (SingularAttributeImplementor) attribute, resolveBindings( attribute ) );
+	public AttributeReference resolve(SingularAttributeImplementor attribute) {
+		return new AttributeReference( attribute, resolveBindings( attribute ) );
 	}
 
 	@Override
@@ -146,7 +145,7 @@ public abstract class AbstractTableGroup implements TableGroup {
 	public void addTableSpecificationJoin(TableJoin join) {
 		log.tracef( "Adding TableSpecification join [%s] to group [%s]", join, this );
 		if ( tableJoins == null ) {
-			tableJoins = new ArrayList<TableJoin>();
+			tableJoins = new ArrayList<>();
 		}
 		tableJoins.add( join );
 	}

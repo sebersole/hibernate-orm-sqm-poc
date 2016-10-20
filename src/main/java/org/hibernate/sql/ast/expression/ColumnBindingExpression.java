@@ -8,8 +8,8 @@ package org.hibernate.sql.ast.expression;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**

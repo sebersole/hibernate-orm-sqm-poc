@@ -6,34 +6,26 @@
  */
 package org.hibernate.persister.collection.internal;
 
-import org.hibernate.persister.collection.spi.PluralAttributeIndex;
-import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
-import org.hibernate.sqm.domain.EmbeddableType;
+import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeIndexEmbeddable implements PluralAttributeIndex<CompositeType, EmbeddableType> {
-	private final EmbeddablePersister embeddablePersister;
-
-	public PluralAttributeIndexEmbeddable(EmbeddablePersister embeddablePersister) {
-		this.embeddablePersister = embeddablePersister;
+public class PluralAttributeIndexEmbeddable extends AbstractPluralAttributeIndex<CompositeType> {
+	public PluralAttributeIndexEmbeddable(ImprovedCollectionPersisterImpl persister, EmbeddablePersister embeddablePersister) {
+		super( persister, embeddablePersister.getOrmType(),embeddablePersister.collectColumns() );
 	}
 
 	@Override
-	public CompositeType getOrmType() {
-		return embeddablePersister.getOrmType();
+	public IndexClassification getClassification() {
+		return IndexClassification.EMBEDDABLE;
 	}
 
 	@Override
-	public EmbeddableType getSqmType() {
-		return (EmbeddableType) embeddablePersister.asManagedType();
-	}
-
-	@Override
-	public Column[] getColumns() {
-		return embeddablePersister.collectColumns();
+	public DomainReference getType() {
+		return this;
 	}
 }

@@ -8,16 +8,24 @@ package org.hibernate.persister.collection.internal;
 
 import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.type.EntityType;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeIndexEntity extends AbstractPluralAttributeIndex<EntityType, org.hibernate.sqm.domain.EntityType> {
-	public PluralAttributeIndexEntity(
-			EntityType ormType,
-			org.hibernate.sqm.domain.EntityType sqmType,
-			Column[] columns) {
-		super( ormType, sqmType, columns );
+public class PluralAttributeIndexEntity extends AbstractPluralAttributeIndex<EntityType> {
+	public PluralAttributeIndexEntity(ImprovedCollectionPersisterImpl persister, EntityType ormType, Column[] columns) {
+		super( persister, ormType, columns );
+	}
+
+	@Override
+	public IndexClassification getClassification() {
+		return IndexClassification.ONE_TO_MANY;
+	}
+
+	@Override
+	public DomainReference getType() {
+		return this;
 	}
 }

@@ -7,14 +7,17 @@
 package org.hibernate.persister.collection.spi;
 
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.sqm.domain.PluralAttributeReference.IndexReference;
+import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public interface PluralAttributeIndex<O extends org.hibernate.type.Type, S extends org.hibernate.sqm.domain.Type> {
+public interface PluralAttributeIndex<O extends Type> extends SqmTypeImplementor, IndexReference, DomainReferenceImplementor {
+	@Override
 	O getOrmType();
-
-	S getSqmType();
 
 	Column[] getColumns();
 }

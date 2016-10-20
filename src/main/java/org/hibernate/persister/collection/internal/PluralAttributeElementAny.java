@@ -8,39 +8,47 @@ package org.hibernate.persister.collection.internal;
 
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.sqm.domain.AnyType;
-import org.hibernate.sqm.domain.PluralAttribute;
+import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.type.AnyType;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementAny implements PluralAttributeElement<org.hibernate.type.AnyType, AnyType> {
-	private final org.hibernate.type.AnyType type;
-	private final AnyType sqmType;
+public class PluralAttributeElementAny implements PluralAttributeElement<AnyType> {
+	private final ImprovedCollectionPersisterImpl collectionPersister;
+	private final AnyType type;
 	private final Column[] columns;
 
-	public PluralAttributeElementAny(org.hibernate.type.AnyType type, AnyType sqmType, Column[] columns) {
+	public PluralAttributeElementAny(
+			ImprovedCollectionPersisterImpl collectionPersister,
+			AnyType type,
+			Column[] columns) {
+		this.collectionPersister = collectionPersister;
 		this.type = type;
-		this.sqmType = sqmType;
 		this.columns = columns;
 	}
 
 	@Override
-	public PluralAttribute.ElementClassification getElementClassification() {
-		return PluralAttribute.ElementClassification.ANY;
+	public ElementClassification getClassification() {
+		return ElementClassification.ANY;
 	}
 
 	@Override
-	public AnyType getSqmType() {
-		return sqmType;
-	}
-
-	@Override
-	public org.hibernate.type.AnyType getOrmType() {
+	public AnyType getOrmType() {
 		return type;
 	}
 
 	public Column[] getColumns() {
 		return columns;
+	}
+
+	@Override
+	public String asLoggableText() {
+		return "PluralAttributeElement(" + collectionPersister.getPersister().getRole() + " [" + getOrmType().getName() + "])" ;
+	}
+
+	@Override
+	public DomainReference getType() {
+		return this;
 	}
 }

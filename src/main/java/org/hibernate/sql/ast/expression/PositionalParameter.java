@@ -10,10 +10,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.hibernate.QueryException;
-import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
@@ -40,8 +40,8 @@ public class PositionalParameter extends AbstractParameter {
 			PreparedStatement statement,
 			int startPosition,
 			QueryParameterBindings queryParameterBindings,
-			SessionImplementor session) throws SQLException {
-		final QueryParameterBinding binding = queryParameterBindings.getPositionalParameterBinding( position );
+			SharedSessionContractImplementor session) throws SQLException {
+		final QueryParameterBinding binding = queryParameterBindings.getBinding( position );
 		return bindParameterValue(  statement, startPosition, binding, session );
 	}
 

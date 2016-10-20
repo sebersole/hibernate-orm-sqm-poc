@@ -69,7 +69,7 @@ public class TableSpace {
 	public void addJoinedTableGroup(TableGroupJoin join) {
 		log.tracef( "Adding TableSpecificationGroup join [%s] to space [%s]", join, this );
 		if ( joinedTableGroups == null ) {
-			joinedTableGroups = new ArrayList<TableGroupJoin>();
+			joinedTableGroups = new ArrayList<>();
 		}
 		joinedTableGroups.add( join );
 	}

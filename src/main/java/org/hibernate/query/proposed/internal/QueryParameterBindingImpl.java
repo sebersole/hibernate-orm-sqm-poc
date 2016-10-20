@@ -6,25 +6,44 @@
  */
 package org.hibernate.query.proposed.internal;
 
+import java.util.Collection;
 import javax.persistence.TemporalType;
 
+import org.hibernate.query.proposed.QueryParameter;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
-import org.hibernate.sql.gen.NotYetImplementedException;
+import org.hibernate.query.proposed.spi.QueryParameterBindingTypeResolver;
 import org.hibernate.type.Type;
 
 /**
+ * The standard Hibernate QueryParameterBinding implementation
+ *
  * @author Steve Ebersole
  */
-public class QueryParameterBindingImpl implements QueryParameterBinding {
-	private Type bindType;
-	private Object bindValue;
+public class QueryParameterBindingImpl<T> implements QueryParameterBinding<T> {
+	private final QueryParameter<T> queryParameter;
+	private final QueryParameterBindingTypeResolver typeResolver;
 
-	public QueryParameterBindingImpl() {
+	private boolean isBound;
+	private boolean isMultiValued;
+
+	private Type bindType;
+
+	private T bindValue;
+	private Collection<T> bindValues;
+
+	public QueryParameterBindingImpl(
+			QueryParameter<T> queryParameter,
+			QueryParameterBindingTypeResolver typeResolver) {
+		this( queryParameter.getHibernateType(), queryParameter, typeResolver );
 	}
 
-	@Override
-	public Object getBindValue() {
-		return bindValue;
+	public QueryParameterBindingImpl(
+			Type bindType,
+			QueryParameter<T> queryParameter,
+			QueryParameterBindingTypeResolver typeResolver) {
+		this.bindType = bindType;
+		this.queryParameter = queryParameter;
+		this.typeResolver = typeResolver;
 	}
 
 	@Override
@@ -33,21 +52,99 @@ public class QueryParameterBindingImpl implements QueryParameterBinding {
 	}
 
 	@Override
-	public void setBindValue(Object value) {
-		if ( value == null ) {
-			throw new IllegalArgumentException( "Cannot bind null to query parameter" );
+	public boolean allowsMultiValued() {
+		return queryParameter.allowsMultiValuedBinding();
+	}
+
+	@Override
+	public boolean isBound() {
+		return isBound;
+	}
+
+	@Override
+	public boolean isMultiValued() {
+		return isMultiValued;
+	}
+
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// single-valued binding support
+
+	@Override
+	public T getBindValue() {
+		if ( isMultiValued ) {
+			throw new IllegalStateException( "Binding is multi-valued; illegal call to #getBindValue" );
 		}
+
+		return bindValue;
+	}
+
+	@Override
+	public void setBindValue(T value) {
+		this.isBound = true;
+		this.isMultiValued = false;
+
 		this.bindValue = value;
+		this.bindValues = null;
+
+		if ( bindType == null ) {
+			this.bindType = typeResolver.resolveParameterBindType( value );
+		}
 	}
 
 	@Override
-	public void setBindValue(Object value, Type clarifiedType) {
+	public void setBindValue(T value, Type clarifiedType) {
 		setBindValue( value );
-		this.bindType = clarifiedType;
+		if ( clarifiedType != null ) {
+			this.bindType = clarifiedType;
+		}
 	}
 
 	@Override
-	public void setBindValue(Object value, TemporalType clarifiedTemporalType) {
-		throw new NotYetImplementedException( "swapping types based on TemporalType not yet implemented" );
+	public void setBindValue(T value, TemporalType clarifiedTemporalType) {
+		setBindValue( value );
+		this.bindType = BindingTypeHelper.INSTANCE.determineTypeForTemporalType( clarifiedTemporalType, bindType, value );
+	}
+
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// multi-valued binding support
+
+	@Override
+	public Collection<T> getBindValues() {
+		if ( !isMultiValued ) {
+			throw new IllegalStateException( "Binding is not multi-valued; illegal call to #getBindValues" );
+		}
+
+		return bindValues;
+	}
+
+	@Override
+	public void setBindValues(Collection<T> values) {
+		this.isBound = true;
+		this.isMultiValued = true;
+
+		this.bindValue = null;
+		this.bindValues = values;
+
+		if ( bindType == null && !values.isEmpty() ) {
+			this.bindType = typeResolver.resolveParameterBindType( values.iterator().next() );
+		}
+
+	}
+
+	@Override
+	public void setBindValues(Collection<T> values, Type clarifiedType) {
+		setBindValues( values );
+		if ( clarifiedType != null ) {
+			this.bindType = clarifiedType;
+		}
+	}
+
+	@Override
+	public void setBindValues(Collection<T> values, TemporalType clarifiedTemporalType) {
+		setBindValues( values );
+		final Object exampleValue = values.isEmpty() ? null : values.iterator().next();
+		this.bindType = BindingTypeHelper.INSTANCE.determineTypeForTemporalType( clarifiedTemporalType, bindType, exampleValue );
 	}
 }

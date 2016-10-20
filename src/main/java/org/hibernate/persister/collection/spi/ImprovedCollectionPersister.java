@@ -9,28 +9,33 @@ package org.hibernate.persister.collection.spi;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
+import org.hibernate.persister.common.spi.SqmTypeImplementor;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.sql.gen.internal.FromClauseIndex;
-import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sqm.domain.PluralAttribute;
-import org.hibernate.sqm.query.from.JoinedFromElement;
+import org.hibernate.sql.convert.internal.FromClauseIndex;
+import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
+import org.hibernate.sqm.domain.PluralAttributeReference;
+import org.hibernate.sqm.query.from.SqmAttributeJoin;
 
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedCollectionPersister extends PluralAttribute {
+public interface ImprovedCollectionPersister extends PluralAttributeReference, SqmTypeImplementor {
 	CollectionPersister getPersister();
 
 	void finishInitialization(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel);
 
 	PluralAttributeKey getForeignKeyDescriptor();
 	PluralAttributeId getIdDescriptor();
-	PluralAttributeIndex getIndexDescriptor();
-	PluralAttributeElement getElementDescriptor();
+
+	@Override
+	PluralAttributeElement getElementReference();
+
+	@Override
+	PluralAttributeIndex getIndexReference();
 
 	CollectionTableGroup buildTableGroup(
-			JoinedFromElement joinedFromElement,
+			SqmAttributeJoin joinedFromElement,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex);

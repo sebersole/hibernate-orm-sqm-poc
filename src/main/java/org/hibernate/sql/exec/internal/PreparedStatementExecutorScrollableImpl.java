@@ -12,13 +12,13 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.ScrollableResults;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
+import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.convert.spi.Return;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
-import org.hibernate.sql.exec.spi.QueryOptions;
 import org.hibernate.sql.exec.spi.RowTransformer;
-import org.hibernate.sql.gen.NotYetImplementedException;
-import org.hibernate.sql.gen.Return;
 
 /**
  * PreparedStatement execution for building {@link ScrollableResults}, which:<ol>
@@ -40,7 +40,7 @@ public class PreparedStatementExecutorScrollableImpl<T> implements PreparedState
 			QueryOptions queryOptions,
 			List<Return> returns,
 			RowTransformer<T> rowTransformer,
-			SessionImplementor session) throws SQLException {
+			SharedSessionContractImplementor session) throws SQLException {
 		final LogicalConnectionImplementor logicalConnection = session.getJdbcCoordinator().getLogicalConnection();
 
 		// Execute the query

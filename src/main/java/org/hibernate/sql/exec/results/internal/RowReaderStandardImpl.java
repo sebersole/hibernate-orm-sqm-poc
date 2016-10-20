@@ -7,17 +7,16 @@
 package org.hibernate.sql.exec.results.internal;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.loader.spi.AfterLoadAction;
+import org.hibernate.sql.convert.spi.Return;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingState;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.spi.RowReader;
 import org.hibernate.sql.exec.spi.RowTransformer;
-import org.hibernate.sql.gen.Return;
 
 /**
  * @author Steve Ebersole

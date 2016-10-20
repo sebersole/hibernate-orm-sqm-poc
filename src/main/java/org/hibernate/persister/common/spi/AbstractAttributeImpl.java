@@ -6,7 +6,7 @@
  */
 package org.hibernate.persister.common.spi;
 
-import org.hibernate.sqm.domain.ManagedType;
+import org.hibernate.sqm.domain.DomainReference;
 
 /**
  * Base class for Attribute implementations
@@ -14,21 +14,22 @@ import org.hibernate.sqm.domain.ManagedType;
  * @author Steve Ebersole
  */
 public abstract class AbstractAttributeImpl implements AttributeImplementor {
-	private final ManagedType declaringType;
+	private final DomainReference declaringType;
 	private final String name;
 
-	public AbstractAttributeImpl(ManagedType declaringType, String name) {
+	public AbstractAttributeImpl(DomainReferenceImplementor declaringType, String name) {
 		this.declaringType = declaringType;
 		this.name = name;
 	}
 
 	@Override
-	public ManagedType getDeclaringType() {
+	public DomainReference getLeftHandSide() {
 		return declaringType;
 	}
 
 	@Override
-	public String getName() {
+	public String getAttributeName() {
 		return name;
 	}
+
 }

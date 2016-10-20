@@ -7,8 +7,8 @@
 package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.type.Type;
 
 /**

@@ -9,6 +9,7 @@ package org.hibernate.sql.gen;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Tuple;
@@ -19,11 +20,14 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.persister.common.internal.PersisterFactoryImpl;
 import org.hibernate.persister.internal.PersisterFactoryInitiator;
-import org.hibernate.query.proposed.internal.QueryProposedImpl;
-import org.hibernate.query.proposed.internal.ConsumerContextImpl;
+import org.hibernate.query.proposed.internal.sqm.QuerySqmImpl;
+import org.hibernate.sql.ConsumerContextImpl;
+import org.hibernate.sql.ExecutionContextTestImpl;
+import org.hibernate.sql.QueryProducerTestImpl;
+import org.hibernate.sqm.SemanticQueryInterpreter;
 
 import org.junit.After;
 import org.junit.Before;
@@ -89,141 +93,174 @@ public class FullStackTest {
 
 	@Test
 	public void testFullStack() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+			session -> {
+				final QuerySqmImpl query = generateQueryImpl(
+						session,
+						"select p.name from Person p where p.age >= 20 and p.age <= ?1",
+						null
+				);
 
-		QueryProposedImpl query = new QueryProposedImpl(
-				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
-				(SessionImplementor) session,
-				consumerContext
+				query.setParameter( 1, 39 );
+				final List results = query.list();
+
+				assertThat( results.size(), is( 1 ) );
+				assertThat( results.get( 0 ), instanceOf( Object[].class ) );
+				Object[] row = (Object[]) results.get( 0 );
+				assertThat( row.length, is( 1 ) );
+				assertThat( row[0], instanceOf( String.class ) );
+				assertThat( row[0], is("Steve") );
+			}
 		);
+	}
 
-		query.setParameter( 1, 39 );
-		final List results = query.list();
+	private void doInSession(Consumer<SharedSessionContractImplementor> work) {
+		final SharedSessionContractImplementor session = (SharedSessionContractImplementor) sessionFactory.openSession();
 
-		assertThat( results.size(), is( 1 ) );
-		assertThat( results.get( 0 ), instanceOf( Object[].class ) );
-		Object[] row = (Object[]) results.get( 0 );
-		assertThat( row.length, is( 1 ) );
-		assertThat( row[0], instanceOf( String.class ) );
-		assertThat( (String)row[0], is("Steve") );
+		try {
+			work.accept( session );
+		}
+		finally {
+			session.close();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> QuerySqmImpl<T> generateQueryImpl(SharedSessionContractImplementor session, String qryStr, Class<T> resultType) {
+		return new QuerySqmImpl(
+				qryStr,
+				SemanticQueryInterpreter.interpret( qryStr, consumerContext ),
+				resultType,
+				session,
+				new QueryProducerTestImpl( session ),
+				new ExecutionContextTestImpl( session )
+		);
 	}
 
 	@Test
 	public void testFullStackTyped() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+				session -> {
+					final QuerySqmImpl<String> query = generateQueryImpl(
+							session,
+							"select p.name from Person p where p.age >= 20 and p.age <= ?1",
+							String.class
+					);
 
-		QueryProposedImpl<String> query = new QueryProposedImpl<String>(
-				"select p.name from Person p where p.age >= 20 and p.age <= ?1",
-				String.class,
-				(SessionImplementor) session,
-				consumerContext
+					query.setParameter( 1, 39 );
+					final List results = query.list();
+
+					assertThat( results.size(), is( 1 ) );
+					assertThat( results.get( 0 ), instanceOf( String.class ) );
+					String name = (String) results.get( 0 );
+					assertThat( name, is("Steve") );
+				}
 		);
-
-		query.setParameter( 1, 39 );
-		final List results = query.list();
-
-		assertThat( results.size(), is( 1 ) );
-		assertThat( results.get( 0 ), instanceOf( String.class ) );
-		String name = (String) results.get( 0 );
-		assertThat( name, is("Steve") );
 	}
 
 	@Test
 	public void testFullStackTupleTyped() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+				session -> {
+					final QuerySqmImpl<Tuple> query = generateQueryImpl(
+							session,
+							"select p.name as name from Person p where p.age >= 20 and p.age <= ?1",
+							Tuple.class
+					);
 
-		QueryProposedImpl<Tuple> query = new QueryProposedImpl<Tuple>(
-				"select p.name as name from Person p where p.age >= 20 and p.age <= ?1",
-				Tuple.class,
-				(SessionImplementor) session,
-				consumerContext
+					query.setParameter( 1, 39 );
+					final List<Tuple> results = query.list();
+					assertThat( results.size(), is( 1 ) );
+					Tuple tuple = results.get( 0 );
+					assertThat( (String) tuple.get( "name" ), is("Steve") );
+				}
 		);
-
-		query.setParameter( 1, 39 );
-		final List<Tuple> results = query.list();
-		assertThat( results.size(), is( 1 ) );
-		Tuple tuple = results.get( 0 );
-		assertThat( (String) tuple.get( "name" ), is("Steve") );
 	}
 
 	@Test
 	public void testFullStackDynamicInstantiation() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+				session -> {
+					final QuerySqmImpl<Person> query = generateQueryImpl(
+							session,
+							"select new Person( p.id, p.name, p.age ) from Person p where p.age >= 20 and p.age <= ?1",
+							Person.class
+					);
 
-		QueryProposedImpl<Person> query = new QueryProposedImpl<Person>(
-				"select new Person( p.id, p.name, p.age ) from Person p where p.age >= 20 and p.age <= ?1",
-				Person.class,
-				(SessionImplementor) session,
-				consumerContext
+					query.setParameter( 1, 39 );
+					final List<Person> results = query.list();
+					assertThat( results.size(), is( 1 ) );
+					Person person = results.get( 0 );
+					assertThat( person.name, is("Steve") );
+					assertThat( person.id, is(1) );
+					assertThat( person.age, is(20) );
+				}
 		);
-
-		query.setParameter( 1, 39 );
-		final List<Person> results = query.list();
-		assertThat( results.size(), is( 1 ) );
-		Person person = results.get( 0 );
-		assertThat( person.name, is("Steve") );
-		assertThat( person.id, is(1) );
-		assertThat( person.age, is(20) );
 	}
 
 	@Test
 	public void testFullStackDynamicInstantiationInjection() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+				session -> {
+					final QuerySqmImpl<Person> query = generateQueryImpl(
+							session,
+							"select new Person( p.name as name, p.age as age ) from Person p where p.age >= 20 and p.age <= ?1",
+							Person.class
+					);
 
-		QueryProposedImpl<Person> query = new QueryProposedImpl<Person>(
-				"select new Person( p.name as name, p.age as age ) from Person p where p.age >= 20 and p.age <= ?1",
-				Person.class,
-				(SessionImplementor) session,
-				consumerContext
+					query.setParameter( 1, 39 );
+					final List<Person> results = query.list();
+					assertThat( results.size(), is( 1 ) );
+					Person person = results.get( 0 );
+					assertThat( person.id, is(nullValue()) );
+					assertThat( person.name, is("Steve") );
+					assertThat( person.age, is(20) );
+				}
 		);
-
-		query.setParameter( 1, 39 );
-		final List<Person> results = query.list();
-		assertThat( results.size(), is( 1 ) );
-		Person person = results.get( 0 );
-		assertThat( person.id, is(nullValue()) );
-		assertThat( person.name, is("Steve") );
-		assertThat( person.age, is(20) );
 	}
 
 	@Test
 	public void testFullStackDynamicInstantiationList() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+				session -> {
+					final QuerySqmImpl<List> query = generateQueryImpl(
+							session,
+							"select new list(p.name, p.age) from Person p where p.age >= 20 and p.age <= ?1",
+							List.class
+					);
 
-		QueryProposedImpl<List> query = new QueryProposedImpl<List>(
-				"select new list(p.name, p.age) from Person p where p.age >= 20 and p.age <= ?1",
-				List.class,
-				(SessionImplementor) session,
-				consumerContext
+					query.setParameter( 1, 39 );
+
+					final List<List> results = query.list();
+					assertThat( results.size(), is( 1 ) );
+					List tuples = results.get( 0 );
+					assertThat( tuples.size(), is(2) );
+					assertThat( tuples.get(0), CoreMatchers.is( "Steve") );
+					assertThat( tuples.get(1), CoreMatchers.is( 20) );
+				}
 		);
-
-		query.setParameter( 1, 39 );
-		final List<List> results = query.list();
-		assertThat( results.size(), is( 1 ) );
-		List tuples = results.get( 0 );
-		assertThat( tuples.size(), is(2) );
-		assertThat( tuples.get(0), CoreMatchers.<Object>is("Steve") );
-		assertThat( tuples.get(1), CoreMatchers.<Object>is(20) );
 	}
 
 	@Test
 	public void testFullStackDynamicInstantiationMap() throws SQLException {
-		final Session session = sessionFactory.openSession();
+		doInSession(
+				session -> {
+					final QuerySqmImpl<Map> query = generateQueryImpl(
+							session,
+							"select new map(p.name as name, p.age as age) from Person p where p.age >= 20 and p.age <= ?1",
+							Map.class
+					);
 
-		QueryProposedImpl<Map> query = new QueryProposedImpl<Map>(
-				"select new map(p.name as name, p.age as age) from Person p where p.age >= 20 and p.age <= ?1",
-				Map.class,
-				(SessionImplementor) session,
-				consumerContext
+					query.setParameter( 1, 39 );
+
+					final List<Map> results = query.list();
+					assertThat( results.size(), is( 1 ) );
+					Map tuples = results.get( 0 );
+					assertThat( tuples.size(), is(2) );
+					assertThat( tuples.get("name"), CoreMatchers.is( "Steve") );
+					assertThat( tuples.get("age"), CoreMatchers.is( 20) );
+				}
 		);
-
-		query.setParameter( 1, 39 );
-		final List<Map> results = query.list();
-		assertThat( results.size(), is( 1 ) );
-		Map tuples = results.get( 0 );
-		assertThat( tuples.size(), is(2) );
-		assertThat( tuples.get("name"), CoreMatchers.<Object>is("Steve") );
-		assertThat( tuples.get("age"), CoreMatchers.<Object>is(20) );
 	}
 
 	@Entity(name="Person")

@@ -13,17 +13,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
+import org.hibernate.sql.convert.spi.Return;
 import org.hibernate.sql.exec.results.internal.ResultSetProcessingStateStandardImpl;
 import org.hibernate.sql.exec.results.internal.RowReaderStandardImpl;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingState;
 import org.hibernate.sql.exec.results.spi.RowReader;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
-import org.hibernate.sql.exec.spi.QueryOptions;
 import org.hibernate.sql.exec.spi.RowTransformer;
-import org.hibernate.sql.gen.Return;
 
 /**
  * Normal PreparedStatement execution which:<ol>
@@ -70,7 +70,7 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 			QueryOptions queryOptions,
 			List<Return> returns,
 			RowTransformer<T> rowTransformer,
-			SessionImplementor session) throws SQLException {
+			SharedSessionContractImplementor session) throws SQLException {
 		final LogicalConnectionImplementor logicalConnection = session.getJdbcCoordinator().getLogicalConnection();
 
 		// Execute the query

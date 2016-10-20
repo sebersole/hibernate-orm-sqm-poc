@@ -6,85 +6,57 @@
  */
 package org.hibernate.query.proposed.spi;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.hibernate.Incubating;
 import org.hibernate.query.proposed.QueryParameter;
-import org.hibernate.query.proposed.UnknownParameterException;
-import org.hibernate.query.proposed.NamedQueryParameter;
-import org.hibernate.query.proposed.PositionalQueryParameter;
-import org.hibernate.query.proposed.internal.QueryParameterBindingImpl;
 
 /**
- * Manages the group of QueryParameterBinding for a particular query.
+ * Manages all the parameter bindings for a particular query.
  *
  * @author Steve Ebersole
  */
 @Incubating
-public class QueryParameterBindings {
-	private Map<QueryParameter, QueryParameterBinding> parameterBindingMap;
+public interface QueryParameterBindings {
+	/**
+	 * Has binding been done for the given parameter.  Handles
+	 * cases where we do not (yet) have a binding object as well
+	 * by simply returning false.
+	 *
+	 * @param parameter The parameter to check for a binding
+	 *
+	 * @return {@code true} if its value has been bound; {@code false}
+	 * otherwise.
+	 */
+	boolean isBound(QueryParameter parameter);
 
-	public QueryParameterBindings() {
-		this( Collections.<QueryParameter>emptySet() );
-	}
+	/**
+	 * Access to the binding via QueryParameter reference
+	 *
+	 * @param parameter The QueryParameter reference
+	 *
+	 * @return The binding, or {@code null} if not yet bound
+	 */
+	<T> QueryParameterBinding<T> getBinding(QueryParameter<T> parameter);
 
-	public QueryParameterBindings(Set<QueryParameter> queryParameters) {
-		if ( queryParameters == null || queryParameters.isEmpty() ) {
-			parameterBindingMap = Collections.emptyMap();
-		}
-		else {
-			parameterBindingMap = new HashMap<QueryParameter, QueryParameterBinding>();
+	/**
+	 * Access to the binding via name
+	 *
+	 * @param name The parameter name
+	 *
+	 * @return The binding, or {@code null} if not yet bound
+	 */
+	<T> QueryParameterBinding<T> getBinding(String name);
 
-			for ( QueryParameter queryParameter : queryParameters ) {
-				parameterBindingMap.put( queryParameter, new QueryParameterBindingImpl() );
-			}
-		}
-	}
+	/**
+	 * Access to the binding via position
+	 *
+	 * @param position The parameter position
+	 *
+	 * @return The binding, or {@code null} if not yet bound
+	 */
+	<T> QueryParameterBinding getBinding(int position);
 
-	public QueryParameterBinding getBinding(QueryParameter parameter) {
-		return parameterBindingMap.get( parameter );
-	}
-
-	public QueryParameterBinding getNamedParameterBinding(String name) {
-		for ( Map.Entry<QueryParameter, QueryParameterBinding> entry : parameterBindingMap.entrySet() ) {
-			if ( entry.getKey() instanceof NamedQueryParameter ) {
-				if ( name.equals( ( (NamedQueryParameter) entry.getKey() ).getName() ) ) {
-					return entry.getValue();
-				}
-			}
-		}
-
-		throw new UnknownParameterException( "Unknown named parameter : " + name );
-	}
-
-	public QueryParameterBinding getPositionalParameterBinding(Integer position) {
-		for ( Map.Entry<QueryParameter, QueryParameterBinding> entry : parameterBindingMap.entrySet() ) {
-			if ( entry.getKey() instanceof PositionalQueryParameter ) {
-				if ( position.equals( ( (PositionalQueryParameter) entry.getKey() ).getPosition() ) ) {
-					return entry.getValue();
-				}
-			}
-		}
-
-		throw new UnknownParameterException( "Unknown positional parameter : " + position );
-	}
-
-	public QueryParameterBinding getParameterBinding(QueryParameter parameter) {
-		// see if this exact instance is known as a key
-		if ( parameterBindingMap.containsKey( parameter ) ) {
-			return parameterBindingMap.get( parameter );
-		}
-
-		if ( parameter instanceof NamedQueryParameter ) {
-			return getNamedParameterBinding( ( (NamedQueryParameter) parameter ).getName() );
-		}
-		if ( parameter instanceof PositionalQueryParameter ) {
-			return getPositionalParameterBinding( ( (PositionalQueryParameter) parameter ).getPosition() );
-		}
-
-		throw new UnknownParameterException( "Could not resolve  parameter [" + parameter + "] as part of query" );
-	}
+	/**
+	 * Validate the bindings.  Called just before execution
+	 */
+	void validate();
 }

@@ -19,10 +19,10 @@ import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;
+import org.hibernate.sql.convert.internal.FromClauseIndex;
+import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sql.gen.BaseUnitTest;
-import org.hibernate.sql.gen.internal.FromClauseIndex;
-import org.hibernate.sql.gen.internal.SqlAliasBaseManager;
-import org.hibernate.sqm.query.SelectStatement;
+import org.hibernate.sqm.query.SqmSelectStatement;
 
 import org.junit.Test;
 
@@ -40,10 +40,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 	@Test
 	public void testSingleSpace() {
-		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableWithSecondaryTableEntity" );
+		SqmSelectStatement sqm = (SqmSelectStatement) interpret( "from SingleTableWithSecondaryTableEntity" );
 
 		final ImprovedEntityPersister improvedEntityPersister =
-				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableWithSecondaryTableEntity" );
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityReference( "SingleTableWithSecondaryTableEntity" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( SingleTableEntityPersister.class ) );
 
 		// interpreter set up
@@ -78,10 +78,10 @@ public class SingleTableEntityWithSecondaryTableTest extends BaseUnitTest {
 	}
 	@Test
 	public void testTwoSpaces() {
-		SelectStatement sqm = (SelectStatement) interpret( "from SingleTableWithSecondaryTableEntity, SingleTableWithSecondaryTableEntity" );
+		SqmSelectStatement sqm = (SqmSelectStatement) interpret( "from SingleTableWithSecondaryTableEntity, SingleTableWithSecondaryTableEntity" );
 
 		final ImprovedEntityPersister improvedEntityPersister =
-				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityType( "SingleTableWithSecondaryTableEntity" );
+				(ImprovedEntityPersister) getConsumerContext().getDomainMetamodel().resolveEntityReference( "SingleTableWithSecondaryTableEntity" );
 		assertThat( improvedEntityPersister.getEntityPersister(), instanceOf( SingleTableEntityPersister.class ) );
 
 		assertThat( sqm.getQuerySpec().getFromClause().getFromElementSpaces().size(), equalTo( 2 ) );

@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 

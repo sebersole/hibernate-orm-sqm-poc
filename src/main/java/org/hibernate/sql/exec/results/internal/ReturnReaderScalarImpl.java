@@ -12,15 +12,15 @@ import java.sql.Types;
 
 import org.hibernate.EntityMode;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.Type;
-import org.hibernate.type.proposed.spi.descriptor.java.JavaTypeDescriptor;
-import org.hibernate.type.proposed.spi.descriptor.java.JavaTypeDescriptorRegistry;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
 
 /**
  * @author Steve Ebersole
@@ -61,7 +61,7 @@ public class ReturnReaderScalarImpl implements ReturnReader {
 		// for now we assume basic types with no attribute conversion etc.
 		// a more correct implementation requires the "positional read" changes to Type.
 
-		final SessionImplementor session = processingState.getResultSetProcessingState().getSession();
+		final SharedSessionContractImplementor session = processingState.getResultSetProcessingState().getSession();
 		final ResultSet resultSet = processingState.getResultSetProcessingState().getResultSet();
 
 		final int columnSpan = returnType.getColumnSpan( session.getFactory() );

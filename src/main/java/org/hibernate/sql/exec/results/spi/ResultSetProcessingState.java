@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.spi;
 
 import java.sql.ResultSet;
 
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 
 /**
  * Provides a context for processing a ResultSet.  Holds in-flight state
@@ -27,7 +27,7 @@ import org.hibernate.engine.spi.SessionImplementor;
  */
 public interface ResultSetProcessingState {
 	ResultSet getResultSet();
-	SessionImplementor getSession();
+	SharedSessionContractImplementor getSession();
 
 	RowProcessingState getCurrentRowProcessingState();
 

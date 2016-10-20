@@ -6,13 +6,11 @@
  */
 package org.hibernate.persister.common.spi;
 
-import org.hibernate.sqm.domain.SingularAttribute;
-import org.hibernate.type.Type;
+import org.hibernate.sqm.domain.SingularAttributeReference;
 
 /**
  * @author Steve Ebersole
  */
-public interface SingularAttributeImplementor extends SingularAttribute {
-	Type getOrmType();
+public interface SingularAttributeImplementor extends SingularAttributeReference, SqmTypeImplementor {
 	Column[] getColumns();
 }

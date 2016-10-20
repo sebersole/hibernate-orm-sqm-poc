@@ -15,19 +15,19 @@ import java.util.Set;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.common.spi.AbstractAttributeImpl;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
-import org.hibernate.sql.gen.NotYetImplementedException;
-import org.hibernate.persister.embeddable.EmbeddablePersister;
-import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
-import org.hibernate.sqm.domain.ManagedType;
-import org.hibernate.sqm.domain.PluralAttribute;
-import org.hibernate.sqm.domain.PluralAttribute.CollectionClassification;
-import org.hibernate.sqm.domain.SingularAttribute;
+import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sqm.domain.PluralAttributeReference.CollectionClassification;
+import org.hibernate.sqm.domain.PluralAttributeReference.ElementReference.ElementClassification;
+import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
 import org.hibernate.type.ArrayType;
 import org.hibernate.type.BagType;
 import org.hibernate.type.BasicType;
@@ -183,7 +183,7 @@ public class Helper {
 	public AbstractAttributeImpl buildAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			ManagedType source,
+			DomainReferenceImplementor source,
 			String propertyName,
 			Type propertyType,
 			Column[] columns) {
@@ -212,34 +212,32 @@ public class Helper {
 	public AbstractAttributeImpl buildSingularAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			ManagedType source,
+			DomainReferenceImplementor source,
 			String attributeName,
-			org.hibernate.type.Type attributeType,
+			Type attributeType,
 			Column[] columns) {
-		final SingularAttribute.Classification classification = interpretSingularAttributeClassification( attributeType );
-		final org.hibernate.sqm.domain.Type type;
-		if ( classification == SingularAttribute.Classification.ANY ) {
+		final SingularAttributeClassification classification = interpretSingularAttributeClassification( attributeType );
+		if ( classification == SingularAttributeClassification.ANY ) {
 			throw new NotYetImplementedException();
 		}
-		else if ( classification == SingularAttribute.Classification.EMBEDDED ) {
+		else if ( classification == SingularAttributeClassification.EMBEDDED ) {
 			return new SingularAttributeEmbedded(
 					source,
 					attributeName,
 					buildEmbeddablePersister(
 							databaseModel,
 							domainMetamodel,
-							source.getTypeName() + '.' + attributeName,
+							source.asLoggableText() + '.' + attributeName,
 							(CompositeType) attributeType,
 							columns
 					)
 			);
 		}
-		else if ( classification == SingularAttribute.Classification.BASIC ) {
+		else if ( classification == SingularAttributeClassification.BASIC ) {
 			return new SingularAttributeBasic(
 					source,
 					attributeName,
 					(org.hibernate.type.BasicType) attributeType,
-					domainMetamodel.toSqmType( (org.hibernate.type.BasicType) attributeType ),
 					columns
 			);
 		}
@@ -259,7 +257,6 @@ public class Helper {
 					attributeName,
 					classification,
 					ormEntityType,
-					domainMetamodel.toSqmType( ormEntityType ),
 					columns
 			);
 		}
@@ -289,12 +286,12 @@ public class Helper {
 	public AbstractAttributeImpl buildPluralAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			ManagedType source,
+			DomainReferenceImplementor source,
 			String subclassPropertyName,
 			org.hibernate.type.Type attributeType,
 			Column[] columns) {
 		final CollectionType collectionType = (CollectionType) attributeType;
-		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getCollectionPersister( collectionType.getRole() );
+		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getMetamodel().collectionPersister( collectionType.getRole() );
 
 		final ImprovedCollectionPersisterImpl persister = new ImprovedCollectionPersisterImpl(
 				source,
@@ -309,7 +306,7 @@ public class Helper {
 
 	public static interface CollectionMetadata {
 		CollectionClassification getCollectionClassification();
-		PluralAttribute.ElementClassification getElementClassification();
+		ElementClassification getElementClassification();
 
 		Type getForeignKeyType();
 		BasicType getCollectionIdType();
@@ -319,7 +316,7 @@ public class Helper {
 
 	public static class CollectionMetadataImpl implements CollectionMetadata {
 		private final CollectionClassification collectionClassification;
-		private final PluralAttribute.ElementClassification elementClassification;
+		private final ElementClassification elementClassification;
 		private final Type foreignKeyType;
 		private final BasicType collectionIdType;
 		private final Type elementType;
@@ -327,7 +324,7 @@ public class Helper {
 
 		public CollectionMetadataImpl(
 				CollectionClassification collectionClassification,
-				PluralAttribute.ElementClassification elementClassification,
+				ElementClassification elementClassification,
 				Type foreignKeyType,
 				BasicType collectionIdType,
 				Type elementType,
@@ -346,7 +343,7 @@ public class Helper {
 		}
 
 		@Override
-		public PluralAttribute.ElementClassification getElementClassification() {
+		public ElementClassification getElementClassification() {
 			return elementClassification;
 		}
 
@@ -372,7 +369,7 @@ public class Helper {
 	}
 
 	public static CollectionMetadata interpretCollectionMetadata(SessionFactoryImplementor factory, CollectionType collectionType) {
-		final CollectionPersister collectionPersister = factory.getCollectionPersister( collectionType.getRole() );
+		final CollectionPersister collectionPersister = factory.getMetamodel().collectionPersister( collectionType.getRole() );
 
 		return new CollectionMetadataImpl(
 				interpretCollectionClassification( collectionType ),
@@ -419,51 +416,51 @@ public class Helper {
 		}
 	}
 
-	private static PluralAttribute.ElementClassification interpretElementClassification(CollectionPersister collectionPersister) {
+	private static ElementClassification interpretElementClassification(CollectionPersister collectionPersister) {
 		final Type elementType = collectionPersister.getElementType();
 
 		if ( elementType.isAnyType() ) {
-			return PluralAttribute.ElementClassification.ANY;
+			return ElementClassification.ANY;
 		}
 		else if ( elementType.isComponentType() ) {
-			return PluralAttribute.ElementClassification.EMBEDDABLE;
+			return ElementClassification.EMBEDDABLE;
 		}
 		else if ( elementType.isEntityType() ) {
 			if ( collectionPersister.isManyToMany() ) {
-				return PluralAttribute.ElementClassification.MANY_TO_MANY;
+				return ElementClassification.MANY_TO_MANY;
 			}
 			else {
-				return PluralAttribute.ElementClassification.ONE_TO_MANY;
+				return ElementClassification.ONE_TO_MANY;
 			}
 		}
 		else {
-			return PluralAttribute.ElementClassification.BASIC;
+			return ElementClassification.BASIC;
 		}
 	}
 
-	public static SingularAttribute.Classification interpretSingularAttributeClassification(Type attributeType) {
+	public static SingularAttributeClassification interpretSingularAttributeClassification(Type attributeType) {
 		assert !attributeType.isCollectionType();
 
 		if ( attributeType.isAnyType() ) {
-			return SingularAttribute.Classification.ANY;
+			return SingularAttributeClassification.ANY;
 		}
 		else if ( attributeType.isEntityType() ) {
 			final org.hibernate.type.EntityType ormEntityType = (org.hibernate.type.EntityType) attributeType;
 			return ormEntityType.isOneToOne() || ormEntityType.isLogicalOneToOne()
-					? SingularAttribute.Classification.ONE_TO_ONE
-					: SingularAttribute.Classification.MANY_TO_ONE;
+					? SingularAttributeClassification.ONE_TO_ONE
+					: SingularAttributeClassification.MANY_TO_ONE;
 		}
 		else if ( attributeType.isComponentType() ) {
-			return SingularAttribute.Classification.EMBEDDED;
+			return SingularAttributeClassification.EMBEDDED;
 		}
 		else {
-			return SingularAttribute.Classification.BASIC;
+			return SingularAttributeClassification.BASIC;
 		}
 	}
 
-	public static SingularAttribute.Classification interpretIdentifierClassification(Type ormIdType) {
+	public static SingularAttributeClassification interpretIdentifierClassification(Type ormIdType) {
 		return ormIdType instanceof CompositeType
-				? SingularAttribute.Classification.EMBEDDED
-				: SingularAttribute.Classification.BASIC;
+				? SingularAttributeClassification.EMBEDDED
+				: SingularAttributeClassification.BASIC;
 	}
 }

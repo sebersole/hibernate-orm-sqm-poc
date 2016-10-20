@@ -28,7 +28,7 @@ public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
 			List<DynamicInstantiationArgument> arguments,
 			int startPosition,
 			SessionFactoryImplementor sessionFactory) {
-		this.entryReaders = new ArrayList<AliasedReturnReader>();
+		this.entryReaders = new ArrayList<>();
 		int numberOfColumnsConsumed = 0;
 
 		for ( DynamicInstantiationArgument argument : arguments ) {
@@ -74,6 +74,7 @@ public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object assemble(
 			RowProcessingState processingState,
 			ResultSetProcessingOptions options) throws SQLException {

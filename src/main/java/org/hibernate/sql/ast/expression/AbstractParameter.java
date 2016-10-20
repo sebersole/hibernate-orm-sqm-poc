@@ -9,10 +9,10 @@ package org.hibernate.sql.ast.expression;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.sql.gen.ParameterBinder;
-import org.hibernate.sql.gen.ParameterSpec;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
+import org.hibernate.sql.convert.spi.ParameterSpec;
+import org.hibernate.sql.spi.ParameterBinder;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
@@ -47,7 +47,7 @@ public abstract class AbstractParameter extends SelfReadingExpressionSupport imp
 			PreparedStatement statement,
 			int startPosition,
 			QueryParameterBinding valueBinding,
-			SessionImplementor session) throws SQLException {
+			SharedSessionContractImplementor session) throws SQLException {
 		final Type bindType;
 		final Object bindValue;
 

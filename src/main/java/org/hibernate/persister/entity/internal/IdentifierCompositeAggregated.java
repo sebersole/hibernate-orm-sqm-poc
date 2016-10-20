@@ -7,25 +7,27 @@
 package org.hibernate.persister.entity.internal;
 
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
-import org.hibernate.persister.entity.spi.IdentifierDescriptorImplementor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
-import org.hibernate.sqm.domain.IdentifierDescriptorSingleAttribute;
-import org.hibernate.sqm.domain.ManagedType;
-import org.hibernate.sqm.domain.SingularAttribute;
+import org.hibernate.persister.entity.spi.AttributeReferenceSource;
+import org.hibernate.persister.entity.spi.IdentifierDescriptor;
+import org.hibernate.sqm.domain.AttributeReference;
+import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.type.CompositeType;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
 public class IdentifierCompositeAggregated
-		implements IdentifierDescriptorImplementor, SingularAttributeImplementor, IdentifierDescriptorSingleAttribute {
-	private final ManagedType declaringType;
+		implements IdentifierDescriptor, SingularAttributeImplementor, AttributeReferenceSource {
+	private final DomainReferenceImplementor declaringType;
 	private final String attributeName;
 	private final EmbeddablePersister embeddablePersister;
 
 	public IdentifierCompositeAggregated(
-			ManagedType declaringType,
+			DomainReferenceImplementor declaringType,
 			String attributeName,
 			EmbeddablePersister embeddablePersister) {
 		this.declaringType = declaringType;
@@ -37,13 +39,8 @@ public class IdentifierCompositeAggregated
 	// IdentifierDescriptor
 
 	@Override
-	public SingularAttribute getIdAttribute() {
-		return this;
-	}
-
-	@Override
-	public org.hibernate.sqm.domain.Type getIdType() {
-		return embeddablePersister;
+	public CompositeType getIdType() {
+		return embeddablePersister.getOrmType();
 	}
 
 	@Override
@@ -52,27 +49,8 @@ public class IdentifierCompositeAggregated
 	}
 
 	@Override
-	public String getReferableAttributeName() {
-		return attributeName;
-	}
-
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// SingularAttribute
-
-	@Override
-	public Classification getAttributeTypeClassification() {
-		return Classification.EMBEDDED;
-	}
-
-	@Override
-	public ManagedType getDeclaringType() {
-		return declaringType;
-	}
-
-	@Override
-	public String getName() {
-		return attributeName;
+	public SingularAttributeImplementor getIdAttribute() {
+		return this;
 	}
 
 	@Override
@@ -80,33 +58,37 @@ public class IdentifierCompositeAggregated
 		return embeddablePersister.collectColumns();
 	}
 
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// SingularAttribute
+
+	@Override
+	public SingularAttributeClassification getAttributeTypeClassification() {
+		return SingularAttributeClassification.EMBEDDED;
+	}
+
 	@Override
 	public Type getOrmType() {
-		return embeddablePersister.getOrmType();
+		return getIdType();
 	}
 
 	@Override
-	public org.hibernate.sqm.domain.Type getType() {
-		return embeddablePersister;
+	public DomainReference getLeftHandSide() {
+		return declaringType;
 	}
 
 	@Override
-	public boolean isId() {
-		return true;
+	public String getAttributeName() {
+		return attributeName;
 	}
 
 	@Override
-	public boolean isVersion() {
-		return false;
+	public String asLoggableText() {
+		return "IdentifierCompositeAggregated(" + embeddablePersister.asLoggableText() + ")";
 	}
 
 	@Override
-	public org.hibernate.sqm.domain.Type getBoundType() {
-		return embeddablePersister.getBoundType();
-	}
-
-	@Override
-	public ManagedType asManagedType() {
-		return embeddablePersister.asManagedType();
+	public AttributeReference findAttribute(String name) {
+		return embeddablePersister.findAttribute( name );
 	}
 }

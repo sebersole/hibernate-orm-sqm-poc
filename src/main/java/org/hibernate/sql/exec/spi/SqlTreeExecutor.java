@@ -7,11 +7,13 @@
 package org.hibernate.sql.exec.spi;
 
 import org.hibernate.Incubating;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.query.proposed.QueryOptions;
+import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.result.Outputs;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.gen.Callback;
+import org.hibernate.sql.convert.spi.Callback;
 
 /**
  * NOTE : look at as the clean room representation of "Loader", although possibly for DML as
@@ -52,33 +54,37 @@ public interface SqlTreeExecutor {
 	<R,T> R executeSelect(
 			SelectQuery sqlTree,
 			PreparedStatementCreator statementCreator,
-			PreparedStatementExecutor<R,T> preparedStatementExecutor,
+			PreparedStatementExecutor<R, T> preparedStatementExecutor,
 			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			Callback callback,
-			SessionImplementor session);
+			SharedSessionContractImplementor persistenceContext,
+			ExecutionContext executionContext);
 
 	Object[] executeInsert(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
 			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
-			SessionImplementor session);
+			SharedSessionContractImplementor persistenceContext,
+			ExecutionContext executionContext);
 
 	int executeUpdate(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
 			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
-			SessionImplementor session);
+			SharedSessionContractImplementor persistenceContext,
+			ExecutionContext executionContext);
 
 	int executeDelete(
 			Object sqlTree,
 			PreparedStatementCreator statementCreator,
 			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
-			SessionImplementor session);
+			SharedSessionContractImplementor persistenceContext,
+			ExecutionContext executionContext);
 
 	<T> Outputs executeCall(
 			String callableName,
@@ -86,5 +92,6 @@ public interface SqlTreeExecutor {
 			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			Callback callback,
-			SessionImplementor session);
+			SharedSessionContractImplementor persistenceContext,
+			ExecutionContext executionContext);
 }

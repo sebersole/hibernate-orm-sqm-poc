@@ -13,8 +13,8 @@ import java.util.Map;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sql.gen.SqlTreeWalker;
 import org.hibernate.sqm.query.expression.Compatibility;
 
 import org.jboss.logging.Logger;
@@ -59,7 +59,7 @@ public class DynamicInstantiation<T> implements Expression {
 		areAllArgumentsAliased = areAllArgumentsAliased && alias != null;
 
 		if ( arguments == null ) {
-			arguments = new ArrayList<DynamicInstantiationArgument>();
+			arguments = new ArrayList<>();
 		}
 		arguments.add( new DynamicInstantiationArgument( alias, expression ) );
 	}
@@ -84,6 +84,7 @@ public class DynamicInstantiation<T> implements Expression {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory) {
 		if ( List.class.equals( target ) ) {
 			return new ReturnReaderDynamicInstantiationListImpl( arguments, startPosition, sessionFactory );
@@ -92,16 +93,16 @@ public class DynamicInstantiation<T> implements Expression {
 			return new ReturnReaderDynamicInstantiationMapImpl( arguments, startPosition, sessionFactory );
 		}
 		else {
-			List<AliasedReturnReader> argumentReaders = new ArrayList<AliasedReturnReader>();
+			List<AliasedReturnReader> argumentReaders = new ArrayList<>();
 			int numberOfColumnsConsumed = 0;
-			for ( int i = 0; i < arguments.size(); i++ ) {
-				final ReturnReader argumentReader = arguments.get( i ).getExpression().getReturnReader(
+			for ( DynamicInstantiationArgument argument : arguments ) {
+				final ReturnReader argumentReader = argument.getExpression().getReturnReader(
 						startPosition + numberOfColumnsConsumed,
 						true,
 						sessionFactory
 				);
 				numberOfColumnsConsumed += argumentReader.getNumberOfColumnsRead( sessionFactory );
-				argumentReaders.add( new AliasedReturnReader( arguments.get( i ).getAlias(), argumentReader ) );
+				argumentReaders.add( new AliasedReturnReader( argument.getAlias(), argumentReader ) );
 			}
 
 			// find a constructor matching argument types

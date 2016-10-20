@@ -13,12 +13,14 @@ import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.internal.PersisterFactoryImpl;
 import org.hibernate.persister.internal.PersisterFactoryInitiator;
+import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.SelectStatementInterpreter;
-import org.hibernate.query.proposed.internal.ConsumerContextImpl;
+import org.hibernate.sql.ConsumerContextImpl;
+import org.hibernate.sql.convert.spi.Callback;
+import org.hibernate.sql.convert.spi.SelectStatementInterpreter;
 import org.hibernate.sqm.SemanticQueryInterpreter;
-import org.hibernate.sqm.query.SelectStatement;
-import org.hibernate.sqm.query.Statement;
+import org.hibernate.sqm.query.SqmSelectStatement;
+import org.hibernate.sqm.query.SqmStatement;
 
 import org.junit.After;
 import org.junit.Before;
@@ -75,12 +77,12 @@ public class BaseUnitTest {
 		return consumerContext;
 	}
 
-	protected Statement interpret(String query) {
+	protected SqmStatement interpret(String query) {
 		return SemanticQueryInterpreter.interpret( query, getConsumerContext() );
 	}
 
 	protected SelectQuery interpretSelectQuery(String query) {
-		final SelectStatement statement = (SelectStatement) interpret( query );
+		final SqmSelectStatement statement = (SqmSelectStatement) interpret( query );
 
 		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter( queryOptions(), callBack() );
 		interpreter.interpret( statement );
@@ -93,7 +95,7 @@ public class BaseUnitTest {
 		};
 	}
 
-	protected org.hibernate.sql.exec.spi.QueryOptions queryOptions() {
+	protected QueryOptions queryOptions() {
 		return new QueryOptionsTestingImpl();
 	}
 

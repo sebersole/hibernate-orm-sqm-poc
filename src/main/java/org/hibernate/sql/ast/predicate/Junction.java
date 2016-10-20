@@ -9,7 +9,7 @@ package org.hibernate.sql.ast.predicate;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 
 /**
  * @author Steve Ebersole

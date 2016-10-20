@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.predicate;
 
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 
 /**
  * Represents a filter applied to an entity/collection.

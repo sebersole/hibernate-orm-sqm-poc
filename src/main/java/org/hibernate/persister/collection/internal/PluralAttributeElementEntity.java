@@ -8,45 +8,58 @@ package org.hibernate.persister.collection.internal;
 
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.sqm.domain.EntityType;
-import org.hibernate.sqm.domain.PluralAttribute.ElementClassification;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.type.EntityType;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementEntity implements PluralAttributeElement<org.hibernate.type.EntityType, EntityType> {
+public class PluralAttributeElementEntity implements PluralAttributeElement<EntityType> {
+	private final ImprovedCollectionPersisterImpl collectionPersister;
+	private final ImprovedEntityPersister elementPersister;
 	private final ElementClassification classification;
-	private final org.hibernate.type.EntityType type;
-	private final EntityType sqmType;
+	private final EntityType type;
 	private final Column[] columns;
 
 	public PluralAttributeElementEntity(
+			ImprovedCollectionPersisterImpl collectionPersister,
+			ImprovedEntityPersister elementPersister,
 			ElementClassification classification,
-			org.hibernate.type.EntityType type,
-			EntityType sqmType,
+			EntityType type,
 			Column[] columns) {
+		this.collectionPersister = collectionPersister;
+		this.elementPersister = elementPersister;
 		this.classification = classification;
 		this.type = type;
-		this.sqmType = sqmType;
 		this.columns = columns;
 	}
 
+	public ImprovedEntityPersister getElementPersister() {
+		return elementPersister;
+	}
+
 	@Override
-	public ElementClassification getElementClassification() {
+	public ElementClassification getClassification() {
 		return classification;
 	}
 
 	@Override
-	public EntityType getSqmType() {
-		return sqmType;
+	public DomainReference getType() {
+		return this;
 	}
 
 	@Override
-	public org.hibernate.type.EntityType getOrmType() {
+	public EntityType getOrmType() {
 		return type;
 	}
 
 	public Column[] getColumns() {
 		return columns;
+	}
+
+	@Override
+	public String asLoggableText() {
+		return "PluralAttributeElement(" + collectionPersister.getPersister().getRole() + " [" + getOrmType().getName() + "])" ;
 	}
 }

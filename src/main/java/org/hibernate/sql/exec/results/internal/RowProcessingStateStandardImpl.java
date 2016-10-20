@@ -12,11 +12,11 @@ import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
 import org.hibernate.loader.plan.spi.EntityReference;
 import org.hibernate.loader.plan.spi.Fetch;
+import org.hibernate.query.proposed.QueryOptions;
+import org.hibernate.sql.convert.spi.Return;
 import org.hibernate.sql.exec.results.spi.EntityReferenceProcessingState;
 import org.hibernate.sql.exec.results.spi.ResultSetProcessingState;
 import org.hibernate.sql.exec.results.spi.RowProcessingState;
-import org.hibernate.sql.exec.spi.QueryOptions;
-import org.hibernate.sql.gen.Return;
 
 /**
  * @author Steve Ebersole

@@ -30,7 +30,7 @@ public class ReturnReaderDynamicInstantiationListImpl implements ReturnReader<Li
 		this.startPosition = startPosition;
 		int numberOfColumnsConsumed = 0;
 
-		this.argumentReaders = new ArrayList<ReturnReader>();
+		this.argumentReaders = new ArrayList<>();
 		for ( DynamicInstantiationArgument argument : arguments ) {
 			ReturnReader argumentReader = argument.getExpression().getReturnReader( startPosition+numberOfColumnsConsumed, true, sessionFactory );
 			argumentReaders.add( argumentReader );
@@ -69,6 +69,7 @@ public class ReturnReaderDynamicInstantiationListImpl implements ReturnReader<Li
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public List assemble(
 			RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException {
 		final ArrayList result = new ArrayList();

@@ -6,7 +6,6 @@
  */
 package org.hibernate.persister.common.internal;
 
-import javax.persistence.TemporalType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,12 +17,18 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.spi.SqmTypeImplementor;
 import org.hibernate.persister.entity.EntityPersister;
-import org.hibernate.sql.gen.NotYetImplementedException;
 import org.hibernate.persister.entity.internal.ImprovedEntityPersisterImpl;
+import org.hibernate.persister.entity.spi.AttributeReferenceSource;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.BasicType;
 import org.hibernate.sqm.domain.DomainMetamodel;
-import org.hibernate.type.AnyType;
+import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.EntityReference;
+import org.hibernate.sqm.domain.NoSuchAttributeException;
+import org.hibernate.sqm.query.expression.BinaryArithmeticSqmExpression;
 import org.hibernate.type.CollectionType;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.EntityType;
@@ -40,7 +45,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 	private final Map<Class, BasicType> basicTypeMap;
 
 	private final Map<EntityPersister, ImprovedEntityPersisterImpl> entityTypeDescriptorMap;
-	private Map<String,PolymorphicEntityTypeImpl> polymorphicEntityTypeDescriptorMap;
+	private Map<String,PolymorphicEntityReferenceImpl> polymorphicEntityTypeDescriptorMap;
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// This section needs a bit of explanation...
@@ -77,17 +82,6 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		}
 	}
 
-	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<>();
-
-	public void registerCollectionPersister(ImprovedCollectionPersisterImpl persister) {
-		collectionPersisterMap.put( persister.getPersister(), persister );
-	}
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-	public SessionFactoryImplementor getSessionFactory() {
-		return sessionFactory;
-	}
-
 	private static Map<Class, BasicType> buildBasicTypeMaps() {
 		final Map<Class,BasicType> map = new HashMap<>();
 
@@ -107,59 +101,49 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		return map;
 	}
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T> BasicType<T> getBasicType(Class<T> javaType) {
-		final org.hibernate.type.BasicType ormType = sessionFactory.getTypeResolver().basic( javaType.getName() );
-		if ( ormType != null ) {
-			return toSqmType( ormType );
-		}
+	private Map<CollectionPersister, ImprovedCollectionPersister> collectionPersisterMap = new HashMap<>();
 
-		BasicType<T> type = new BasicTypeNonOrmImpl<T>( javaType );
-		basicTypeMap.put( javaType, type );
+	public void registerCollectionPersister(ImprovedCollectionPersisterImpl persister) {
+		collectionPersisterMap.put( persister.getPersister(), persister );
+	}
 
-		return type;
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// DomainMetamodel impl
+
+	public SessionFactoryImplementor getSessionFactory() {
+		return sessionFactory;
 	}
 
 	@Override
-	public <T> BasicType<T> getBasicType(Class<T> javaType, TemporalType temporalType) {
-		return null;
-	}
-
-	@Override
-	public org.hibernate.sqm.domain.EntityType resolveEntityType(Class javaType) {
-		return resolveEntityType( javaType.getName() );
-	}
-
-	@Override
-	public org.hibernate.sqm.domain.EntityType resolveEntityType(String name) {
-		final String importedName = sessionFactory.getMetamodel().getImportedClassName( name );
+	public EntityReference resolveEntityReference(String entityName) {
+		final String importedName = sessionFactory.getMetamodel().getImportedClassName( entityName );
 		if ( importedName != null ) {
-			name = importedName;
+			entityName = importedName;
 		}
 
 		// look at existing non-polymorphic descriptors
-		final EntityPersister persister = sessionFactory.getMetamodel().entityPersister( name );
+		final EntityPersister persister = sessionFactory.getMetamodel().entityPersister( entityName );
 		if ( persister != null ) {
 			return entityTypeDescriptorMap.get( persister );
 		}
 
 		// look at existing polymorphic descriptors
 		if ( polymorphicEntityTypeDescriptorMap != null ) {
-			PolymorphicEntityTypeImpl existingEntry = polymorphicEntityTypeDescriptorMap.get( name );
+			PolymorphicEntityReferenceImpl existingEntry = polymorphicEntityTypeDescriptorMap.get( entityName );
 			if ( existingEntry != null ) {
 				return existingEntry;
 			}
 		}
 
 
-		final String[] implementors = sessionFactory.getMetamodel().getImplementors( name );
+		final String[] implementors = sessionFactory.getMetamodel().getImplementors( entityName );
 		if ( implementors != null ) {
 			if ( implementors.length == 1 ) {
 				return entityTypeDescriptorMap.get( sessionFactory.getMetamodel().entityPersister( implementors[0] ) );
 			}
 			else if ( implementors.length > 1 ) {
-				final List<org.hibernate.sqm.domain.EntityType> implementDescriptors = new ArrayList<>();
+				final List<ImprovedEntityPersister> implementDescriptors = new ArrayList<>();
 				for ( String implementor : implementors ) {
 					implementDescriptors.add(
 							entityTypeDescriptorMap.get( sessionFactory.getMetamodel().entityPersister( implementor ) )
@@ -168,88 +152,96 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 				if ( polymorphicEntityTypeDescriptorMap == null ) {
 					polymorphicEntityTypeDescriptorMap = new HashMap<>();
 				}
-				PolymorphicEntityTypeImpl descriptor = new PolymorphicEntityTypeImpl(
+				PolymorphicEntityReferenceImpl descriptor = new PolymorphicEntityReferenceImpl(
 						this,
-						name,
+						entityName,
 						implementDescriptors
 				);
-				polymorphicEntityTypeDescriptorMap.put( name, descriptor );
+				polymorphicEntityTypeDescriptorMap.put( entityName, descriptor );
 				return descriptor;
 			}
 		}
 
-		throw new HibernateException( "Could not resolve entity reference [" + name + "] from query" );
+		throw new HibernateException( "Could not resolve entity reference [" + entityName + "] from query" );
+	}
+
+	@Override
+	public EntityReference resolveEntityReference(Class javaType) {
+		return resolveEntityReference( javaType.getName() );
+	}
+
+	@Override
+	public AttributeReference resolveAttributeReference(DomainReference source, String attributeName) {
+		final AttributeReference attrRef = locateAttributeReference( source, attributeName );
+		if ( attrRef == null ) {
+			throw new NoSuchAttributeException( "Could not locate attribute named [" + attributeName + "] relative to [" + source.asLoggableText() + "]" );
+		}
+		return attrRef;
+	}
+
+	@Override
+	public AttributeReference locateAttributeReference(DomainReference sourceBinding, String attributeName) {
+		if ( sourceBinding instanceof AttributeReferenceSource ) {
+			return ( (AttributeReferenceSource) sourceBinding ).findAttribute( attributeName );
+		}
+
+		if ( sourceBinding instanceof SqmTypeImplementor ) {
+			return resolveAttributeReferenceSource( ( (SqmTypeImplementor) sourceBinding ) ).findAttribute( attributeName );
+		}
+
+		throw new IllegalArgumentException( "Unexpected type [" + sourceBinding + "] passed as 'attribute source'" );
+	}
+
+	private AttributeReferenceSource resolveAttributeReferenceSource(SqmTypeImplementor typeAccess) {
+		final Type type = typeAccess.getOrmType();
+		if ( type instanceof EntityType ) {
+			return (ImprovedEntityPersister) resolveEntityReference( ( (EntityType) type ).getAssociatedEntityName( sessionFactory ) );
+		}
+		else if ( type instanceof CollectionType ) {
+			return resolveAttributeReferenceSource(
+					collectionPersisterMap.get( sessionFactory.getMetamodel().collectionPersister( ( (CollectionType) type ).getRole() ) ).getElementReference()
+			);
+		}
+		else if ( type instanceof CompositeType ) {
+			throw new org.hibernate.cfg.NotYetImplementedException( "Resolving CompositeType atttribute references is not yet implemented; requires Type system changes" );
+		}
+
+		throw new IllegalArgumentException( "Unexpected type [" + typeAccess + "] passed" );
+	}
+
+
+	@Override
+	public BasicType resolveBasicType(Class javaType) {
+		// see if we've cached it so far...
+		BasicType basicType = basicTypeMap.get( javaType );
+		if ( basicType == null ) {
+			basicType = new BasicTypeNonOrmImpl( javaType );
+			basicTypeMap.put( javaType, basicType );
+		}
+		return basicType;
+	}
+
+	@Override
+	public BasicType resolveArithmeticType(
+			DomainReference firstType,
+			DomainReference secondType,
+			BinaryArithmeticSqmExpression.Operation operation) {
+		throw new org.hibernate.cfg.NotYetImplementedException( "DomainMetamodelImpl#resolveArithmeticType" );
+	}
+
+	@Override
+	public BasicType resolveSumFunctionType(DomainReference argumentType) {
+		throw new org.hibernate.cfg.NotYetImplementedException( "DomainMetamodelImpl#resolveSumFunctionType" );
 	}
 
 	@Override
 	public BasicType resolveCastTargetType(String name) {
-		return toSqmType( (org.hibernate.type.BasicType) sessionFactory.getTypeHelper().heuristicType( name ) );
-	}
-
-	public org.hibernate.sqm.domain.Type toSqmType(Type ormType) {
-		if ( ormType == null ) {
+		// we assume only casts to basic types are valid, because that is what SQM assumes
+		org.hibernate.type.BasicType ormBasicType = (org.hibernate.type.BasicType) sessionFactory.getTypeHelper().heuristicType( name );
+		if ( ormBasicType == null ) {
 			return null;
 		}
-		else if ( ormType.isAnyType() ) {
-			return toSqmType( (AnyType) ormType );
-		}
-		else if ( ormType.isEntityType() ) {
-			return toSqmType( (EntityType) ormType );
-		}
-		else if ( ormType.isComponentType() ) {
-			return toSqmType( ( CompositeType) ormType );
-		}
-		else if ( ormType.isCollectionType() ) {
-			final CollectionType collectionType = (CollectionType) ormType;
-			return toSqmType( (CollectionPersister) collectionType.getAssociatedJoinable( sessionFactory ) );
-		}
-		else {
-			return toSqmType( (org.hibernate.type.BasicType) ormType );
-		}
-	}
 
-	public org.hibernate.sqm.domain.BasicType toSqmType(org.hibernate.type.BasicType ormBasicType) {
-		org.hibernate.sqm.domain.BasicType descriptor = null;
-		if ( ormBasicType != null ) {
-			descriptor = basicTypeMap.get( ormBasicType.getReturnedClass() );
-
-			if ( descriptor == null ) {
-				descriptor = new BasicTypeImpl( ormBasicType );
-				basicTypeMap.put( ormBasicType.getReturnedClass(), descriptor );
-			}
-		}
-		return descriptor;
-	}
-
-	public AnyTypeImpl toSqmType(AnyType ormType) {
-		return new AnyTypeImpl(
-				ormType,
-				toSqmType( ( org.hibernate.type.BasicType) ormType.getDiscriminatorType() ),
-				toSqmType( ormType.getIdentifierType() )
-		);
-	}
-
-	public ImprovedEntityPersisterImpl toSqmType(EntityType entityType) {
-		return toSqmType( (EntityPersister) entityType.getAssociatedJoinable( sessionFactory ) );
-	}
-
-	public ImprovedEntityPersisterImpl toSqmType(EntityPersister persister) {
-		ImprovedEntityPersisterImpl entityType = entityTypeDescriptorMap.get( persister );
-		if ( entityType == null ) {
-			throw new IllegalArgumentException( "No ImprovedEntityPersister known for " + persister );
-		}
-		return entityType;
-	}
-
-	public org.hibernate.sqm.domain.Type toSqmType(CompositeType ormType) {
-		throw new NotYetImplementedException();
-	}
-
-	public org.hibernate.sqm.domain.Type toSqmType(CollectionType collectionType) {
-		return toSqmType( (CollectionPersister) collectionType.getAssociatedJoinable( sessionFactory ) );
-	}
-
-	public org.hibernate.sqm.domain.Type toSqmType(CollectionPersister collectionPersister) {
-		throw new NotYetImplementedException();
+		return resolveBasicType( ormBasicType.getReturnedClass() );
 	}
 }

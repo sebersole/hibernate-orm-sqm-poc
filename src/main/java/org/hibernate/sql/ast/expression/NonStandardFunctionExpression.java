@@ -9,7 +9,7 @@ package org.hibernate.sql.ast.expression;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 

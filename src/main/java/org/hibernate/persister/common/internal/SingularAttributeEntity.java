@@ -8,31 +8,29 @@ package org.hibernate.persister.common.internal;
 
 import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.sqm.domain.EntityType;
-import org.hibernate.sqm.domain.ManagedType;
+import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.type.EntityType;
 
 /**
  * @author Steve Ebersole
  */
-public class SingularAttributeEntity
-		extends AbstractSingularAttribute<org.hibernate.type.EntityType, EntityType> {
-	private final Classification classification;
+public class SingularAttributeEntity extends AbstractSingularAttribute<EntityType> {
+	private final SingularAttributeClassification classification;
 	private final Column[] columns;
 
 	public SingularAttributeEntity(
-			ManagedType declaringType,
+			DomainReferenceImplementor declaringType,
 			String name,
-			Classification classification,
-			org.hibernate.type.EntityType ormType,
-			EntityType sqmType,
+			SingularAttributeClassification classification,
+			EntityType ormType,
 			Column[] columns) {
-		super( declaringType, name, ormType, sqmType );
+		super( declaringType, name, ormType );
 		this.classification = classification;
 		this.columns = columns;
 	}
 
 	@Override
-	public Classification getAttributeTypeClassification() {
+	public SingularAttributeClassification getAttributeTypeClassification() {
 		return classification;
 	}
 
@@ -41,17 +39,9 @@ public class SingularAttributeEntity
 	}
 
 	@Override
-	public boolean isId() {
-		return false;
-	}
-
-	@Override
-	public boolean isVersion() {
-		return false;
-	}
-
-	@Override
-	public EntityType asManagedType() {
-		return getBoundType();
+	public String asLoggableText() {
+		return "SingularAttributeEntity([" + getAttributeTypeClassification().name() + "] " +
+				getLeftHandSide().asLoggableText() + '.' + getAttributeName() +
+				")";
 	}
 }

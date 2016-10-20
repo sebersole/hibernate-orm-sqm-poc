@@ -8,7 +8,7 @@ package org.hibernate.sql.ast.predicate;
 
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.gen.SqlTreeWalker;
+import org.hibernate.sql.convert.spi.SqlTreeWalker;
 
 /**
  * @author Steve Ebersole
