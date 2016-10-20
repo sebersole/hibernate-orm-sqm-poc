@@ -7,6 +7,8 @@
 package org.hibernate.persister.common.internal;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -253,12 +255,92 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 			BasicType firstType,
 			BasicType secondType,
 			BinaryArithmeticSqmExpression.Operation operation) {
-		throw new org.hibernate.cfg.NotYetImplementedException( "DomainMetamodelImpl#resolveArithmeticType" );
+		if ( operation == BinaryArithmeticSqmExpression.Operation.DIVIDE ) {
+			// covered under the note in 6.5.7.1 discussing the unportable
+			// "semantics of the SQL division operation"..
+			return resolveBasicType( Number.class );
+		}
+		else if ( firstType != null && Double.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return firstType;
+		}
+		else if ( secondType != null && Double.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return secondType;
+		}
+		else if ( firstType != null && Float.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return firstType;
+		}
+		else if ( secondType != null && Float.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return secondType;
+		}
+		else if ( firstType != null && BigDecimal.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return firstType;
+		}
+		else if ( secondType != null && BigDecimal.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return secondType;
+		}
+		else if ( firstType != null && BigInteger.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return firstType;
+		}
+		else if ( secondType != null && BigInteger.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return secondType;
+		}
+		else if ( firstType != null && Long.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return firstType;
+		}
+		else if ( secondType != null && Long.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return secondType;
+		}
+		else if ( firstType != null && Integer.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return firstType;
+		}
+		else if ( secondType != null && Integer.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return secondType;
+		}
+		else if ( firstType != null && Short.class.isAssignableFrom( firstType.getJavaType() ) ) {
+			return resolveBasicType( Integer.class );
+		}
+		else if ( secondType != null && Short.class.isAssignableFrom( secondType.getJavaType() ) ) {
+			return resolveBasicType( Integer.class );
+		}
+		else {
+			return resolveBasicType( Number.class );
+		}
 	}
 
 	@Override
 	public BasicType resolveSumFunctionType(DomainReference argumentType) {
-		throw new org.hibernate.cfg.NotYetImplementedException( "DomainMetamodelImpl#resolveSumFunctionType" );
+		return resolveSumFunctionType( toBasicType( argumentType ) );
+	}
+
+	public BasicType resolveSumFunctionType(BasicType argumentType) {
+		if ( argumentType == null ) {
+			return resolveBasicType( Number.class );
+		}
+
+		if ( Double.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return argumentType;
+		}
+		else if ( Float.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return argumentType;
+		}
+		else if ( BigDecimal.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return argumentType;
+		}
+		else if ( BigInteger.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return argumentType;
+		}
+		else if ( Long.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return argumentType;
+		}
+		else if ( Integer.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return argumentType;
+		}
+		else if ( Short.class.isAssignableFrom( argumentType.getJavaType() ) ) {
+			return resolveBasicType( Integer.class );
+		}
+		else {
+			return resolveBasicType( Number.class );
+		}
 	}
 
 	@Override
