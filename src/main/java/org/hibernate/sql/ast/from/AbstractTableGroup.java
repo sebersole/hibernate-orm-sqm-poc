@@ -115,16 +115,8 @@ public abstract class AbstractTableGroup implements TableGroup {
 		final ImprovedEntityPersister improvedEntityPersister = resolveEntityReferenceBase();
 
 		final TableBinding tableBinding = locateTableBinding( improvedEntityPersister.getRootTable() );
-		final Collection<Column> columns = tableBinding.getTable().getColumns();
-		ColumnBinding[] columnBindings = new ColumnBinding[columns.size()];
-		final Iterator<Column> iterator = columns.iterator();
-		int i = 0;
-		while ( iterator.hasNext() ) {
-			columnBindings[i] = new ColumnBinding( iterator.next(), tableBinding );
-			i++;
-		}
 
-		return new EntityReference( improvedEntityPersister.getOrmType(), columnBindings );
+		return new EntityReference( this, improvedEntityPersister, tableBinding );
 	}
 
 	protected abstract ImprovedEntityPersister resolveEntityReferenceBase();

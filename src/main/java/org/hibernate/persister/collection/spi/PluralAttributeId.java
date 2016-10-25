@@ -7,14 +7,14 @@
 package org.hibernate.persister.collection.spi;
 
 import org.hibernate.id.IdentifierGenerator;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeId implements SqmTypeImplementor {
+public class PluralAttributeId implements OrmTypeExporter {
 	private final org.hibernate.type.BasicType type;
 	private final IdentifierGenerator generator;
 

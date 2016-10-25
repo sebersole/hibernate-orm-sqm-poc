@@ -13,6 +13,8 @@ import java.util.Locale;
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.convert.internal.DomainReferenceRendererSelectionImpl;
+import org.hibernate.sql.convert.internal.DomainReferenceRendererStandardImpl;
 import org.hibernate.sql.spi.ParameterBinder;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.SelectQuery;
@@ -68,7 +70,7 @@ import org.jboss.logging.Logger;
 /**
  * @author Steve Ebersole
  */
-public class SqlTreeWalker {
+public class SqlTreeWalker implements DomainReferenceRenderer.RenderingContext {
 	private static final Logger log = Logger.getLogger( SqlTreeWalker.class );
 
 	// pre-req state
@@ -79,9 +81,10 @@ public class SqlTreeWalker {
 	// In-flight state
 	private final StringBuilder sqlBuffer = new StringBuilder();
 	private final List<ParameterBinder> parameterBinders = new ArrayList<>();
-	private final List<Return> returns = new ArrayList<Return>();
+	private final List<Return> returns = new ArrayList<>();
 
-	// rendering expressions often has to be done differently if it occurs in a predicate
+	// rendering expressions often has to be done differently if it occurs in certain contexts
+	private final Stack<DomainReferenceRenderer> domainReferenceRendererStack = new Stack<>( new DomainReferenceRendererStandardImpl( this ) );
 	private boolean currentlyInPredicate;
 	private boolean currentlyInSelections;
 
@@ -135,7 +138,7 @@ public class SqlTreeWalker {
 
 	public void visitSelectClause(SelectClause selectClause) {
 		currentSelectionProcessor = new SelectionProcessor( currentSelectionProcessor );
-
+		domainReferenceRendererStack.push( new DomainReferenceRendererSelectionImpl( this ) );
 		try {
 			boolean previouslyInSelections = currentlyInSelections;
 			currentlyInSelections = true;
@@ -259,7 +262,7 @@ public class SqlTreeWalker {
 		//		e.g...
 		//			1) In the select clause we should render the complete column bindings for associations
 		//			2) In join predicates
-		renderColumnBindings( attributeReference.getColumnBindings() );
+		domainReferenceRendererStack.getCurrent().render( attributeReference );
 	}
 
 	private void visitColumnBinding(ColumnBinding columnBinding) {
@@ -628,10 +631,15 @@ public class SqlTreeWalker {
 	}
 
 	public void visitEntityExpression(EntityReference entityExpression) {
-		renderColumnBindings( entityExpression.getColumnBindings() );
+		domainReferenceRendererStack.getCurrent().render( entityExpression );
 	}
 
-	private void renderColumnBindings(ColumnBinding[] columnBindings) {
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// DomainReferenceRenderer.RenderingContext impl
+
+	@Override
+	public void renderColumnBindings(ColumnBinding... columnBindings) {
 		final boolean needsParens = columnBindings.length > 1 && currentlyInPredicate;
 		if ( needsParens ) {
 			appendSql( "(" );

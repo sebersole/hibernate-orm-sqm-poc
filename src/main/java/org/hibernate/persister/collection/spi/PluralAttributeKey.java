@@ -7,13 +7,13 @@
 package org.hibernate.persister.collection.spi;
 
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeKey implements SqmTypeImplementor {
+public class PluralAttributeKey implements OrmTypeExporter {
 	private final Type type;
 	private final Column[] foreignKeyColumns;
 	// todo : referenced values?

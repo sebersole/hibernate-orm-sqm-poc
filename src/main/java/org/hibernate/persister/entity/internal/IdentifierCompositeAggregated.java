@@ -6,6 +6,8 @@
  */
 package org.hibernate.persister.entity.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
@@ -14,6 +16,7 @@ import org.hibernate.persister.entity.spi.AttributeReferenceSource;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.Type;
 
@@ -90,5 +93,10 @@ public class IdentifierCompositeAggregated
 	@Override
 	public AttributeReference findAttribute(String name) {
 		return embeddablePersister.findAttribute( name );
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

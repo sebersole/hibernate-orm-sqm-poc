@@ -19,7 +19,7 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.internal.ImprovedEntityPersisterImpl;
 import org.hibernate.persister.entity.spi.AttributeReferenceSource;
@@ -191,14 +191,14 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 			return ( (SingularAttributeEmbedded) sourceBinding ).getEmbeddablePersister().findAttribute( attributeName );
 		}
 
-		if ( sourceBinding instanceof SqmTypeImplementor ) {
-			return resolveAttributeReferenceSource( ( (SqmTypeImplementor) sourceBinding ) ).findAttribute( attributeName );
+		if ( sourceBinding instanceof OrmTypeExporter ) {
+			return resolveAttributeReferenceSource( ( (OrmTypeExporter) sourceBinding ) ).findAttribute( attributeName );
 		}
 
 		throw new IllegalArgumentException( "Unexpected type [" + sourceBinding + "] passed as 'attribute source'" );
 	}
 
-	private AttributeReferenceSource resolveAttributeReferenceSource(SqmTypeImplementor typeAccess) {
+	private AttributeReferenceSource resolveAttributeReferenceSource(OrmTypeExporter typeAccess) {
 		final Type type = typeAccess.getOrmType();
 		if ( type instanceof EntityType ) {
 			return (ImprovedEntityPersister) resolveEntityReference( ( (EntityType) type ).getAssociatedEntityName( sessionFactory ) );
@@ -244,8 +244,8 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 			return (BasicType) domainReference;
 		}
 
-		if ( domainReference instanceof SqmTypeImplementor ) {
-			return resolveBasicType( ( (SqmTypeImplementor) domainReference ).getOrmType().getReturnedClass() );
+		if ( domainReference instanceof OrmTypeExporter ) {
+			return resolveBasicType( ( (OrmTypeExporter) domainReference ).getOrmType().getReturnedClass() );
 		}
 
 		throw new IllegalArgumentException( "Unexpected type [" + domainReference + "]" );

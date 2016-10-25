@@ -6,7 +6,7 @@
  */
 package org.hibernate.query.proposed.internal;
 
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.query.proposed.QueryParameter;
 import org.hibernate.sqm.query.Parameter;
 import org.hibernate.type.Type;
@@ -32,7 +32,7 @@ public class QueryParameterPositionalImpl<T> extends AbstractQueryParameter<T> {
 				parameter.getPosition(),
 				parameter.allowMultiValuedBinding(),
 				true,
-				( (SqmTypeImplementor) parameter.getAnticipatedType() ).getOrmType()
+				( (OrmTypeExporter) parameter.getAnticipatedType() ).getOrmType()
 		);
 	}
 

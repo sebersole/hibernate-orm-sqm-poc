@@ -6,9 +6,12 @@
  */
 package org.hibernate.persister.common.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.BasicType;
 
 /**
@@ -38,5 +41,10 @@ public class SingularAttributeBasic extends AbstractSingularAttribute<BasicType>
 	@Override
 	public String asLoggableText() {
 		return "SingularAttributeBasic(" + getLeftHandSide().asLoggableText() + '.' + getAttributeName() + ')';
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

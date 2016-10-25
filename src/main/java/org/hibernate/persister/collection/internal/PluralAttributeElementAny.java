@@ -6,9 +6,12 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.AnyType;
 
 /**
@@ -50,5 +53,10 @@ public class PluralAttributeElementAny implements PluralAttributeElement<AnyType
 	@Override
 	public DomainReference getType() {
 		return this;
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

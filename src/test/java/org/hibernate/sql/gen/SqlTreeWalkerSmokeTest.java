@@ -337,16 +337,18 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	@Test
 	public void testSqlTreeWalking11() {
 		final String qryStr = "select a from Person p join p.address a";
-		final SqmSelectStatement statement = (SqmSelectStatement) interpret( qryStr );
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+		final SqmSelectStatement sqmStatement = (SqmSelectStatement) interpret( qryStr );
+		final SelectQuery sqlTree = SelectStatementInterpreter.interpret(
+				sqmStatement,
 				getSessionFactory(),
 				getConsumerContext().getDomainMetamodel(),
-				queryOptions(), callBack() );
-		interpreter.interpret( statement );
-		final SelectQuery sqlTree = interpreter.getSelectQuery();
-		SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
+				queryOptions(),
+				callBack()
+		);
+
+		final SqlTreeWalker sqlTreeWalker = new SqlTreeWalker(
 				getSessionFactory(),
-				buildQueryParameterBindings( statement )
+				buildQueryParameterBindings( sqmStatement )
 		);
 		sqlTreeWalker.visitSelectQuery( sqlTree );
 

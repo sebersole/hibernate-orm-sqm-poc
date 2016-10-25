@@ -6,13 +6,13 @@
  */
 package org.hibernate.persister.common.internal;
 
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class BasicTypeImpl<X> implements org.hibernate.sqm.domain.BasicType, SqmTypeImplementor {
+public class BasicTypeImpl<X> implements org.hibernate.sqm.domain.BasicType, OrmTypeExporter {
 	private BasicType ormBasicType;
 
 	public BasicTypeImpl(BasicType ormBasicType) {

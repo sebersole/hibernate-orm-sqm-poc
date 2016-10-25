@@ -6,29 +6,62 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.results.internal.ReturnReaderScalarImpl;
+import org.hibernate.sql.exec.results.spi.ReturnReader;
 import org.hibernate.type.Type;
 
 /**
  * @author Andrea Boriero
+ * @author Steve Ebersole
  */
-public class EntityReference extends SelfReadingExpressionSupport {
-	private final Type ormType;
-	private final ColumnBinding[]  columnBindings;
+public class EntityReference implements DomainReference {
+	private final AbstractTableGroup tableGroup;
+	private final ImprovedEntityPersister improvedEntityPersister;
+	private final TableBinding tableBinding;
 
-	public EntityReference(Type ormType, ColumnBinding[] columnBindings) {
-		this.ormType = ormType;
-		this.columnBindings = columnBindings;
+	public EntityReference(
+			AbstractTableGroup tableGroup,
+			ImprovedEntityPersister improvedEntityPersister,
+			TableBinding tableBinding) {
+
+		this.tableGroup = tableGroup;
+		this.improvedEntityPersister = improvedEntityPersister;
+		this.tableBinding = tableBinding;
+	}
+
+	public ImprovedEntityPersister getImprovedEntityPersister() {
+		return improvedEntityPersister;
+	}
+
+	public AbstractTableGroup getTableGroup() {
+		return tableGroup;
+	}
+
+	public TableBinding getTableBinding() {
+		return tableBinding;
 	}
 
 	@Override
 	public Type getType() {
-		return ormType;
+		return improvedEntityPersister.getOrmType();
 	}
 
-	public ColumnBinding[] getColumnBindings() {
-		return columnBindings;
+	@Override
+	public ReturnReader getReturnReader(
+			int startPosition,
+			boolean shallow,
+			SessionFactoryImplementor sessionFactory) {
+		if ( shallow ) {
+			return new ReturnReaderScalarImpl( startPosition, getType() );
+		}
+
+		return new ReturnReaderScalarImpl( startPosition, getType() );
 	}
 
 	@Override

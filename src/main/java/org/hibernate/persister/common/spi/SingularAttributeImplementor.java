@@ -11,6 +11,6 @@ import org.hibernate.sqm.domain.SingularAttributeReference;
 /**
  * @author Steve Ebersole
  */
-public interface SingularAttributeImplementor extends SingularAttributeReference, SqmTypeImplementor {
+public interface SingularAttributeImplementor extends SingularAttributeReference, OrmTypeExporter {
 	Column[] getColumns();
 }

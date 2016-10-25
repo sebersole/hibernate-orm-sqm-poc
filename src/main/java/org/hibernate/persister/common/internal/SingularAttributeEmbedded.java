@@ -6,11 +6,14 @@
  */
 package org.hibernate.persister.common.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.common.spi.AbstractAttributeImpl;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.Type;
 
 /**
@@ -52,5 +55,10 @@ public class SingularAttributeEmbedded
 	@Override
 	public String asLoggableText() {
 		return toString();
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

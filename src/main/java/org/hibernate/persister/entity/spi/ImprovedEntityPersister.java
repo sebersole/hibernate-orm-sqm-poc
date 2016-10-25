@@ -11,10 +11,12 @@ import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
+import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
@@ -27,7 +29,8 @@ import org.hibernate.sqm.query.from.SqmFrom;
  *
  * @author Steve Ebersole
  */
-public interface ImprovedEntityPersister extends EntityReference, DomainReferenceImplementor, SqmTypeImplementor, AttributeReferenceSource {
+public interface ImprovedEntityPersister extends EntityReference, DomainReferenceImplementor,
+		OrmTypeExporter, AttributeReferenceSource {
 	/**
 	 * In integrating this upstream, the methods here would all be part of EntityPersister
 	 * but here we cannot do that and therefore still need access to EntityPersister
@@ -53,4 +56,6 @@ public interface ImprovedEntityPersister extends EntityReference, DomainReferenc
 			Object typeSource,
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel);
+
+	ColumnBinding[] resolveColumnBindings(TableBinding tableBinding, boolean shallow);
 }

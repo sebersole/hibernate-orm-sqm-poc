@@ -9,7 +9,7 @@ package org.hibernate.persister.collection.spi;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
@@ -20,7 +20,7 @@ import org.hibernate.sqm.query.from.SqmAttributeJoin;
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedCollectionPersister extends PluralAttributeReference, SqmTypeImplementor {
+public interface ImprovedCollectionPersister extends PluralAttributeReference, OrmTypeExporter {
 	CollectionPersister getPersister();
 
 	void finishInitialization(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel);

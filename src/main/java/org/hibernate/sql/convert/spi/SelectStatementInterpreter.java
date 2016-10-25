@@ -16,7 +16,7 @@ import org.hibernate.AssertionFailure;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.ast.QuerySpec;
@@ -132,17 +132,12 @@ import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
+ * Interprets an SqmSelectStatement as a SQL-AST SelectQuery.
+ *
  * @author Steve Ebersole
  * @author John O'Hara
  */
 public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
-
-	// todo : need to move to a more Binding-centric approach to resolving types (needs to be ORM types)
-	//		search for `todo (binding) `
-
-	// todo : relatedly ^^ see in-line notes regarding direct casts to persister and the need to move to Binding interpretation
-	//		search for `todo (binding) (persister) : `
-
 	/**
 	 * Main entry point into SQM SelectStatement interpretation
 	 *
@@ -516,7 +511,7 @@ public class SelectStatementInterpreter extends BaseSemanticQueryWalker {
 			return null;
 		}
 
-		return ( (SqmTypeImplementor) sqmType ).getOrmType();
+		return ( (OrmTypeExporter) sqmType ).getOrmType();
 	}
 
 	protected Type extractOrmType(DomainReference expressionType, Class javaType) {

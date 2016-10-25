@@ -6,10 +6,11 @@
  */
 package org.hibernate.persister.common.spi;
 
-import org.hibernate.sqm.domain.AttributeReference;
+import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public interface AttributeImplementor extends AttributeReference, OrmTypeExporter {
+public interface OrmTypeExporter {
+	Type getOrmType();
 }

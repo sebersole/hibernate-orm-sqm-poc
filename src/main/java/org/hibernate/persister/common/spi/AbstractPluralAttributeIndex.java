@@ -24,6 +24,10 @@ public abstract class AbstractPluralAttributeIndex<O extends Type> implements Pl
 		this.columns = columns;
 	}
 
+	public ImprovedCollectionPersisterImpl getPersister() {
+		return persister;
+	}
+
 	@Override
 	public O getOrmType() {
 		return ormType;

@@ -26,7 +26,7 @@ import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.convert.spi.NotYetImplementedException;
 import org.hibernate.sqm.domain.PluralAttributeReference.CollectionClassification;
-import org.hibernate.sqm.domain.PluralAttributeReference.ElementReference.ElementClassification;
+import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassification;
 import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
 import org.hibernate.type.ArrayType;
 import org.hibernate.type.BagType;
@@ -257,6 +257,7 @@ public class Helper {
 					attributeName,
 					classification,
 					ormEntityType,
+					(ImprovedEntityPersister) domainMetamodel.resolveEntityReference( ormEntityType.getAssociatedEntityName( domainMetamodel.getSessionFactory() ) ),
 					columns
 			);
 		}
@@ -288,7 +289,7 @@ public class Helper {
 			DomainMetamodelImpl domainMetamodel,
 			DomainReferenceImplementor source,
 			String subclassPropertyName,
-			org.hibernate.type.Type attributeType,
+			Type attributeType,
 			Column[] columns) {
 		final CollectionType collectionType = (CollectionType) attributeType;
 		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getMetamodel().collectionPersister( collectionType.getRole() );

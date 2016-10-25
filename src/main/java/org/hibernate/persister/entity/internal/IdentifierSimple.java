@@ -6,11 +6,14 @@
  */
 package org.hibernate.persister.entity.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.persister.common.spi.SingularAttributeImplementor;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.BasicType;
 
 /**
@@ -76,5 +79,10 @@ public class IdentifierSimple implements IdentifierDescriptor, SingularAttribute
 	@Override
 	public String asLoggableText() {
 		return "IdentifierSimple(" + declaringType.asLoggableText() + ")";
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

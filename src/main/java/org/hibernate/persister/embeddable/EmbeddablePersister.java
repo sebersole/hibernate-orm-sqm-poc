@@ -16,14 +16,14 @@ import org.hibernate.persister.common.spi.AbstractAttributeImpl;
 import org.hibernate.persister.common.spi.AttributeImplementor;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.spi.AttributeReferenceSource;
 import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
-public class EmbeddablePersister implements SqmTypeImplementor, DomainReferenceImplementor, AttributeReferenceSource {
+public class EmbeddablePersister implements OrmTypeExporter, DomainReferenceImplementor, AttributeReferenceSource {
 	private final String compositeName;
 	private final String roleName;
 	private final CompositeType ormType;

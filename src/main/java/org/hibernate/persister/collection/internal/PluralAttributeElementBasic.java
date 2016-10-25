@@ -6,11 +6,14 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.BasicType;
 
 /**
@@ -49,5 +52,10 @@ public class PluralAttributeElementBasic implements PluralAttributeElement<Basic
 	@Override
 	public String asLoggableText() {
 		return "PluralAttributeElement(" + collectionPersister.getPersister().getRole() + " [" + getOrmType().getName() + "])" ;
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

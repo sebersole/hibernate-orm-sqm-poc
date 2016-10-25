@@ -6,9 +6,12 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.Optional;
+
 import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.sqm.domain.DomainReference;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.CompositeType;
 
 /**
@@ -27,5 +30,10 @@ public class PluralAttributeIndexEmbeddable extends AbstractPluralAttributeIndex
 	@Override
 	public DomainReference getType() {
 		return this;
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.empty();
 	}
 }

@@ -27,7 +27,7 @@ import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
-import org.hibernate.sqm.domain.PluralAttributeReference.ElementReference.ElementClassification;
+import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassification;
 import org.hibernate.sqm.query.from.SqmAttributeJoin;
 import org.hibernate.type.AnyType;
 import org.hibernate.type.BasicType;
@@ -118,9 +118,11 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 				);
 			}
 			else if ( persister.getIndexType().isEntityType() ) {
+				final EntityType indexTypeEntity = (EntityType) persister.getIndexType();
 				this.indexDescriptor = new PluralAttributeIndexEntity(
 						this,
-						(EntityType) persister.getIndexType(),
+						(ImprovedEntityPersister) domainMetamodel.resolveEntityReference( indexTypeEntity.getAssociatedEntityName( domainMetamodel.getSessionFactory() ) ),
+						indexTypeEntity,
 						columns
 				);
 			}

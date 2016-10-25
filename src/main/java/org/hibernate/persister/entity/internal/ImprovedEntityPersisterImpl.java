@@ -6,8 +6,11 @@
  */
 package org.hibernate.persister.entity.internal;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
@@ -34,6 +37,7 @@ import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.domain.AttributeReference;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.BasicType;
@@ -295,6 +299,22 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	}
 
 	@Override
+	public ColumnBinding[] resolveColumnBindings(TableBinding tableBinding, boolean shallow) {
+		// todo : this assumes that all columns for the entity come from the same table, which is not true when we look at joined-inheritance
+		// todo : we also need to account for `shallow` - atm this always renders shallow
+
+		final Collection<Column> columns = tableBinding.getTable().getColumns();
+		ColumnBinding[] columnBindings = new ColumnBinding[columns.size()];
+		final Iterator<Column> iterator = columns.iterator();
+		int i = 0;
+		while ( iterator.hasNext() ) {
+			columnBindings[i] = new ColumnBinding( iterator.next(), tableBinding );
+			i++;
+		}
+		return columnBindings;
+	}
+
+	@Override
 	public AttributeReference findAttribute(String name) {
 		if ( attributeMap.containsKey( name ) ) {
 			return attributeMap.get( name );
@@ -331,5 +351,10 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	@Override
 	public String asLoggableText() {
 		return toString();
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		return Optional.of( this );
 	}
 }

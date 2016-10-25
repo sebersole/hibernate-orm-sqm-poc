@@ -7,11 +7,12 @@
 package org.hibernate.persister.collection.spi;
 
 
-import org.hibernate.persister.common.spi.SqmTypeImplementor;
-import org.hibernate.sqm.domain.PluralAttributeReference.ElementReference;
+import org.hibernate.persister.common.spi.OrmTypeExporter;
+import org.hibernate.sqm.domain.PluralAttributeElementReference;
 
 /**
  * @author Steve Ebersole
  */
-public interface PluralAttributeElement<O extends org.hibernate.type.Type> extends SqmTypeImplementor, ElementReference {
+public interface PluralAttributeElement<O extends org.hibernate.type.Type> extends OrmTypeExporter,
+		PluralAttributeElementReference {
 }
