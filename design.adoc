@@ -24,7 +24,19 @@ in the EntityPersister hierarchy.  As a follow-on to this... we should incorpora
 MappedSuperclass into the SQM domain model.  Seems that the spec does not allow querying MappedSuperclasses; verify!
 
 
-== Tables and Groups and Spaces (oh my)
+== SQL AST
+
+The SQL AST is a syntax tree modelling a SQL query:
+
+* It is produced from SQM by `org.hibernate.sql.convert.spi.SelectStatementInterpreter`
+* It is produced from Loaders following the old "LoadPlan" paradigm, although we will probably have
+ 	room for improvement
+* It is consumed into a `org.hibernate.sql.convert.spi.SqlSelectInterpretation` by `org.hibernate.sql.convert.spi.SqlTreeWalker`.
+	The `SqlSelectInterpretation` combines (composite) the various interpretations needed to execute and consume PreparedStatements.
+
+
+
+=== Tables and Groups and Spaces (oh my)
 
 Modeling the from-clause is central to SQM and its translation.  In translating SQM into an SQL AST 
 we build the following types:
@@ -124,11 +136,11 @@ FromClause
 
 
 
-== Parameters
+=== Parameters
 
 There are multiple "parts" to parameter handling...
 
-=== ParameterSpec
+==== ParameterSpec
 
 A ParameterSpec is the specification of a query parameter (name/position, type, etc).  It represents the
 expectation(s) after parsing a query string.
@@ -140,9 +152,9 @@ Consider:
 Query q = session.createQuery( "select p from Person p where p.name = :name" );
 ----
 
-At this point the (Named)ParameterSpec for `":name"` has been parsed.   ParameterSpec needs to understand
-anticipatedType.  Here, because `Person#name` is a `StringType` we would anticipate `":name"` to also 
-be a `StringType`; we will see later that ParameterBinding can adjust that.  
+At this point the (Named)ParameterSpec for `":name"` has been parsed.   ParameterSpec allows for scenarios where the
+SQM parser was able to ascertain an "anticipatedType" for the parameters.  Here, because `Person#name` is a `StringType`
+we would anticipate `":name"` to also be a `StringType`; we will see later that ParameterBinding can adjust that.
 
 It may also be a good idea to allow for a ParameterSpec to specify a requiredType.  This would accomodate
 cases where the placement of the parameter in the query requires a certain Type to used.
@@ -160,7 +172,7 @@ interface ParameterSpec {
 ----
 
 
-=== ParameterBinding
+==== ParameterBinding
 
 ParameterBinding is the binding for a parameter.  Defined another way, it represents the value 
 specified by the user for the parameter for this execution of the query.  
@@ -215,7 +227,7 @@ interface ParameterBinding {
 ----
 
 
-=== ParameterBinder
+==== ParameterBinder
 
 This is more of an esoteric concept at this point, but ultimately the idea is the binding of the 
 parameter value to JDBC.  It would be best to drive the binding of parameter values from "nodes 
@@ -223,3 +235,70 @@ embedded in the query AST".  This could be a case where the implementation of Pa
 additionally implements this "binding contract" as well.
 
 
+== Processing ResultSets
+
+Processing a ResultSet means extracting the JDBC values, but also building Object graphs and using/managing the PersistenceContext.
+
+We decided to (at least initially) reuse most of the concepts from how ResultSet processing is done in the LoadPlan
+ work.  That was always meant as a preview or PoC of the work we are doing now, so that makes sense.  We just know somethings
+ better now too that we'd like to incorporate.  We will go back and retrofit LoadPlan and the Loaders to use this
+ new SQM-intg code.
+
+That existing LoadPlan consuming code has a few pieces...
+
+
+
+=== Return, Fetch and ReturnReader
+
+The `SelectClause` portion of the SQL AST defines its root return values via an ordered List of the individual
+ `org.hibernate.sql.exec.results.spi.Return` descriptors.  Each `Return` in that List represents a single index
+  in the naked result `Object[]`.
+
+Some of these `Return`s represent selections of a particular entity.   This also needs to model the relationship with
+ any defined join-fetches relative to that particular entity reference (literally `org.hibernate.sql.exec.results.spi.EntityReference`).
+ That is the role of `org.hibernate.sql.exec.results.spi.Fetch`.
+
+Important because we should be able to store this Return/Fetch tree along with results in the cache and be
+able to reconstruct fetch graphs.
+
+`Return` and `Fetch` know how to construct `org.hibernate.sql.exec.results.process.spi.ReturnReader`
+ (todo : should be renamed `SelectionReader` or something like that)
+ instances capable of reading their values from the ResultSet leveraging the `org.hibernate.sql.ast.select.SqlSelectionDescriptor`
+ from the `org.hibernate.sql.convert.spi.SqlSelectInterpretation`
+
+todo : would be better to have a delegate that encapsulates the reading of a group of `SqlSelectionDescriptor` pertaining
+ to these `Return` and `Fetch`.  LoadPlan handling does this already (see `org.hibernate.loader.plan.exec.process.spi.EntityReferenceInitializer`)
+
+The `org.hibernate.sql.exec.results.spi` package defines a number of contracts that it is probably beneficial to discuss:
+
+`Return`:: models a return from the query.  There are 3 distinct types of `Return`:
+
+* `ScalarReturn` this is something like selecting a literal, or selecting a basic singular attribute
+* `EntityReturn` represents selecting an entity either by identification variable (from alias) or to-one association
+* `CollectionReturn` represents selecting a collection as the root.  This is only relevant for collection loaders
+
+`Fetch`:: models a join fetch of a particular embeddable or entity association relative to a `org.hibernate.sql.exec.results.spi.FetchParent`:
+
+* `CompositeFetch` is the fetch of an embeddable (composite)
+* `EntityFetch` the fetch of an entity association
+* `CollectionAttributeFetch` the fetch of a plural attribute
+
+`CollectionReference`:: defines a reference to a collection as either a `Return` (`CollectionReturn`) or `Fetch` (`CollectionAttributeFetch`).
+
+`EntityReference`:: defines a reference to an entity as either a `Return` (`EntityReturn`) or `Fetch` (`EntityFetch`).
+
+`CompositeReference`:: todo : add this?
+
+
+=== ResultSetProcessor and friends
+
+At a higher level reading and processing ResultSet rows is handled by `org.hibernate.sql.exec.results.process.spi.ResultSetProcessor`
+which is responsible for maintain row-position within the ResultSet.  It is also responsible for triggering "end of ResultSet processing" logic.
+
+`ResultSetProcessor` delegates to its `org.hibernate.sql.exec.results.process.spi.RowReader` for processing each row.  This
+distinction may seem like overkill, but it is important in reusing code between the ResultSetProcessor impl that builds a
+`ScrollableResults` (delayed row processing) and the others (immediate row processing).
+
+The `RowReader` delegates to the individual `ReturnReader` instances as discussed earlier.
+
+todo : describe the usage and purpose of each of the XyzProcessingState objects, as well as the overall flow of reading results.
