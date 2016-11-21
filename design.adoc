@@ -41,19 +41,19 @@ The SQL AST is a syntax tree modelling a SQL query:
 Modeling the from-clause is central to SQM and its translation.  In translating SQM into an SQL AST 
 we build the following types:
 
-TableSpecification:: Models an singular table reference.  This could be either a real table reference 
-(PhysicalTableSpecification) or an inline-view (DerivedTableSpecification).
+TableBinding:: Models a singular table (`org.hibernate.persister.common.spi.Table`) reference.  This could be either
+a real table (PhysicalTable) or an inline-view (DerivedTable).
 
-TableSpecificationGroup:: Represents a related group of TableSpecification instances.  Specifically it models
-the TableSpecification originating from a given entity/collection persister (see the "improved" persister contracts).
+TableGroup:: Represents a related group of TableBinding instances.  Specifically it models
+the TableBinding instances originating from a given entity/collection persister (see the "improved" persister contracts).
 
-TableSpecificationGroupJoin:: Represents a TableSpecificationGroup along with the type of join and any predicate.
-used to represent joins between "persister references".
+TableGroupJoin:: Represents a joined TableGroup along with the type of join and any predicate.
+used to represent joins between "persister references".  These would be joins explicitly defined in the query
 
 TableSpace:: Models what ANSI SQL calls a "table reference".  Easiest way to think of this is the comma separated groups
-of "from elements".
+of "from elements".  It is a grouping of a root TableGroup, and zero-or-more TableGroupJoin instances
 
-FromClause:: groups one or more TableSpaces.
+FromClause:: grouping of one or more TableSpaces.
 
 Let's look at some examples to make this more clear...
 
@@ -62,8 +62,8 @@ Let's look at some examples to make this more clear...
 ----
 FromClause
     TableSpace
-        root=TableSpecificationGroup(com.acme.Entity, "e")
-            root=PhysicalTableSpecification("t_entity", "e0")
+        root=TableGroup(com.acme.Entity, "e")
+            root=TableBinding(PhysicalTable("t_entity"), "e0")
             joins={}
         joins={}
 ----
@@ -73,11 +73,11 @@ FromClause
 ----
 FromClause
     TableSpace
-        root=TableSpecificationGroup(com.acme.Entity, "e")
-            root=PhysicalTableSpecification("t_entity", "e0")
+        root=TableGroup(com.acme.Entity, "e")
+            root=TableBinding(PhysicalTable("t_entity"), "e0")
             joins={
-                TableSpecificationJoin
-                    PhysicalTableSpecification("t_entity_secondary", "e1")
+                TableJoin
+                    TableBinding(PhysicalTable("t_entity_secondary"), "e1")
                     INNER
                     <join predicate>
             }
@@ -89,11 +89,11 @@ FromClause
 ----
 FromClause
     TableSpace
-        root=TableSpecificationGroup(com.acme.Entity, "e")
-            root=PhysicalTableSpecification("t_entity", "e0")
+        root=TableGroup(com.acme.Entity, "e")
+            root=TableBinding(PhysicalTable("t_entity"), "e0")
             joins={
-                TableSpecificationJoin
-                    PhysicalTableSpecification("t_entity_secondary", "e1")
+                TableJoin
+                    TableBinding(PhysicalTable("t_entity_secondary"), "e1")
                     INNER
                     <join predicate>
             }
@@ -105,13 +105,13 @@ FromClause
 ----
 FromClause
     TableSpace
-        root=TableSpecificationGroup(com.acme.Entity, "e")
-            root=PhysicalTableSpecification("t_entity", "e0")
+        root=TableGroup(com.acme.Entity, "e")
+            root=TableBinding(PhysicalTable("t_entity"), "e0")
             joins={}
         joins={}
     TableSpace
-        root=TableSpecificationGroup(com.acme.SecondEntity, "se")
-            root=PhysicalTableSpecification("t_second_entity", "se0")
+        root=TableGroup(com.acme.SecondEntity, "se")
+            root=TableBinding(PhysicalTable("t_second_entity"), "se0")
             joins={}
         joins={}
 ----
@@ -121,13 +121,13 @@ FromClause
 ----
 FromClause
     TableSpace
-        root=TableSpecificationGroup(com.acme.Entity, "e")
-            root=PhysicalTableSpecification("t_entity", "e0")
+        root=TableGroup(com.acme.Entity, "e")
+            root=TableBinding(PhysicalTable("t_entity"), "e0")
             joins={}
         joins={
-            TableSpecificationGroupJoin
-                EntityTableSpecificationGroup
-                    TableSpecificationGroup(com.acme.SecondEntity, "se")
+            TableGroupJoin
+                TableGroup(com.acme.SecondEntity, "se")
+		            root=TableBinding(PhysicalTable("t_second_entity"), "se0")
                     INNER
                     <join predicate>
         }
@@ -302,3 +302,89 @@ distinction may seem like overkill, but it is important in reusing code between 
 The `RowReader` delegates to the individual `ReturnReader` instances as discussed earlier.
 
 todo : describe the usage and purpose of each of the XyzProcessingState objects, as well as the overall flow of reading results.
+
+
+Much of this comes down to the following comment I added to SqlSelectionDescriptor:
+
+[source]
+----
+	// todo : would be nice to hook this in with an array of the raw selection values per row.
+	//		the idea being to have an array of the raw SQL row values for cases where we
+	// 		need them multiple times; plus would help in terms of reading cached
+	//		query results (the value array would be the same).  The array would be the same
+	//		length as the SQL selections.
+	//
+	// also usable when building the cache entries.  Possibly as a builder contract to
+	//		account for no-caching.  Maybe ResultSetProcessor could act as this contract
+	//		to collect the rows to be cached.
+	//
+	// another option is varying levels of "reader": RawValueReader, HydratedValueReader, ResolvedValueReader
+	//		RawValueReader works on the individual SqlSelectionDescriptor instances which would mean
+	//		we need some resolution of SqlSelectionDescriptor->Type (possibly limited to just BasicType).
+	//		But the idea here is that we could use the "RawValueReader" to manage that process from
+	//		the RowProcessor, building the "sql row array" which can be cached directly and can be used
+	//		by the next reader
+----
+
+todo : create a diagram illustrating what I mean wrt this code comment block
+
+
+== Open Design Questions
+
+Collection of open questions regarding various aspects of the design of this work.
+
+=== SqlSelectionDescriptor and readers
+
+Two questions here specifically:
+
+1. Currently SqlSelectionDescriptor only encompasses ColumnBindings (generally speaking some form of domain reference) and misses
+ 	other types of expressions (function calls, literals).  The main takeaway here is that we want to well-define what is a valid
+ 	select expression
+2. The other piece is the design of the parts needed to read back the JDBC ResultSet.  This is discussed in detail in
+	the "ResultSetProcessor and friends" section.
+
+
+=== Better naming for the various representations of AttributeConverter
+
+As of the latest work on wip/6.0 we currently we have the following:
+
+org.hibernate.cfg.AttributeConverterDefinition::
+[source]
+----
+/*
+ * Representation of an {@link AttributeConverter} from externalized sources.  Generally
+ * speaking these are contributed from:<ul>
+ *     <li>converters discovered via {@link Converter} discovery</li>
+ *     <li>application / integration contributions - {@link org.hibernate.boot.MetadataBuilder#applyAttributeConverter}</li>
+ * </ul>
+ * <p/>
+ * Regardless of how they are known, the set of AttributeConverterDefinition instances
+ * as known to {@link org.hibernate.boot.spi.MetadataBuildingOptions#getAttributeConverters()}
+ * represents the complete set of "a priori converters".  After that point the only additional
+ * converters recognized would come from local {@link javax.persistence.Convert} annotations.
+ */
+----
+
+org.hibernate.type.converter.spi.AttributeConverterDefinition::
+[source]
+----
+/*
+ * Internal descriptor for an AttributeConverter implementation, with the intent of being
+ * incorporated into a {@link org.hibernate.type.spi.BasicType}
+ */
+----
+
+So essentially the same information as `org.hibernate.cfg.AttributeConverterDefinition` but with a
+a slight different intent of being incorporated int o the BasicType
+
+org.hibernate.boot.spi.AttributeConverterDescriptor::
+[source]
+----
+/**
+ * Internal descriptor for an AttributeConverter implementation.
+ */
+----
+
+Is created from a `org.hibernate.cfg.AttributeConverterDefinition` or directly from a
+	`javax.persistence.AttributeConverter` instance.  Used to determine auto-application
+
