@@ -34,7 +34,14 @@ The SQL AST is a syntax tree modelling a SQL query:
 * It is consumed into a `org.hibernate.sql.convert.spi.SqlSelectInterpretation` by `org.hibernate.sql.convert.spi.SqlTreeWalker`.
 	The `SqlSelectInterpretation` combines (composite) the various interpretations needed to execute and consume PreparedStatements.
 
+[note]
+----
+TODO - it is counter-intuitive that a `SqlSelectInterpretation` is produced by a `SqlTreeWalker` from the result
+	of a `SelectStatementInterpreter`.  The names are just "off".  Maybe instead:
 
+* `SelectStatementInterpreter` -> `SqmToSqlAstConverter`
+* `SqlTreeWalker` -> `SqlAstInterpreter`
+----
 
 === Tables and Groups and Spaces (oh my)
 
