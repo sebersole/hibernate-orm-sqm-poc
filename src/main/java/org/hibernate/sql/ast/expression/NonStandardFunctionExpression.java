@@ -9,7 +9,11 @@ package org.hibernate.sql.ast.expression;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
@@ -18,7 +22,7 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public class NonStandardFunctionExpression extends SelfReadingExpressionSupport {
+public class NonStandardFunctionExpression implements Expression, SqlSelectable {
 	private final String functionName;
 	private final List<Expression> arguments;
 	private final BasicType resultType;
@@ -31,6 +35,7 @@ public class NonStandardFunctionExpression extends SelfReadingExpressionSupport 
 		this.arguments = arguments;
 		this.resultType = resultType;
 	}
+
 	public NonStandardFunctionExpression(
 			String functionName,
 			BasicType resultType,
@@ -56,7 +61,17 @@ public class NonStandardFunctionExpression extends SelfReadingExpressionSupport 
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitNonStandardFunctionExpression( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitNonStandardFunctionExpression( this );
+	}
+
+	@Override
+	public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( (BasicType) getType() );
 	}
 }

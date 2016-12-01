@@ -7,24 +7,27 @@
 package org.hibernate.sql.ast.select;
 
 import org.hibernate.sql.ast.expression.Expression;
+import org.hibernate.sql.convert.results.spi.Return;
 
 /**
  * @author Steve Ebersole
  */
 public class Selection {
-	private final Expression selectExpression;
-	private final String resultVariable;
+	private final Return queryReturn;
 
-	public Selection(Expression selectExpression, String resultVariable) {
-		this.selectExpression = selectExpression;
-		this.resultVariable = resultVariable;
+	public Selection(Return queryReturn) {
+		this.queryReturn = queryReturn;
+	}
+
+	public Return getQueryReturn() {
+		return queryReturn;
 	}
 
 	public Expression getSelectExpression() {
-		return selectExpression;
+		return getQueryReturn().getSelectExpression();
 	}
 
 	public String getResultVariable() {
-		return resultVariable;
+		return getQueryReturn().getResultVariableName();
 	}
 }

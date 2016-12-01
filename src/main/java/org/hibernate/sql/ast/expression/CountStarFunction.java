@@ -7,9 +7,7 @@
 package org.hibernate.sql.ast.expression;
 
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
@@ -21,25 +19,26 @@ public class CountStarFunction extends AbstractAggregateFunction {
 		super( STAR, distinct, resultType );
 	}
 
-	private static Expression STAR = new Expression() {
+	private static Expression STAR = new StarExpression();
+
+	@Override
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitCountStarFunction( this );
+	}
+
+	static class StarExpression implements Expression {
 		@Override
 		public Type getType() {
 			return null;
 		}
 
 		@Override
-		public ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory) {
-			throw new UnsupportedOperationException(  );
+		public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
 		}
 
 		@Override
-		public void accept(SqlTreeWalker sqlTreeWalker) {
+		public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
 			throw new UnsupportedOperationException(  );
 		}
-	};
-
-	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitCountStarFunction( this );
 	}
 }

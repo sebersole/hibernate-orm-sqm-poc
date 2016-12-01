@@ -6,19 +6,22 @@
  */
 package org.hibernate.persister.entity.internal;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
-import org.hibernate.persister.common.spi.AbstractAttributeImpl;
+import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
 import org.hibernate.persister.common.spi.AbstractTable;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.Queryable;
@@ -38,6 +41,7 @@ import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.EntityReference;
+import org.hibernate.sqm.domain.PluralAttributeReference;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.BasicType;
@@ -55,10 +59,11 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 	private AbstractTable[] tables;
 
-	private ImprovedEntityPersister superType;
+	private ImprovedEntityPersisterImpl superType;
 	private IdentifierDescriptor identifierDescriptor;
 
-	private final Map<String, AbstractAttributeImpl> attributeMap = new HashMap<>();
+	private final Map<String, AbstractAttributeDescriptor> attributeMap = new HashMap<>();
+	private final List<AbstractAttributeDescriptor> attributeList = new ArrayList<>();
 
 	public ImprovedEntityPersisterImpl(EntityPersister persister) {
 		this.persister = persister;
@@ -78,7 +83,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 		// do init
 
-		this.superType = superType;
+		this.superType = (ImprovedEntityPersisterImpl) superType;
 		final Queryable queryable = (Queryable) persister;
 		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
 
@@ -162,7 +167,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 					formulas
 			);
 
-			final AbstractAttributeImpl attribute;
+			final AbstractAttributeDescriptor attribute;
 			if ( attributeType.isCollectionType() ) {
 				attribute = Helper.INSTANCE.buildPluralAttribute(
 						databaseModel,
@@ -185,6 +190,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			}
 
 			attributeMap.put( attributeName, attribute );
+			attributeList.add( attribute );
 		}
 
 		initComplete = true;
@@ -241,6 +247,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 		final EntityTableGroup group = new EntityTableGroup(
 				tableSpace,
+				fromElement.getUniqueIdentifier(),
 				sqlAliasBaseManager.getSqlAliasBase( fromElement ),
 				this
 		);
@@ -265,6 +272,21 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		}
 	}
 
+	@Override
+	public List<AttributeDescriptor> getNonIdentifierAttributes() {
+		final List<AttributeDescriptor> rtn = new ArrayList<>();
+		collectNonIdentifierAttributes( rtn );
+		return rtn;
+	}
+
+	private void collectNonIdentifierAttributes(List<AttributeDescriptor> list) {
+		if ( superType != null ) {
+			superType.collectNonIdentifierAttributes( list );
+		}
+
+		list.addAll( attributeList );
+	}
+
 	public void addTableJoins(AbstractTableGroup group, JoinType joinType, Column[] fkColumns, Column[] fkTargetColumns) {
 		final int baseAdjust;
 		final TableBinding drivingTableBinding;
@@ -287,8 +309,20 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 				joinPredicate.add(
 						new RelationalPredicate(
 								RelationalPredicate.Operator.EQUAL,
-								new ColumnBindingExpression( new ColumnBinding( fkColumns[i], group.getRootTableBinding() ) ),
-								new ColumnBindingExpression( new ColumnBinding( fkTargetColumns[i], drivingTableBinding ) )
+								new ColumnBindingExpression(
+										new ColumnBinding(
+												fkColumns[i],
+												fkColumns[i].getJdbcType(),
+												group.getRootTableBinding()
+										)
+								),
+								new ColumnBindingExpression(
+										new ColumnBinding(
+												fkTargetColumns[i],
+												fkTargetColumns[i].getJdbcType(),
+												drivingTableBinding
+										)
+								)
 						)
 				);
 			}
@@ -299,23 +333,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	}
 
 	@Override
-	public ColumnBinding[] resolveColumnBindings(TableBinding tableBinding, boolean shallow) {
-		// todo : this assumes that all columns for the entity come from the same table, which is not true when we look at joined-inheritance
-		// todo : we also need to account for `shallow` - atm this always renders shallow
-
-		final Collection<Column> columns = tableBinding.getTable().getColumns();
-		ColumnBinding[] columnBindings = new ColumnBinding[columns.size()];
-		final Iterator<Column> iterator = columns.iterator();
-		int i = 0;
-		while ( iterator.hasNext() ) {
-			columnBindings[i] = new ColumnBinding( iterator.next(), tableBinding );
-			i++;
-		}
-		return columnBindings;
-	}
-
-	@Override
-	public AttributeReference findAttribute(String name) {
+	public AttributeDescriptor findAttribute(String name) {
 		if ( attributeMap.containsKey( name ) ) {
 			return attributeMap.get( name );
 		}
@@ -329,7 +347,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		return null;
 	}
 
-	public Map<String, AbstractAttributeImpl> getAttributeMap() {
+	public Map<String, AbstractAttributeDescriptor> getAttributeMap() {
 		return attributeMap;
 	}
 
@@ -356,5 +374,42 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.of( this );
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		int count = getIdentifierDescriptor().getColumns().length;
+		if ( !shallow ) {
+			for ( AttributeReference attributeReference : getNonIdentifierAttributes() ) {
+				if ( attributeReference instanceof PluralAttributeReference ) {
+					continue;
+				}
+
+				final SingularAttributeDescriptor attrRef = (SingularAttributeDescriptor) attributeReference;
+				count += attrRef.getColumns().length;
+			}
+		}
+		return count;
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		final List<Column> columns = new ArrayList<>();
+
+		// add identifier columns regardless
+		Collections.addAll( columns, getIdentifierDescriptor().getColumns() );
+
+		if ( !shallow ) {
+			for ( AttributeReference attributeReference : getNonIdentifierAttributes() ) {
+				if ( attributeReference instanceof PluralAttributeReference ) {
+					continue;
+				}
+
+				final SingularAttributeDescriptor attrRef = (SingularAttributeDescriptor) attributeReference;
+				Collections.addAll( columns, attrRef.getColumns() );
+			}
+		}
+
+		return columns;
 	}
 }

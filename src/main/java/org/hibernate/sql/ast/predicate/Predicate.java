@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.predicate;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 
 /**
  * @author Steve Ebersole
@@ -14,5 +14,5 @@ import org.hibernate.sql.convert.spi.SqlTreeWalker;
 public interface Predicate {
 	boolean isEmpty();
 
-	void accept(SqlTreeWalker sqlTreeWalker);
+	void accept(SqlAstSelectInterpreter sqlTreeWalker);
 }

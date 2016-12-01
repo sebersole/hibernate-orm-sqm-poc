@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.hibernate.persister.common.spi.AbstractAttributeImpl;
+import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
 import org.hibernate.persister.entity.internal.ImprovedEntityPersisterImpl;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sqm.domain.EntityReference;
@@ -26,7 +26,7 @@ public class PolymorphicEntityReferenceImpl implements PolymorphicEntityReferenc
 	private final String name;
 	private final List<ImprovedEntityPersister> implementors;
 
-	private final Map<String,AbstractAttributeImpl> attributeDescriptorMap = new HashMap<>();
+	private final Map<String,AbstractAttributeDescriptor> attributeDescriptorMap = new HashMap<>();
 
 	public PolymorphicEntityReferenceImpl(
 			DomainMetamodelImpl modelMetadata,
@@ -36,7 +36,7 @@ public class PolymorphicEntityReferenceImpl implements PolymorphicEntityReferenc
 		this.implementors = implementors;
 
 		ImprovedEntityPersisterImpl firstImplementor = (ImprovedEntityPersisterImpl) implementors.get( 0 );
-		attr_loop: for ( AbstractAttributeImpl attributeDescriptor : firstImplementor.getAttributeMap().values() ) {
+		attr_loop: for ( AbstractAttributeDescriptor attributeDescriptor : firstImplementor.getAttributeMap().values() ) {
 			for ( ImprovedEntityPersister implementor : implementors ) {
 				if ( implementor.findAttribute( attributeDescriptor.getAttributeName() ) == null ) {
 					break attr_loop;

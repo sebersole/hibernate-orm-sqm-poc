@@ -11,6 +11,7 @@ import java.util.List;
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
 import org.hibernate.LockOptions;
+import org.hibernate.engine.query.spi.EntityGraphQueryHint;
 
 /**
  * @author Steve Ebersole
@@ -28,6 +29,8 @@ public interface QueryOptions {
 	CacheMode getCacheMode();
 	Boolean isResultCachingEnabled();
 	String getResultCacheRegionName();
+
+	EntityGraphQueryHint getEntityGraphQueryHint();
 
 	TupleTransformer getTupleTransformer();
 	ResultListTransformer getResultListTransformer();

@@ -6,9 +6,12 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
+import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
@@ -53,5 +56,15 @@ public class PluralAttributeElementEmbeddable implements PluralAttributeElement<
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		return collectionPersister.getElementReference().getColumnCount( shallow, factory );
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		return collectionPersister.getElementReference().getColumns( shallow, factory );
 	}
 }

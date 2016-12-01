@@ -22,7 +22,7 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.persister.common.internal.PhysicalColumn;
 import org.hibernate.persister.common.internal.PhysicalTable;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.domain.SingularAttributeReferenceExpression;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.expression.Expression;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
@@ -37,7 +37,7 @@ import org.hibernate.sql.ast.predicate.Junction;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
-import org.hibernate.sql.convert.spi.SelectStatementInterpreter;
+import org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter;
 import org.hibernate.sql.gen.BaseUnitTest;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.SqmSelectStatement;
@@ -57,7 +57,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinOneToManyNoJoinColumnTest() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.addresses" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.addresses" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -108,7 +108,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinOneToManyNoJoinColumnJoinManyToOneTest() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.addresses a join a.code" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.addresses a join a.code" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -176,7 +176,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinOneToManyWithJoinColumnTest() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.pastRoles" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.pastRoles" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -186,7 +186,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 		assertThat( tableSpace.getJoinedTableGroups().size(), is( 1 ) );
 
 		final TableGroupJoin tableGroupJoin = tableSpace.getJoinedTableGroups().get( 0 );
-		checkTableGroupJoin( tableGroupJoin, JoinType.INNER, CollectionTableGroup.class, "ROLE", "r1" );
+		checkTableGroupJoin( tableGroupJoin, JoinType.INNER, CollectionTableGroup.class, "ROLE", "p2" );
 
 		// Let's check the join predicate which should join PERSON(id) -> ROLE(person_id)
 		{
@@ -194,7 +194,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 					getJunctionJoinPredicate( tableGroupJoin ),
 					"p1",
 					"id",
-					"r1",
+					"p2",
 					"person_id"
 			);
 		}
@@ -205,7 +205,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinOneToOneAssociationWithPrimaryKeyJoinColumn() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.actualRole" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.actualRole" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -234,7 +234,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinOneToOneAssociationNoPrimaryKeyJoinColumn() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.actualRole2" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.actualRole2" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -263,7 +263,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinManyToOneAssociationWithJoinColumn() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.nextRole" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.nextRole" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -290,7 +290,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void joinManyToOneAssociationNoJoinColumn() {
-		final TableSpace tableSpace = getTableSpace( "from Person p join p.lastRole" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p join p.lastRole" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -317,7 +317,7 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 
 	@Test
 	public void crossJoinTest() {
-		final TableSpace tableSpace = getTableSpace( "from Person cross join Role" );
+		final TableSpace tableSpace = getTableSpace( "select p.id from Person p cross join Role" );
 
 		final TableGroup rootTableGroup = tableSpace.getRootTableGroup();
 		assertThat( rootTableGroup.getTableJoins().size(), is( 0 ) );
@@ -335,19 +335,21 @@ public class TableSpaceGenerationTest extends BaseUnitTest {
 	public void testSimpleAttributeReference() {
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( "select p.email from Person p" );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+		final SelectQuery sqlAst = SqmSelectToSqlAstConverter.interpret(
+				statement,
 				getSessionFactory(),
 				getConsumerContext().getDomainMetamodel(),
-				queryOptions(), callBack() );
-		interpreter.interpret( statement );
+				queryOptions(),
+				callBack()
+		);
 
-		final SelectClause selectClause = interpreter.getSelectQuery().getQuerySpec().getSelectClause();
+		final SelectClause selectClause = sqlAst.getQuerySpec().getSelectClause();
 
 		assertThat( selectClause.getSelections().size(), is( 1 ) );
 		assertThat( selectClause.getSelections().get( 0 ).getResultVariable(), startsWith( "<gen:" ) );
 		assertThat(
 				selectClause.getSelections().get( 0 ).getSelectExpression(),
-				instanceOf( AttributeReference.class )
+				instanceOf( SingularAttributeReferenceExpression.class )
 		);
 	}
 

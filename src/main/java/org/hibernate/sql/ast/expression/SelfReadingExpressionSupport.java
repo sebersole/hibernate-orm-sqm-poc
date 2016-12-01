@@ -6,16 +6,12 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.exec.results.internal.ReturnReaderScalarImpl;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
-
 /**
  * @author Steve Ebersole
+ *
+ * todo : remove prior to moving to upstream
+ * @deprecated ^^
  */
+@Deprecated
 public abstract class SelfReadingExpressionSupport implements Expression {
-	@Override
-	public ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory) {
-		return new ReturnReaderScalarImpl( startPosition, getType() );
-	}
 }

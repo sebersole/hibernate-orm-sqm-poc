@@ -6,25 +6,32 @@
  */
 package org.hibernate.persister.common.internal;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.persister.common.spi.AbstractSingularAttribute;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainReferenceImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.EntityReference;
+import org.hibernate.sqm.domain.PluralAttributeReference;
 import org.hibernate.type.EntityType;
 
 /**
  * @author Steve Ebersole
  */
-public class SingularAttributeEntity extends AbstractSingularAttribute<EntityType> {
+public class SingularAttributeEntity extends AbstractSingularAttributeDescriptor<EntityType> {
 	private final SingularAttributeClassification classification;
 	private final ImprovedEntityPersister entityPersister;
 	private final Column[] columns;
 
 	public SingularAttributeEntity(
-			DomainReferenceImplementor declaringType,
+			AttributeContainer declaringType,
 			String name,
 			SingularAttributeClassification classification,
 			EntityType ormType,
@@ -36,6 +43,10 @@ public class SingularAttributeEntity extends AbstractSingularAttribute<EntityTyp
 		this.columns = columns;
 	}
 
+	public ImprovedEntityPersister getEntityPersister() {
+		return entityPersister;
+	}
+
 	@Override
 	public SingularAttributeClassification getAttributeTypeClassification() {
 		return classification;
@@ -43,6 +54,24 @@ public class SingularAttributeEntity extends AbstractSingularAttribute<EntityTyp
 
 	public Column[] getColumns() {
 		return columns;
+	}
+
+	@Override
+	protected Column[] collectColumns(boolean shallow) {
+		if ( shallow ) {
+			return getColumns();
+		}
+
+		List<Column> columnList = new ArrayList<>(  );
+		for ( AttributeReference attributeReference : entityPersister.getNonIdentifierAttributes() ) {
+			if ( attributeReference instanceof PluralAttributeReference ) {
+				continue;
+			}
+
+			final SingularAttributeDescriptor attrRef = (SingularAttributeDescriptor) attributeReference;
+			Collections.addAll( columnList, attrRef.getColumns() );
+		}
+		return columnList.toArray( new Column[ columnList.size() ] );
 	}
 
 	@Override
@@ -60,5 +89,21 @@ public class SingularAttributeEntity extends AbstractSingularAttribute<EntityTyp
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.of( entityPersister );
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		// todo : plus the FK column(s)?
+		return entityPersister.getColumnCount( shallow, factory );
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		// todo : add the FK column(s)?
+		return entityPersister.getColumns( shallow, factory );
+	}
+
+	public String getEntityName() {
+		return entityPersister.getEntityName();
 	}
 }

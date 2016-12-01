@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression.instantiation;
 
-import org.hibernate.sql.exec.results.spi.ReturnReader;
+import org.hibernate.sql.exec.results.process.spi.ReturnReader;
 
 /**
  * @author Steve Ebersole

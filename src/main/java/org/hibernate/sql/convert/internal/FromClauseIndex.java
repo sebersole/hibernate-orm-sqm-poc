@@ -6,13 +6,18 @@
  */
 package org.hibernate.sql.convert.internal;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableGroup;
-import org.hibernate.sqm.parser.common.DomainReferenceBinding;
+import org.hibernate.sql.convert.ConversionException;
+import org.hibernate.sqm.query.expression.domain.DomainReferenceBinding;
+import org.hibernate.sqm.query.from.SqmAttributeJoin;
 import org.hibernate.sqm.query.from.SqmFrom;
 
 import org.jboss.logging.Logger;
@@ -27,7 +32,10 @@ public class FromClauseIndex {
 
 	private final Stack<FromClauseStackNode> fromClauseStackNodes = new Stack<>();
 
-	private final Map<SqmFrom, TableGroup> tableSpecificationGroupXref = new HashMap<>();
+	private final Map<String,SqmFrom> sqmFromByUid = new HashMap<>();
+	private final Map<SqmFrom, TableGroup> tableGroupBySqmFromXref = new HashMap<>();
+	private Map<String, List<SqmAttributeJoin>> sqmFetchesByParentUid = new HashMap<>();
+
 
 	public void pushFromClause(FromClause fromClause) {
 		FromClauseStackNode parent = null;
@@ -59,7 +67,7 @@ public class FromClauseIndex {
 	}
 
 	public void crossReference(SqmFrom fromElement, TableGroup tableGroup) {
-		TableGroup old = tableSpecificationGroupXref.put( fromElement, tableGroup );
+		TableGroup old = tableGroupBySqmFromXref.put( fromElement, tableGroup );
 		if ( old != null ) {
 			log.debugf(
 					"FromElement [%s] was already cross-referenced to TableSpecificationGroup - old : [%s]; new : [%s]",
@@ -68,15 +76,60 @@ public class FromClauseIndex {
 					tableGroup
 			);
 		}
+
+		SqmFrom existing = sqmFromByUid.put( fromElement.getUniqueIdentifier(), fromElement );
+		if ( existing != null ) {
+			if ( existing != fromElement ) {
+				log.debugf(
+						"Encountered duplicate SqmFrom#getUniqueIdentifier values [%s -> (%s, %s)]",
+						fromElement.getUniqueIdentifier(),
+						fromElement,
+						existing
+				);
+			}
+		}
+
+		if ( fromElement instanceof SqmAttributeJoin ) {
+			final SqmAttributeJoin sqmAttributeJoin = (SqmAttributeJoin) fromElement;
+			final String fetchParentUid = sqmAttributeJoin.getFetchParentUniqueIdentifier();
+
+			if ( fetchParentUid != null ) {
+				// otherwise, not fetched
+
+				if ( sqmFetchesByParentUid == null ) {
+					sqmFetchesByParentUid = new HashMap<>();
+				}
+
+				List<SqmAttributeJoin> fetches = sqmFetchesByParentUid.computeIfAbsent(
+						fetchParentUid,
+						k -> new ArrayList<>()
+				);
+				fetches.add( sqmAttributeJoin );
+			}
+		}
+
 		crossReference( fromElement.getDomainReferenceBinding(), tableGroup );
 	}
 
 	public TableGroup findResolvedTableGroup(SqmFrom fromElement) {
-		return tableSpecificationGroupXref.get( fromElement );
+		return tableGroupBySqmFromXref.get( fromElement );
+	}
+
+	public SqmFrom findSqmFromByUniqueIdentifier(String uniqueIdentifier) {
+		return sqmFromByUid.get( uniqueIdentifier );
+	}
+
+	public TableGroup findResolvedTableGroupByUniqueIdentifier(String uniqueIdentifier) {
+		final SqmFrom sqmFrom = findSqmFromByUniqueIdentifier( uniqueIdentifier );
+		if ( sqmFrom == null ) {
+			throw new ConversionException( "Could not resolve unique-identifier to SqmFrom" );
+		}
+
+		return tableGroupBySqmFromXref.get( sqmFrom );
 	}
 
 	public void crossReference(DomainReferenceBinding binding, TableGroup group) {
-		tableSpecificationGroupXref.put( binding.getFromElement(), group );
+		tableGroupBySqmFromXref.put( binding.getFromElement(), group );
 	}
 
 	public TableGroup findResolvedTableGroup(DomainReferenceBinding binding) {
@@ -88,7 +141,12 @@ public class FromClauseIndex {
 	}
 
 	public boolean isResolved(SqmFrom fromElement) {
-		return tableSpecificationGroupXref.containsKey( fromElement );
+		return tableGroupBySqmFromXref.containsKey( fromElement );
+	}
+
+	public List<SqmAttributeJoin> findFetchesByUniqueIdentifier(String uniqueIdentifier) {
+		final List<SqmAttributeJoin> fetches = sqmFetchesByParentUid.get( uniqueIdentifier );
+		return fetches == null ? Collections.emptyList() : Collections.unmodifiableList( fetches );
 	}
 
 	public static class FromClauseStackNode {

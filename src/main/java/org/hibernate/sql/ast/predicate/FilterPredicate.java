@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.predicate;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 
 /**
  * Represents a filter applied to an entity/collection.
@@ -24,7 +24,7 @@ public class FilterPredicate implements Predicate {
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
+	public void accept(SqlAstSelectInterpreter sqlTreeWalker) {
 		sqlTreeWalker.visitFilterPredicate( this );
 	}
 }

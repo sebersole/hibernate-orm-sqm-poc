@@ -13,7 +13,7 @@ import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
@@ -63,7 +63,7 @@ public class NamedParameter extends AbstractParameter {
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitNamedParameter( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitNamedParameter( this );
 	}
 }

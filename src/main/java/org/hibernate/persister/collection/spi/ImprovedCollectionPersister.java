@@ -10,29 +10,20 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
+import org.hibernate.persister.common.spi.PluralAttributeDescriptor;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
-import org.hibernate.sqm.domain.PluralAttributeReference;
 import org.hibernate.sqm.query.from.SqmAttributeJoin;
 
 /**
  * @author Steve Ebersole
  */
-public interface ImprovedCollectionPersister extends PluralAttributeReference, OrmTypeExporter {
+public interface ImprovedCollectionPersister extends PluralAttributeDescriptor, OrmTypeExporter {
 	CollectionPersister getPersister();
 
 	void finishInitialization(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel);
-
-	PluralAttributeKey getForeignKeyDescriptor();
-	PluralAttributeId getIdDescriptor();
-
-	@Override
-	PluralAttributeElement getElementReference();
-
-	@Override
-	PluralAttributeIndex getIndexReference();
 
 	CollectionTableGroup buildTableGroup(
 			SqmAttributeJoin joinedFromElement,

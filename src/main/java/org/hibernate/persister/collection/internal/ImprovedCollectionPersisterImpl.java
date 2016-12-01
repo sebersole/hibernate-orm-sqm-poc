@@ -16,11 +16,11 @@ import org.hibernate.persister.collection.spi.PluralAttributeKey;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
-import org.hibernate.persister.common.spi.AbstractAttributeImpl;
+import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
 import org.hibernate.persister.common.spi.AbstractTable;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;
@@ -31,14 +31,14 @@ import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassific
 import org.hibernate.sqm.query.from.SqmAttributeJoin;
 import org.hibernate.type.AnyType;
 import org.hibernate.type.BasicType;
+import org.hibernate.type.CollectionType;
 import org.hibernate.type.CompositeType;
 import org.hibernate.type.EntityType;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl implements ImprovedCollectionPersister {
+public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor implements ImprovedCollectionPersister {
 	private final AbstractCollectionPersister persister;
 	private final CollectionClassification collectionClassification;
 
@@ -50,7 +50,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 	private AbstractTable separateCollectionTable;
 
 	public ImprovedCollectionPersisterImpl(
-			DomainReferenceImplementor declaringType,
+			AttributeContainer declaringType,
 			String attributeName,
 			CollectionPersister persister,
 			Column[] foreignKeyColumns) {
@@ -259,7 +259,10 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex) {
 		final CollectionTableGroup group = new CollectionTableGroup(
-				tableSpace, sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ), this
+				tableSpace,
+				joinedFromElement.getUniqueIdentifier(),
+				sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ),
+				this
 		);
 
 		fromClauseIndex.crossReference( joinedFromElement, group );
@@ -281,7 +284,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 					fkTargetColumns = elementPersister.getIdentifierDescriptor().getColumns();
 				}
 				else {
-					SingularAttributeImplementor referencedAttribute = (SingularAttributeImplementor) elementPersister.findAttribute( elementEntity.getOrmType().getRHSUniqueKeyPropertyName() );
+					SingularAttributeDescriptor referencedAttribute = (SingularAttributeDescriptor) elementPersister.findAttribute( elementEntity.getOrmType().getRHSUniqueKeyPropertyName() );
 					fkTargetColumns = referencedAttribute.getColumns();
 				}
 			}
@@ -317,8 +320,8 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeImpl imple
 	}
 
 	@Override
-	public Type getOrmType() {
-		return persister.getType();
+	public CollectionType getOrmType() {
+		return persister.getCollectionType();
 	}
 
 	@Override

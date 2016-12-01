@@ -6,8 +6,12 @@
  */
 package org.hibernate.sql.ast.from;
 
+import java.util.List;
+
+import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 
 /**
  * A TableSpecificationGroup for an entity reference
@@ -17,8 +21,8 @@ import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 public class EntityTableGroup extends AbstractTableGroup {
 	private final ImprovedEntityPersister persister;
 
-	public EntityTableGroup(TableSpace tableSpace, String aliasBase, ImprovedEntityPersister persister) {
-		super( tableSpace, aliasBase );
+	public EntityTableGroup(TableSpace tableSpace, String uid, String aliasBase, ImprovedEntityPersister persister) {
+		super( tableSpace, uid, aliasBase );
 		this.persister = persister;
 	}
 
@@ -32,7 +36,7 @@ public class EntityTableGroup extends AbstractTableGroup {
 		final TableBinding tableBinding = getRootTableBinding();
 		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
 		for ( int i = 0; i < columns.length; i++ ) {
-			bindings[i] = new ColumnBinding( columns[i], tableBinding );
+			bindings[i] = new ColumnBinding( columns[i], columns[i].getJdbcType(), tableBinding );
 		}
 		return bindings;
 	}
@@ -40,5 +44,27 @@ public class EntityTableGroup extends AbstractTableGroup {
 	@Override
 	protected ImprovedEntityPersister resolveEntityReferenceBase() {
 		return getPersister();
+	}
+
+	@Override
+	public List<ColumnBinding> resolveColumnBindings(DomainReferenceExpression expression, boolean shallow) {
+		final List<Column> columns = expression.getDomainReference().getColumns(
+				shallow,
+				getPersister().getEntityPersister().getFactory()
+		);
+
+		final List<ColumnBinding> bindings = CollectionHelper.arrayList( columns.size() );
+
+		for ( Column column : columns ) {
+			bindings.add(
+					new ColumnBinding(
+							column,
+							column.getJdbcType(),
+							locateTableBinding( column.getSourceTable() )
+					)
+			);
+		}
+
+		return bindings;
 	}
 }

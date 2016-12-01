@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 
 /**
@@ -18,7 +18,7 @@ public class SumFunction extends AbstractAggregateFunction implements AggregateF
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitSumFunction( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitSumFunction( this );
 	}
 }

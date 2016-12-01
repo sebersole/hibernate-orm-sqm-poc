@@ -6,30 +6,33 @@
  */
 package org.hibernate.persister.common.internal;
 
+import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.persister.common.spi.AbstractAttributeImpl;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.DomainDescriptor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.sqm.domain.EntityReference;
-import org.hibernate.type.Type;
+import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
 public class SingularAttributeEmbedded
-		extends AbstractAttributeImpl
-		implements SingularAttributeImplementor {
+		extends AbstractSingularAttributeDescriptor<CompositeType>
+		implements SingularAttributeDescriptor {
 
 	private final EmbeddablePersister embeddablePersister;
 
 	public SingularAttributeEmbedded(
-			DomainReferenceImplementor declaringType,
+			AttributeContainer declaringType,
 			String attributeName,
 			EmbeddablePersister embeddablePersister) {
-		super( declaringType, attributeName );
+		super( declaringType, attributeName, embeddablePersister.getOrmType() );
 		this.embeddablePersister = embeddablePersister;
 	}
 
@@ -40,11 +43,6 @@ public class SingularAttributeEmbedded
 	@Override
 	public SingularAttributeClassification getAttributeTypeClassification() {
 		return SingularAttributeClassification.EMBEDDED;
-	}
-
-	@Override
-	public Type getOrmType() {
-		return embeddablePersister.getOrmType();
 	}
 
 	@Override
@@ -60,5 +58,15 @@ public class SingularAttributeEmbedded
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		return embeddablePersister.getColumnCount( shallow, factory );
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		return embeddablePersister.getColumns( shallow, factory );
 	}
 }

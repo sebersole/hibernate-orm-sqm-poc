@@ -6,32 +6,33 @@
  */
 package org.hibernate.persister.entity.internal;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AttributeContainer;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
-import org.hibernate.persister.entity.spi.AttributeReferenceSource;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
-import org.hibernate.sqm.domain.AttributeReference;
-import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.CompositeType;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
 public class IdentifierCompositeNonAggregated
-		implements IdentifierDescriptor, SingularAttributeImplementor, AttributeReferenceSource {
+		extends AbstractSingularAttributeDescriptor<CompositeType>
+		implements IdentifierDescriptor, SingularAttributeDescriptor, AttributeContainer {
 	// todo : IdClass handling eventually
 
-	private final DomainReferenceImplementor declaringType;
 	private final EmbeddablePersister embeddablePersister;
 
-	public IdentifierCompositeNonAggregated(DomainReferenceImplementor declaringType, EmbeddablePersister embeddablePersister) {
-		this.declaringType = declaringType;
+	public IdentifierCompositeNonAggregated(AttributeContainer declaringType, EmbeddablePersister embeddablePersister) {
+		super( declaringType, "<id>", embeddablePersister.getOrmType() );
 		this.embeddablePersister = embeddablePersister;
 	}
 
@@ -51,7 +52,7 @@ public class IdentifierCompositeNonAggregated
 	}
 
 	@Override
-	public SingularAttributeImplementor getIdAttribute() {
+	public SingularAttributeDescriptor getIdAttribute() {
 		return this;
 	}
 
@@ -59,19 +60,10 @@ public class IdentifierCompositeNonAggregated
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// SingularAttributeImplementor
 
-	@Override
-	public Type getOrmType() {
-		return embeddablePersister.getOrmType();
-	}
 
 	@Override
 	public SingularAttributeClassification getAttributeTypeClassification() {
 		return SingularAttributeClassification.EMBEDDED;
-	}
-
-	@Override
-	public DomainReference getLeftHandSide() {
-		return declaringType;
 	}
 
 	@Override
@@ -81,16 +73,31 @@ public class IdentifierCompositeNonAggregated
 
 	@Override
 	public String asLoggableText() {
-		return "IdentifierCompositeNonAggregated(" + declaringType.asLoggableText() + ")";
+		return "IdentifierCompositeNonAggregated(" + getAttributeContainer().asLoggableText() + ")";
 	}
 
 	@Override
-	public AttributeReference findAttribute(String name) {
+	public List<AttributeDescriptor> getNonIdentifierAttributes() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public AttributeDescriptor findAttribute(String name) {
 		return embeddablePersister.findAttribute( name );
 	}
 
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		return embeddablePersister.getColumnCount( shallow, factory );
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		return embeddablePersister.getColumns( shallow, factory );
 	}
 }

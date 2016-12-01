@@ -16,17 +16,17 @@ import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
-import org.hibernate.persister.common.spi.AbstractAttributeImpl;
+import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
 import org.hibernate.persister.common.spi.AbstractTable;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainReferenceImplementor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.convert.spi.NotYetImplementedException;
-import org.hibernate.sqm.domain.PluralAttributeReference.CollectionClassification;
 import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassification;
+import org.hibernate.sqm.domain.PluralAttributeReference.CollectionClassification;
 import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
 import org.hibernate.type.ArrayType;
 import org.hibernate.type.BagType;
@@ -180,10 +180,10 @@ public class Helper {
 		return values;
 	}
 
-	public AbstractAttributeImpl buildAttribute(
+	public AbstractAttributeDescriptor buildAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			DomainReferenceImplementor source,
+			AttributeContainer source,
 			String propertyName,
 			Type propertyType,
 			Column[] columns) {
@@ -209,10 +209,10 @@ public class Helper {
 		}
 	}
 
-	public AbstractAttributeImpl buildSingularAttribute(
+	public AbstractAttributeDescriptor buildSingularAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			DomainReferenceImplementor source,
+			AttributeContainer source,
 			String attributeName,
 			Type attributeType,
 			Column[] columns) {
@@ -284,10 +284,10 @@ public class Helper {
 		return attributeType.getName();
 	}
 
-	public AbstractAttributeImpl buildPluralAttribute(
+	public AbstractAttributeDescriptor buildPluralAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			DomainReferenceImplementor source,
+			AttributeContainer source,
 			String subclassPropertyName,
 			Type attributeType,
 			Column[] columns) {

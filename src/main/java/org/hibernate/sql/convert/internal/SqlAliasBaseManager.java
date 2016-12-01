@@ -11,7 +11,7 @@ import java.util.Map;
 
 import org.hibernate.AssertionFailure;
 import org.hibernate.internal.util.StringHelper;
-import org.hibernate.persister.common.spi.AttributeImplementor;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
@@ -97,7 +97,7 @@ public class SqlAliasBaseManager {
 
 	private String determineAcronym(AttributeReference attrRef) {
 		final String acronymBase;
-		final Type attrType = ( (AttributeImplementor) attrRef ).getOrmType();
+		final Type attrType = ( (AttributeDescriptor) attrRef ).getOrmType();
 		if ( attrType.isEntityType() && !attrType.isAnyType() ) {
 			// use the entity name as the base
 			acronymBase = toSimpleEntityName( ( (EntityType) attrType ).getAssociatedEntityName() );

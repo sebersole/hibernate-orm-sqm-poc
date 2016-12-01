@@ -13,6 +13,7 @@ import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.result.Outputs;
 import org.hibernate.sql.ast.SelectQuery;
+import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.spi.Callback;
 
 /**

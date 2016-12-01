@@ -6,8 +6,10 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sqm.domain.DomainReference;
@@ -58,5 +60,15 @@ public class PluralAttributeElementAny implements PluralAttributeElement<AnyType
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		return collectionPersister.getElementReference().getColumnCount( shallow, factory );
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		return collectionPersister.getElementReference().getColumns( shallow, factory );
 	}
 }

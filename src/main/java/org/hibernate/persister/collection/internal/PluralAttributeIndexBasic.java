@@ -6,8 +6,10 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sqm.domain.DomainReference;
@@ -36,4 +38,5 @@ public class PluralAttributeIndexBasic extends AbstractPluralAttributeIndex<Basi
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
 	}
+
 }

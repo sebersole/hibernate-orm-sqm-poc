@@ -9,13 +9,18 @@ package org.hibernate.sql.ast.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
-import org.hibernate.type.Type;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
+import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class CoalesceExpression extends SelfReadingExpressionSupport {
+public class CoalesceExpression implements Expression, SqlSelectable {
 	private List<Expression> values = new ArrayList<>();
 
 	public List<Expression> getValues() {
@@ -27,12 +32,22 @@ public class CoalesceExpression extends SelfReadingExpressionSupport {
 	}
 
 	@Override
-	public Type getType() {
-		return values.get( 0 ).getType();
+	public BasicType getType() {
+		return (BasicType) values.get( 0 ).getType();
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitCoalesceExpression( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitCoalesceExpression( this );
+	}
+
+	@Override
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( getType() );
 	}
 }

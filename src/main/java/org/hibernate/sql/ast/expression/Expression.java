@@ -6,9 +6,8 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
 /**
@@ -22,17 +21,7 @@ public interface Expression {
 	 */
 	Type getType();
 
-	/**
-	 * Obtain the ReturnReader for properly reading back values for this expression from the select
-	 *
-	 * @return The Return
-	 */
-	ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory);
+	Return toQueryReturn(String resultVariable);
 
-	/**
-	 * Visitation by delegation
-	 *
-	 * @param sqlTreeWalker The visitation controller
-	 */
-	void accept(SqlTreeWalker sqlTreeWalker);
+	void accept(SqlAstSelectInterpreter walker, boolean shallow);
 }

@@ -11,33 +11,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sql.exec.results.spi.RowProcessingState;
+import org.hibernate.internal.util.StringHelper;
+import org.hibernate.internal.util.collections.CollectionHelper;
+import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.ReturnReader;
+import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnReaderDynamicInstantiationListImpl implements ReturnReader<List> {
+	private static final Logger log = Logger.getLogger( ReturnReaderDynamicInstantiationListImpl.class );
+
 	private final List<ReturnReader> argumentReaders;
-	private final int startPosition;
 	private final int numberOfColumnsConsumed;
 
 	public ReturnReaderDynamicInstantiationListImpl(
-			List<DynamicInstantiationArgument> arguments,
-			int startPosition,
-			SessionFactoryImplementor sessionFactory) {
-		this.startPosition = startPosition;
-		int numberOfColumnsConsumed = 0;
+			List<AliasedReturnReader> aliasedArgumentReaders,
+			int numberOfColumnsConsumed) {
+		this.numberOfColumnsConsumed = numberOfColumnsConsumed;
 
-		this.argumentReaders = new ArrayList<>();
-		for ( DynamicInstantiationArgument argument : arguments ) {
-			ReturnReader argumentReader = argument.getExpression().getReturnReader( startPosition+numberOfColumnsConsumed, true, sessionFactory );
-			argumentReaders.add( argumentReader );
-			numberOfColumnsConsumed += argumentReader.getNumberOfColumnsRead( sessionFactory );
+		final List<ReturnReader> argumentReaders = CollectionHelper.arrayList( aliasedArgumentReaders.size() );
+		for ( AliasedReturnReader aliasedArgumentReader : aliasedArgumentReaders ) {
+			if ( StringHelper.isNotEmpty( aliasedArgumentReader.getAlias() ) ) {
+				log.debugf( "Argument for list dynamic instantiation (`new list(...)`) specified alias, ignoring" );
+			}
+			argumentReaders.add( aliasedArgumentReader.getReturnReader() );
 		}
 
-		this.numberOfColumnsConsumed = numberOfColumnsConsumed;
+		this.argumentReaders = argumentReaders;
 	}
 
 	@Override

@@ -13,6 +13,7 @@ import java.util.List;
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
 import org.hibernate.LockOptions;
+import org.hibernate.engine.query.spi.EntityGraphQueryHint;
 import org.hibernate.query.proposed.Limit;
 import org.hibernate.query.proposed.ResultListTransformer;
 import org.hibernate.query.proposed.TupleTransformer;
@@ -38,6 +39,8 @@ public class QueryOptionsImpl implements MutableQueryOptions {
 
 	private TupleTransformer tupleTransformer;
 	private ResultListTransformer resultListTransformer;
+
+	private EntityGraphQueryHint entityGraphQueryHint;
 
 	@Override
 	public Integer getTimeout() {
@@ -163,5 +166,14 @@ public class QueryOptionsImpl implements MutableQueryOptions {
 	@Override
 	public Boolean isReadOnly() {
 		return readOnlyEnabled;
+	}
+
+	@Override
+	public EntityGraphQueryHint getEntityGraphQueryHint() {
+		return entityGraphQueryHint;
+	}
+
+	public void setEntityGraphQueryHint(EntityGraphQueryHint entityGraphQueryHint) {
+		this.entityGraphQueryHint = entityGraphQueryHint;
 	}
 }

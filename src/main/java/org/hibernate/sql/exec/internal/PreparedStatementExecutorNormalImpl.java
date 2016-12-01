@@ -16,12 +16,15 @@ import java.util.List;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
-import org.hibernate.sql.convert.spi.Return;
-import org.hibernate.sql.exec.results.internal.ResultSetProcessingStateStandardImpl;
-import org.hibernate.sql.exec.results.internal.RowReaderStandardImpl;
-import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.spi.ResultSetProcessingState;
-import org.hibernate.sql.exec.results.spi.RowReader;
+import org.hibernate.sql.exec.results.process.internal.caching.QueryCacheDataAccessEnabled;
+import org.hibernate.sql.exec.results.process.internal.caching.QueryCacheDataAccessImplementor;
+import org.hibernate.sql.exec.results.process.internal.caching.QueryCacheDataAccessNoCachingImpl;
+import org.hibernate.sql.exec.results.process.internal.ResultSetProcessingStateStandardImpl;
+import org.hibernate.sql.exec.results.process.internal.RowReaderStandardImpl;
+import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingState;
+import org.hibernate.sql.exec.results.process.spi.RowReader;
+import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
 import org.hibernate.sql.exec.spi.RowTransformer;
 
@@ -68,7 +71,7 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 	public List<T> execute(
 			PreparedStatement ps,
 			QueryOptions queryOptions,
-			List<Return> returns,
+			List<ResolvedReturn> returns,
 			RowTransformer<T> rowTransformer,
 			SharedSessionContractImplementor session) throws SQLException {
 		final LogicalConnectionImplementor logicalConnection = session.getJdbcCoordinator().getLogicalConnection();
@@ -81,14 +84,17 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 			int position = 1;
 
 			// Prepare the ResultSetProcessingState...
+			final QueryCacheDataAccessImplementor queryCacheDataAccess = resolveQueryCacheDataAccess( queryOptions, session );
 			final ResultSetProcessingState resultSetProcessingState = new ResultSetProcessingStateStandardImpl(
 					resultSet,
+					queryCacheDataAccess,
 					queryOptions,
+					processingOptions,
 					returns,
 					session
 			);
 
-			final RowReader<T> rowReader = new RowReaderStandardImpl<T>( returns, rowTransformer );
+			final RowReader<T> rowReader = new RowReaderStandardImpl<T>( returns, queryCacheDataAccess, rowTransformer );
 
 			final List<T> results = new ArrayList<T>();
 			final Integer maxRows = queryOptions.getLimit().getMaxRows();
@@ -118,5 +124,19 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 			logicalConnection.getResourceRegistry().release( resultSet, ps );
 			logicalConnection.getResourceRegistry().release( ps );
 		}
+	}
+
+	private QueryCacheDataAccessImplementor resolveQueryCacheDataAccess(
+			QueryOptions queryOptions,
+			SharedSessionContractImplementor session) {
+		if ( ! session.getFactory().getSessionFactoryOptions().isQueryCacheEnabled() ) {
+			return QueryCacheDataAccessNoCachingImpl.INSTANCE;
+		}
+
+		return new QueryCacheDataAccessEnabled(
+				queryOptions.getCacheMode(),
+				session.getFactory().getCache().getQueryCache( queryOptions.getResultCacheRegionName() ),
+				null
+		);
 	}
 }

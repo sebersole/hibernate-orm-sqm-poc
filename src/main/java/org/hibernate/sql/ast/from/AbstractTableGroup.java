@@ -7,22 +7,19 @@
 package org.hibernate.sql.ast.from;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
-import org.hibernate.persister.entity.internal.IdentifierSimple;
-import org.hibernate.sql.ast.expression.AttributeReference;
-import org.hibernate.sql.ast.expression.EntityReference;
-import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.persister.common.internal.SingularAttributeBasic;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.Table;
-import org.hibernate.sql.convert.spi.Helper;
+import org.hibernate.persister.entity.internal.IdentifierSimple;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
+import org.hibernate.sql.ast.expression.domain.EntityReferenceExpression;
 import org.hibernate.sql.convert.spi.NotYetImplementedException;
 
 import org.jboss.logging.Logger;
@@ -30,23 +27,30 @@ import org.jboss.logging.Logger;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractTableGroup implements TableGroup {
+public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSource {
 	private static final Logger log = Logger.getLogger( AbstractTableGroup.class );
 
 	private final TableSpace tableSpace;
+	private final String uid;
 	private final String aliasBase;
 
 	private TableBinding rootTableBinding;
 	private List<TableJoin> tableJoins;
 
-	public AbstractTableGroup(TableSpace tableSpace, String aliasBase) {
+	public AbstractTableGroup(TableSpace tableSpace, String uid, String aliasBase) {
 		this.tableSpace = tableSpace;
+		this.uid = uid;
 		this.aliasBase = aliasBase;
 	}
 
 	@Override
 	public TableSpace getTableSpace() {
 		return tableSpace;
+	}
+
+	@Override
+	public String getUid() {
+		return uid;
 	}
 
 	@Override
@@ -78,7 +82,7 @@ public abstract class AbstractTableGroup implements TableGroup {
 	}
 
 	@Override
-	public ColumnBinding[] resolveBindings(SingularAttributeImplementor attribute) {
+	public ColumnBinding[] resolveBindings(SingularAttributeDescriptor attribute) {
 		final Column[] columns;
 		if ( attribute instanceof SingularAttributeBasic ) {
 			columns = attribute.getColumns();
@@ -99,29 +103,22 @@ public abstract class AbstractTableGroup implements TableGroup {
 		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
 		for ( int i = 0; i < columns.length; i++ ) {
 			final TableBinding tableBinding = locateTableBinding( columns[i].getSourceTable() );
-			bindings[i] = new ColumnBinding( columns[i], tableBinding );
+			bindings[i] = new ColumnBinding( columns[i], columns[i].getJdbcType(), tableBinding );
 		}
 
 		return bindings;
 	}
 
 	@Override
-	public AttributeReference resolve(SingularAttributeImplementor attribute) {
-		return new AttributeReference( attribute, resolveBindings( attribute ) );
-	}
-
-	@Override
-	public EntityReference resolveEntityReference() {
+	public EntityReferenceExpression resolveEntityReference() {
 		final ImprovedEntityPersister improvedEntityPersister = resolveEntityReferenceBase();
-
-		final TableBinding tableBinding = locateTableBinding( improvedEntityPersister.getRootTable() );
-
-		return new EntityReference( this, improvedEntityPersister, tableBinding );
+		return new EntityReferenceExpression( this, improvedEntityPersister );
 	}
 
 	protected abstract ImprovedEntityPersister resolveEntityReferenceBase();
 
-	private TableBinding locateTableBinding(Table table) {
+	@Override
+	public TableBinding locateTableBinding(Table table) {
 		if ( table == getRootTableBinding().getTable() ) {
 			return getRootTableBinding();
 		}

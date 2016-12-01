@@ -10,8 +10,10 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Tuple;
 
 import org.hibernate.Session;
@@ -29,6 +31,7 @@ import org.hibernate.sql.ExecutionContextTestImpl;
 import org.hibernate.sql.QueryProducerTestImpl;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 
+import org.hibernate.testing.FailureExpected;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +46,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Steve Ebersole
  */
-public class FullStackTest {
+public class FullStackTest extends org.hibernate.testing.junit4.BaseUnitTestCase {
 	private SessionFactoryImplementor sessionFactory;
 	private ConsumerContextImpl consumerContext;
 
@@ -57,6 +60,7 @@ public class FullStackTest {
 		try {
 			MetadataSources metadataSources = new MetadataSources( ssr );
 			metadataSources.addAnnotatedClass( Person.class );
+			metadataSources.addAnnotatedClass( Address.class );
 
 			this.sessionFactory = (SessionFactoryImplementor) metadataSources.buildMetadata().buildSessionFactory();
 		}
@@ -73,7 +77,9 @@ public class FullStackTest {
 	private void insertRow() {
 		Session session = sessionFactory.openSession();
 		session.beginTransaction();
-		session.persist( new Person( 1, "Steve", 20 ) );
+		Address addr = new Address( 1, "123 Main", "Anywhere, USA" );
+		session.persist( addr );
+		session.persist( new Person( 1, "Steve", 20, addr ) );
 		session.getTransaction().commit();
 		session.close();
 	}
@@ -92,7 +98,7 @@ public class FullStackTest {
 	}
 
 	@Test
-	public void testFullStack() throws SQLException {
+	public void testFullStackBasicAttributeSelection() throws SQLException {
 		doInSession(
 			session -> {
 				final QuerySqmImpl query = generateQueryImpl(
@@ -139,7 +145,7 @@ public class FullStackTest {
 	}
 
 	@Test
-	public void testFullStackTyped() throws SQLException {
+	public void testFullStackTypedBasicAttributeSelection() throws SQLException {
 		doInSession(
 				session -> {
 					final QuerySqmImpl<String> query = generateQueryImpl(
@@ -205,7 +211,7 @@ public class FullStackTest {
 				session -> {
 					final QuerySqmImpl<Person> query = generateQueryImpl(
 							session,
-							"select new Person( p.name as name, p.age as age ) from Person p where p.age >= 20 and p.age <= ?1",
+							"select new Person( p.id, p.name as name, p.age as age ) from Person p where p.age >= 20 and p.age <= ?1",
 							Person.class
 					);
 
@@ -213,7 +219,7 @@ public class FullStackTest {
 					final List<Person> results = query.list();
 					assertThat( results.size(), is( 1 ) );
 					Person person = results.get( 0 );
-					assertThat( person.id, is(nullValue()) );
+					assertThat( person.id, is(1) );
 					assertThat( person.name, is("Steve") );
 					assertThat( person.age, is(20) );
 				}
@@ -264,6 +270,29 @@ public class FullStackTest {
 		);
 	}
 
+	@Test
+	@FailureExpected( jiraKey = "none" )
+	public void testFullStackManyToAttributeSelection() throws SQLException {
+		doInSession(
+				session -> {
+					final QuerySqmImpl<Map> query = generateQueryImpl(
+							session,
+							"select p.address from Person p where p.age >= 20 and p.age <= ?1",
+							Map.class
+					);
+
+					query.setParameter( 1, 39 );
+
+					final List results = query.list();
+					assertThat( results.size(), is( 1 ) );
+					Address address = (Address) results.get( 0 );
+					assertThat( address.id, is(1) );
+					assertThat( address.streetAddress, CoreMatchers.is( "123 Main" ) );
+					assertThat( address.city, CoreMatchers.is( "Anywhere, USA" ) );
+				}
+		);
+	}
+
 	@Entity(name="Person")
 	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class Person {
@@ -271,6 +300,8 @@ public class FullStackTest {
 		Integer id;
 		String name;
 		int age;
+		@ManyToOne( cascade = CascadeType.ALL )
+		Address address;
 
 		public Person() {
 		}
@@ -280,6 +311,30 @@ public class FullStackTest {
 			this.name = name;
 			this.age = age;
 		}
+
+		public Person(Integer id, String name, int age, Address address) {
+			this.id = id;
+			this.name = name;
+			this.age = age;
+			this.address = address;
+		}
 	}
 
+	@Entity(name="Address")
+	@SuppressWarnings({"WeakerAccess", "unused"})
+	public static class Address {
+		@Id
+		Integer id;
+		String streetAddress;
+		String city;
+
+		public Address() {
+		}
+
+		public Address(Integer id, String streetAddress, String city) {
+			this.id = id;
+			this.streetAddress = streetAddress;
+			this.city = city;
+		}
+	}
 }

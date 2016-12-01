@@ -6,13 +6,18 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.type.BasicType;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractAggregateFunction extends SelfReadingExpressionSupport implements AggregateFunction {
+public abstract class AbstractAggregateFunction
+		implements AggregateFunction, SqlSelectable {
 	private final Expression argument;
 	private final boolean distinct;
 	private final BasicType resultType;
@@ -29,12 +34,22 @@ public abstract class AbstractAggregateFunction extends SelfReadingExpressionSup
 	}
 
 	@Override
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
 	public boolean isDistinct() {
 		return distinct;
 	}
 
 	@Override
-	public Type getType() {
+	public BasicType getType() {
 		return resultType;
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( getType() );
 	}
 }

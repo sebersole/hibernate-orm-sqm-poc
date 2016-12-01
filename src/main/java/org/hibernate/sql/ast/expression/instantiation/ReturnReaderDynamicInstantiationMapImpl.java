@@ -7,40 +7,26 @@
 package org.hibernate.sql.ast.expression.instantiation;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sql.exec.results.spi.RowProcessingState;
+import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.ReturnReader;
+import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
-	private final List<AliasedReturnReader> entryReaders;
+	private final List<AliasedReturnReader> argumentReaders;
 	private final int numberOfColumnsConsumed;
 
 	public ReturnReaderDynamicInstantiationMapImpl(
-			List<DynamicInstantiationArgument> arguments,
-			int startPosition,
-			SessionFactoryImplementor sessionFactory) {
-		this.entryReaders = new ArrayList<>();
-		int numberOfColumnsConsumed = 0;
-
-		for ( DynamicInstantiationArgument argument : arguments ) {
-			final ReturnReader reader = argument.getExpression().getReturnReader(
-					startPosition+numberOfColumnsConsumed,
-					true,
-					sessionFactory
-			);
-			numberOfColumnsConsumed += reader.getNumberOfColumnsRead( sessionFactory );
-			entryReaders.add( new AliasedReturnReader( argument.getAlias(), reader ) );
-		}
-
+			List<AliasedReturnReader> argumentReaders,
+			int numberOfColumnsConsumed) {
+		this.argumentReaders = argumentReaders;
 		this.numberOfColumnsConsumed = numberOfColumnsConsumed;
 	}
 
@@ -59,7 +45,7 @@ public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
 	public void readBasicValues(
 			RowProcessingState processingState,
 			ResultSetProcessingOptions options) throws SQLException {
-		for ( AliasedReturnReader entryReader : entryReaders ) {
+		for ( AliasedReturnReader entryReader : argumentReaders ) {
 			entryReader.getReturnReader().readBasicValues( processingState, options );
 		}
 	}
@@ -68,7 +54,7 @@ public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
 	public void resolveBasicValues(
 			RowProcessingState processingState,
 			ResultSetProcessingOptions options) throws SQLException {
-		for ( AliasedReturnReader entryReader : entryReaders ) {
+		for ( AliasedReturnReader entryReader : argumentReaders ) {
 			entryReader.getReturnReader().resolveBasicValues( processingState, options );
 		}
 	}
@@ -80,7 +66,7 @@ public class ReturnReaderDynamicInstantiationMapImpl implements ReturnReader {
 			ResultSetProcessingOptions options) throws SQLException {
 		final HashMap result = new HashMap();
 
-		for ( AliasedReturnReader entryReader : entryReaders ) {
+		for ( AliasedReturnReader entryReader : argumentReaders ) {
 			result.put(
 					entryReader.getAlias(),
 					entryReader.getReturnReader().assemble( processingState, options )

@@ -17,11 +17,12 @@ import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
 import org.hibernate.result.Outputs;
+import org.hibernate.sql.exec.spi.SqlSelectInterpretation;
 import org.hibernate.sql.spi.ParameterBinder;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.convert.spi.Callback;
 import org.hibernate.sql.convert.spi.NotYetImplementedException;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
 import org.hibernate.sql.exec.spi.RowTransformer;
@@ -54,8 +55,19 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 
 		// todo : also need to account for multi-valued param bindings in terms of the generated SQL...
 
-		final SqlTreeWalker sqlTreeWalker = new SqlTreeWalker( persistenceContext.getFactory(), queryParameterBindings );
-		sqlTreeWalker.visitSelectQuery( sqlTree );
+		// todo : actually, why not just pass in the SqlSelectInterpretation rather than SelectQuery (SQL AST)
+		//		The only use of the SQL AST here is in building the SqlSelectInterpretation
+
+		// todo : look at making SqlAstSelectInterpreter into an interface and having that be the thing that Dialects can hook into the translation
+		//		nice tie-in with Dialect handling follow-on-locking e.g.
+
+
+		final SqlSelectInterpretation sqlSelectInterpretation = SqlAstSelectInterpreter.interpret(
+				sqlTree,
+				false,
+				persistenceContext.getFactory(),
+				queryParameterBindings
+		);
 
 		// Now start the execution
 		final LogicalConnectionImplementor logicalConnection = persistenceContext.getJdbcCoordinator().getLogicalConnection();
@@ -63,7 +75,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 
 		final JdbcServices jdbcServices = persistenceContext.getFactory().getServiceRegistry().getService( JdbcServices.class );
 
-		final String sql = sqlTreeWalker.getSql();
+		final String sql = sqlSelectInterpretation.getSql();
 		try {
 			jdbcServices.getSqlStatementLogger().logStatement( sql );
 
@@ -82,7 +94,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 			// bind parameters
 			// 		todo : validate that all query parameters were bound?
 			int position = 1;
-			for ( ParameterBinder parameterBinder : sqlTreeWalker.getParameterBinders() ) {
+			for ( ParameterBinder parameterBinder : sqlSelectInterpretation.getParameterBinders() ) {
 				position += parameterBinder.bindParameterValue(
 						ps,
 						position,
@@ -94,7 +106,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 			return preparedStatementExecutor.execute(
 					ps,
 					queryOptions,
-					sqlTreeWalker.getReturns(),
+					sqlSelectInterpretation.getReturns(),
 					rowTransformer,
 					persistenceContext
 			);

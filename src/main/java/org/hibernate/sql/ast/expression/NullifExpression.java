@@ -6,13 +6,18 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class NullifExpression extends SelfReadingExpressionSupport {
+public class NullifExpression implements Expression, SqlSelectable{
 	private final Expression first;
 	private final Expression second;
 
@@ -35,7 +40,17 @@ public class NullifExpression extends SelfReadingExpressionSupport {
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitNullifExpression( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitNullifExpression( this );
+	}
+
+	@Override
+	public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( (BasicType) getType() );
 	}
 }

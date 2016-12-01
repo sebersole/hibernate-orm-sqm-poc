@@ -6,8 +6,10 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
@@ -43,5 +45,17 @@ public class PluralAttributeIndexEntity extends AbstractPluralAttributeIndex<Ent
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.of( indexEntityPersister );
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		// todo : plus the number of columns in the FK?
+		return indexEntityPersister.getColumnCount( shallow, factory );
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		// todo : add the FK column(s)?
+		return indexEntityPersister.getColumns( shallow, factory );
 	}
 }

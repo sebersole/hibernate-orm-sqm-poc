@@ -10,13 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.sql.ast.predicate.Predicate;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public class CaseSearchedExpression extends SelfReadingExpressionSupport implements Expression {
+public class CaseSearchedExpression implements Expression, SqlSelectable {
 	private final Type type;
 
 	private List<WhenFragment> whenFragments = new ArrayList<>();
@@ -44,13 +50,23 @@ public class CaseSearchedExpression extends SelfReadingExpressionSupport impleme
 	}
 
 	@Override
-	public Type getType() {
-		return type;
+	public BasicType getType() {
+		return (BasicType) type;
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitCaseSearchedExpression( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitCaseSearchedExpression( this );
+	}
+
+	@Override
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( getType() );
 	}
 
 	public static class WhenFragment {

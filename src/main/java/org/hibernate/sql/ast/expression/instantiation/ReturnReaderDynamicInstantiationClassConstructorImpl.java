@@ -12,9 +12,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.sql.exec.results.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sql.exec.results.spi.RowProcessingState;
+import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.ReturnReader;
+import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
  * @author Steve Ebersole

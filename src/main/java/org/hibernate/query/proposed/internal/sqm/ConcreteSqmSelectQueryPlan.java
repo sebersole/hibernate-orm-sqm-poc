@@ -27,7 +27,7 @@ import org.hibernate.query.proposed.spi.ScrollableResultsImplementor;
 import org.hibernate.query.proposed.spi.SelectQueryPlan;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.convert.spi.Callback;
-import org.hibernate.sql.convert.spi.SelectStatementInterpreter;
+import org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableForwardOnlyImpl;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableInsensitiveImpl;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableSensitiveImpl;
@@ -161,7 +161,7 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		final Callback callback = new Callback() {};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
-		final SelectQuery sqlTree = SelectStatementInterpreter.interpret(
+		final SelectQuery sqlTree = SqmSelectToSqlAstConverter.interpret(
 				sqm,
 				persistenceContext.getFactory(),
 				domainMetamodel,
@@ -214,7 +214,7 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		final Callback callback = new Callback() {};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
-		final SelectQuery sqlTree = SelectStatementInterpreter.interpret(
+		final SelectQuery sqlTree = SqmSelectToSqlAstConverter.interpret(
 				sqm,
 				persistenceContext.getFactory(),
 				domainMetamodel,

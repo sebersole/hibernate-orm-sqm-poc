@@ -11,8 +11,14 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.spi.ParameterSpec;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.spi.ParameterBinder;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
@@ -20,7 +26,8 @@ import org.jboss.logging.Logger;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractParameter extends SelfReadingExpressionSupport implements ParameterSpec, ParameterBinder {
+public abstract class AbstractParameter
+		implements ParameterSpec, ParameterBinder, Expression, SqlSelectable {
 	private static final Logger log = Logger.getLogger( AbstractParameter.class );
 
 	private final Type inferredType;
@@ -39,8 +46,18 @@ public abstract class AbstractParameter extends SelfReadingExpressionSupport imp
 	}
 
 	@Override
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
 	public ParameterBinder getParameterBinder() {
 		return this;
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( (BasicType) getType() );
 	}
 
 	protected int bindParameterValue(

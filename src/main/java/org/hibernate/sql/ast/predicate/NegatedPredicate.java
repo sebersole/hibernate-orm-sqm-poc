@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.predicate;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 
 /**
  * @author Steve Ebersole
@@ -28,7 +28,7 @@ public class NegatedPredicate implements Predicate {
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
+	public void accept(SqlAstSelectInterpreter sqlTreeWalker) {
 		sqlTreeWalker.visitNegatedPredicate( this );
 	}
 }

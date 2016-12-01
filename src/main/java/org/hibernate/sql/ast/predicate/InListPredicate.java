@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.sqm.Helper;
 
 /**
@@ -70,7 +70,7 @@ public class InListPredicate implements Predicate {
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
+	public void accept(SqlAstSelectInterpreter sqlTreeWalker) {
 		sqlTreeWalker.visitInListPredicate( this );
 	}
 }

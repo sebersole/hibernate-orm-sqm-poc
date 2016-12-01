@@ -19,7 +19,7 @@ import javax.persistence.OneToOne;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.expression.AttributeReference;
+import org.hibernate.sql.ast.expression.domain.SingularAttributeReferenceExpression;
 import org.hibernate.sql.ast.expression.AvgFunction;
 import org.hibernate.sql.ast.expression.BinaryArithmeticExpression;
 import org.hibernate.sql.ast.expression.CountFunction;
@@ -98,14 +98,14 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 	@Test
 	public void testBetweenLiterals() {
-		SelectQuery query = interpretSelectQuery( "select p from Person p where p.age between 20 and 39" );
+		SelectQuery query = interpretSelectQuery( "select p.id from Person p where p.age between 20 and 39" );
 
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), notNullValue() );
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), instanceOf( BetweenPredicate.class ) );
 		BetweenPredicate betweenPredicate = (BetweenPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
-		assertThat( betweenPredicate.getExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) betweenPredicate.getExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
+		assertThat( betweenPredicate.getExpression(), instanceOf( SingularAttributeReferenceExpression.class ) );
+		assertThat( ( (SingularAttributeReferenceExpression) betweenPredicate.getExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( betweenPredicate.getLowerBound(), instanceOf( QueryLiteral.class ) );
 		assertThat( ( (QueryLiteral) betweenPredicate.getLowerBound() ).getValue(), CoreMatchers.is( 20) );
@@ -116,14 +116,14 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 	@Test
 	public void testBetweenParams() {
-		SelectQuery query = interpretSelectQuery( "select p from Person p where p.age between :lower and :upper" );
+		SelectQuery query = interpretSelectQuery( "select p.id from Person p where p.age between :lower and :upper" );
 
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), notNullValue() );
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), instanceOf( BetweenPredicate.class ) );
 		BetweenPredicate betweenPredicate = (BetweenPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
-		assertThat( betweenPredicate.getExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) betweenPredicate.getExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
+		assertThat( betweenPredicate.getExpression(), instanceOf( SingularAttributeReferenceExpression.class ) );
+		assertThat( ( (SingularAttributeReferenceExpression) betweenPredicate.getExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( betweenPredicate.getLowerBound(), instanceOf( NamedParameter.class ) );
 
@@ -132,14 +132,14 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 	@Test
 	public void testInListOfLiterals() {
-		SelectQuery query = interpretSelectQuery( "select p from Person p where p.age in (20, 30, 40, 50, 60)" );
+		SelectQuery query = interpretSelectQuery( "select p.id from Person p where p.age in (20, 30, 40, 50, 60)" );
 
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), notNullValue() );
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), instanceOf( InListPredicate.class ) );
 		InListPredicate inPredicate = (InListPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
-		assertThat( inPredicate.getTestExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) inPredicate.getTestExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
+		assertThat( inPredicate.getTestExpression(), instanceOf( SingularAttributeReferenceExpression.class ) );
+		assertThat( ( (SingularAttributeReferenceExpression) inPredicate.getTestExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( inPredicate.getListExpressions().size(), is( 5) );
 		for ( Expression expression : inPredicate.getListExpressions() ) {
@@ -149,14 +149,14 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 	@Test
 	public void testInListOfParameters() {
-		SelectQuery query = interpretSelectQuery( "select p from Person p where p.age in (:first, :second, :third)" );
+		SelectQuery query = interpretSelectQuery( "select p.id from Person p where p.age in (:first, :second, :third)" );
 
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), notNullValue() );
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), instanceOf( InListPredicate.class ) );
 		InListPredicate inPredicate = (InListPredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
-		assertThat( inPredicate.getTestExpression(), instanceOf( AttributeReference.class ) );
-		assertThat( ( (AttributeReference) inPredicate.getTestExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
+		assertThat( inPredicate.getTestExpression(), instanceOf( SingularAttributeReferenceExpression.class ) );
+		assertThat( ( (SingularAttributeReferenceExpression) inPredicate.getTestExpression() ).getReferencedAttribute().getAttributeName(), is( "age" ) );
 
 		assertThat( inPredicate.getListExpressions().size(), is( 3 ) );
 		for ( Expression expression : inPredicate.getListExpressions() ) {
@@ -166,20 +166,20 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 	@Test
 	public void testLike() {
-		SelectQuery query = interpretSelectQuery( "select p from Person p where p.name.last like :name" );
+		SelectQuery query = interpretSelectQuery( "select p.id from Person p where p.name.last like :name" );
 
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), notNullValue() );
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), instanceOf( LikePredicate.class ) );
 		LikePredicate likePredicate = (LikePredicate) query.getQuerySpec().getWhereClauseRestrictions();
 
-		assertThat( likePredicate.getMatchExpression(), instanceOf( AttributeReference.class ) );
+		assertThat( likePredicate.getMatchExpression(), instanceOf( SingularAttributeReferenceExpression.class ) );
 
 		assertThat( likePredicate.getPattern(), instanceOf( NamedParameter.class ) );
 	}
 
 	@Test
 	public void testNamedParameterCreatesUniqueInstances() {
-		SelectQuery query = interpretSelectQuery( "select p from Person p where p.name.last = :name or p.name.last = :name" );
+		SelectQuery query = interpretSelectQuery( "select p.id from Person p where p.name.last = :name or p.name.last = :name" );
 
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), notNullValue() );
 		assertThat( query.getQuerySpec().getWhereClauseRestrictions(), instanceOf( Junction.class ) );
@@ -209,7 +209,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 		BinaryArithmeticExpression expression = (BinaryArithmeticExpression) selection.getSelectExpression();
 		assertThat( expression.getOperation(), is( BinaryArithmeticExpression.Operation.ADD ) );
 
-		assertThat( expression.getLeftHandOperand(), instanceOf( AttributeReference.class ) );
+		assertThat( expression.getLeftHandOperand(), instanceOf( SingularAttributeReferenceExpression.class ) );
 		assertThat( expression.getRightHandOperand(), instanceOf( QueryLiteral.class ) );
 	}
 
@@ -222,7 +222,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 		assertThat( selection.getSelectExpression(), instanceOf( AvgFunction.class ) );
 		AvgFunction expression = (AvgFunction) selection.getSelectExpression();
-		assertThat( expression.getArgument(), instanceOf( AttributeReference.class ) );
+		assertThat( expression.getArgument(), instanceOf( SingularAttributeReferenceExpression.class ) );
 	}
 
 	@Test
@@ -234,7 +234,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 		assertThat( selection.getSelectExpression(), instanceOf( CountFunction.class ) );
 		CountFunction expression = (CountFunction) selection.getSelectExpression();
-		assertThat( expression.getArgument(), instanceOf( AttributeReference.class ) );
+		assertThat( expression.getArgument(), instanceOf( SingularAttributeReferenceExpression.class ) );
 	}
 
 	@Test
@@ -256,7 +256,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 		assertThat( selection.getSelectExpression(), instanceOf( MaxFunction.class ) );
 		MaxFunction expression = (MaxFunction) selection.getSelectExpression();
-		assertThat( expression.getArgument(), instanceOf( AttributeReference.class ) );
+		assertThat( expression.getArgument(), instanceOf( SingularAttributeReferenceExpression.class ) );
 	}
 
 	@Test
@@ -268,7 +268,7 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 		assertThat( selection.getSelectExpression(), instanceOf( MinFunction.class ) );
 		MinFunction expression = (MinFunction) selection.getSelectExpression();
-		assertThat( expression.getArgument(), instanceOf( AttributeReference.class ) );
+		assertThat( expression.getArgument(), instanceOf( SingularAttributeReferenceExpression.class ) );
 	}
 
 	@Test
@@ -280,6 +280,6 @@ public class BasicPredicateAndExpressionTest extends BaseUnitTest {
 
 		assertThat( selection.getSelectExpression(), instanceOf( SumFunction.class ) );
 		SumFunction expression = (SumFunction) selection.getSelectExpression();
-		assertThat( expression.getArgument(), instanceOf( AttributeReference.class ) );
+		assertThat( expression.getArgument(), instanceOf( SingularAttributeReferenceExpression.class ) );
 	}
 }

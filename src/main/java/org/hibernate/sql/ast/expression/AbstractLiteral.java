@@ -11,7 +11,13 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.spi.ParameterBinder;
+import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
 /**
@@ -22,7 +28,8 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public abstract class AbstractLiteral extends SelfReadingExpressionSupport implements ParameterBinder {
+public abstract class AbstractLiteral
+		implements ParameterBinder, Expression, SqlSelectable {
 	private final Object value;
 	private final Type ormType;
 
@@ -38,6 +45,16 @@ public abstract class AbstractLiteral extends SelfReadingExpressionSupport imple
 	@Override
 	public Type getType() {
 		return ormType;
+	}
+
+	@Override
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, ormType, resultVariable );
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( (BasicType) getType() );
 	}
 
 	@Override

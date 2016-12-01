@@ -8,8 +8,7 @@ package org.hibernate.sql.convert.spi;
 
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.persister.common.internal.DomainMetamodelImpl;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
@@ -66,7 +65,7 @@ public class Helper {
 		}
 
 		// assume the fact that the attribute/type are entity has already been validated
-		final EntityType entityType = (EntityType) ( (SingularAttributeImplementor) joinedFromElement.getAttributeBinding().getAttribute() ).getOrmType();
+		final EntityType entityType = (EntityType) ( (SingularAttributeDescriptor) joinedFromElement.getAttributeBinding().getAttribute() ).getOrmType();
 		final String entityName = entityType.getAssociatedEntityName( factory );
 		return (ImprovedEntityPersister) sqmDomainMetamodel.resolveEntityReference( entityName );
 	}

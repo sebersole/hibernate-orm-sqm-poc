@@ -7,10 +7,16 @@
 package org.hibernate.sql.ast.from;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hibernate.persister.collection.internal.PluralAttributeElementEntity;
-import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
+import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
+import org.hibernate.sql.ast.expression.domain.PluralAttributeIndexReferenceExpression;
 
 /**
  * A TableSpecificationGroup for a collection reference
@@ -22,9 +28,10 @@ public class CollectionTableGroup extends AbstractTableGroup {
 
 	public CollectionTableGroup(
 			TableSpace tableSpace,
+			String uid,
 			String aliasBase,
 			ImprovedCollectionPersister persister) {
-		super( tableSpace, aliasBase );
+		super( tableSpace, uid, aliasBase );
 		this.persister = persister;
 	}
 
@@ -38,7 +45,7 @@ public class CollectionTableGroup extends AbstractTableGroup {
 		final TableBinding tableBinding = getRootTableBinding();
 		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
 		for ( int i = 0; i < columns.length; i++ ) {
-			bindings[i] = new ColumnBinding( columns[i], tableBinding );
+			bindings[i] = new ColumnBinding( columns[i], columns[i].getJdbcType(), tableBinding );
 		}
 		return bindings;
 	}
@@ -50,5 +57,45 @@ public class CollectionTableGroup extends AbstractTableGroup {
 		}
 
 		return null;
+	}
+
+	@Override
+	public List<ColumnBinding> resolveColumnBindings(DomainReferenceExpression expression, boolean shallow) {
+		if ( expression instanceof PluralAttributeElementReferenceExpression ) {
+			final PluralAttributeElementReferenceExpression elementExpression = (PluralAttributeElementReferenceExpression) expression;
+			return createColumnBindings(
+					elementExpression.getDomainReference().getColumns(
+							shallow,
+							persister.getPersister().getFactory()
+					)
+			);
+		}
+		else if ( expression instanceof PluralAttributeIndexReferenceExpression ) {
+			final PluralAttributeIndexReferenceExpression indexExpression = (PluralAttributeIndexReferenceExpression) expression;
+			return createColumnBindings(
+					indexExpression.getDomainReference().getColumns( shallow, persister.getPersister().getFactory() )
+			);
+		}
+		else {
+			throw new IllegalArgumentException(
+					"Illegal DomainReferenceExpression [" + expression + "] for ColumnBinding resolution via CollectionTableGroup"
+			);
+		}
+	}
+
+	private List<ColumnBinding> createColumnBindings(List<Column> columns) {
+		final List<ColumnBinding> bindings = new ArrayList<>();
+		for ( Column column : columns ) {
+			bindings.add( createBinding( column ) );
+		}
+		return bindings;
+	}
+
+	private ColumnBinding createBinding(Column column) {
+		return new ColumnBinding(
+				column,
+				column.getJdbcType(),
+				locateTableBinding( column.getSourceTable() )
+		);
 	}
 }

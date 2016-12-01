@@ -16,7 +16,7 @@ import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
 import org.hibernate.sql.convert.spi.NotYetImplementedException;
-import org.hibernate.sql.convert.spi.Return;
+import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
 import org.hibernate.sql.exec.spi.RowTransformer;
 
@@ -38,7 +38,7 @@ public class PreparedStatementExecutorScrollableImpl<T> implements PreparedState
 	public ScrollableResults execute(
 			PreparedStatement ps,
 			QueryOptions queryOptions,
-			List<Return> returns,
+			List<ResolvedReturn> returns,
 			RowTransformer<T> rowTransformer,
 			SharedSessionContractImplementor session) throws SQLException {
 		final LogicalConnectionImplementor logicalConnection = session.getJdbcCoordinator().getLogicalConnection();

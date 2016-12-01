@@ -6,13 +6,18 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class UnaryOperationExpression extends SelfReadingExpressionSupport {
+public class UnaryOperationExpression implements Expression, SqlSelectable {
 	public enum Operation {
 		PLUS,
 		MINUS
@@ -28,21 +33,33 @@ public class UnaryOperationExpression extends SelfReadingExpressionSupport {
 		this.type = type;
 	}
 
-	@Override
-	public BasicType getType() {
-		return type;
-	}
-
-	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitUnaryOperationExpression( this );
+	public Operation getOperation() {
+		return operation;
 	}
 
 	public Expression getOperand() {
 		return operand;
 	}
 
-	public Operation getOperation() {
-		return operation;
+	@Override
+	public BasicType getType() {
+		return type;
 	}
+
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( getType() );
+	}
+
+	@Override
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitUnaryOperationExpression( this );
+	}
+
+	@Override
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
 }

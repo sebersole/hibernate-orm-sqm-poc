@@ -17,20 +17,23 @@ import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ConsumerContextImpl;
 import org.hibernate.sql.convert.spi.Callback;
-import org.hibernate.sql.convert.spi.SelectStatementInterpreter;
+import org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.SqmSelectStatement;
 import org.hibernate.sqm.query.SqmStatement;
 
+import org.hibernate.testing.junit4.CustomRunner;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.runner.RunWith;
 
 /**
  * Test for asserting structures, etc.  Does not export the schema
  *
  * @author Steve Ebersole
  */
-public class BaseUnitTest {
+@RunWith( CustomRunner.class )
+public abstract class BaseUnitTest {
 	private SessionFactoryImplementor sessionFactory;
 	private ConsumerContextImpl consumerContext;
 
@@ -84,13 +87,13 @@ public class BaseUnitTest {
 	protected SelectQuery interpretSelectQuery(String query) {
 		final SqmSelectStatement statement = (SqmSelectStatement) interpret( query );
 
-		final SelectStatementInterpreter interpreter = new SelectStatementInterpreter(
+		return SqmSelectToSqlAstConverter.interpret(
+				statement,
 				getSessionFactory(),
 				getConsumerContext().getDomainMetamodel(),
-				queryOptions(), callBack() );
-		interpreter.interpret( statement );
-
-		return interpreter.getSelectQuery();
+				queryOptions(),
+				callBack()
+		);
 	}
 
 	protected Callback callBack() {

@@ -19,10 +19,10 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.internal.ImprovedEntityPersisterImpl;
-import org.hibernate.persister.entity.spi.AttributeReferenceSource;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sqm.domain.AttributeReference;
 import org.hibernate.sqm.domain.BasicType;
@@ -183,8 +183,8 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 
 	@Override
 	public AttributeReference locateAttributeReference(DomainReference sourceBinding, String attributeName) {
-		if ( sourceBinding instanceof AttributeReferenceSource ) {
-			return ( (AttributeReferenceSource) sourceBinding ).findAttribute( attributeName );
+		if ( sourceBinding instanceof AttributeContainer ) {
+			return ( (AttributeContainer) sourceBinding ).findAttribute( attributeName );
 		}
 
 		if ( sourceBinding instanceof SingularAttributeEmbedded ) {
@@ -198,7 +198,7 @@ public class DomainMetamodelImpl implements DomainMetamodel {
 		throw new IllegalArgumentException( "Unexpected type [" + sourceBinding + "] passed as 'attribute source'" );
 	}
 
-	private AttributeReferenceSource resolveAttributeReferenceSource(OrmTypeExporter typeAccess) {
+	private AttributeContainer resolveAttributeReferenceSource(OrmTypeExporter typeAccess) {
 		final Type type = typeAccess.getOrmType();
 		if ( type instanceof EntityType ) {
 			return (ImprovedEntityPersister) resolveEntityReference( ( (EntityType) type ).getAssociatedEntityName( sessionFactory ) );

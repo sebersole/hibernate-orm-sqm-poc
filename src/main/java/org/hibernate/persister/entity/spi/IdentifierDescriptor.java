@@ -7,13 +7,13 @@
 package org.hibernate.persister.entity.spi;
 
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public interface IdentifierDescriptor extends SingularAttributeImplementor {
+public interface IdentifierDescriptor extends SingularAttributeDescriptor {
 	Type getIdType();
 
 	/**
@@ -33,7 +33,7 @@ public interface IdentifierDescriptor extends SingularAttributeImplementor {
 	 *
 	 * @return
 	 */
-	SingularAttributeImplementor getIdAttribute();
+	SingularAttributeDescriptor getIdAttribute();
 
 	Column[] getColumns();
 }

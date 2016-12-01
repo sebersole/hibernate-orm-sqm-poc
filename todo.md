@@ -13,7 +13,7 @@ TODO Items
 * TREAT should be journaled into the respective FromElement along with some concept of where it came from (because ultimately that
   	affects its rendering into SQL).  For TREAT in SELECT we may still need a wrapper (see next point too)
 * Make sure that FromElements are NEVER used directly in other parts of the query.  All references to a FromElement in
-	another part of the query should always be "wrapped" in another type (FromElementReferenceExpression, e.g.).  Part
+	another part of the query should always be "wrapped" in another target (FromElementReferenceExpression, e.g.).  Part
 	of this is that I do not think its a good idea for all FromElement types (via org.hibernate.sqm.path.AttributePathPart) 
 	to be Expressions; that change has some bearing on the org.hibernate.query.parser.internal.hql.path.AttributePathResolver
 	code.
@@ -22,9 +22,11 @@ TODO Items
 * Add "default SqlTypeDescriptor" to JavaTypeDescriptor.  We already have that code in place in
 	`org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings`, just need to decide what is the easiest way to 
 	get-at and consume that information.  We'd use this when building the ImprovedBasicType if no SqlTypeDescriptor
-	is specified.  And actually considering other type hints (@Nationalized, @Lob, etc) maybe its better to 
-	pass along access to all that info (param object).  See org.hibernate.type.descriptor.sql.RecommendedJdbcTypeResolver and 
-	org.hibernate.type.descriptor.sql.RecommendedJdbcTypeResolutionContext in this PoC for an initial design.
+	is specified.  And actually considering other target hints (@Nationalized, @Lob, etc) maybe its better to 
+	pass along access to all that info (param object).  See org.hibernate.target.descriptor.sql.RecommendedJdbcTypeResolver and 
+	org.hibernate.target.descriptor.sql.RecommendedJdbcTypeResolutionContext in this PoC for an initial design.
+* Finish the logic to apply fetches and EntityGraph hints.  See `#applyFetchesAndEntityGraph` in 
+	`org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter` 
 
 Keep track of downcasts on FromElement
 

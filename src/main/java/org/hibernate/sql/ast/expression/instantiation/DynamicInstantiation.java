@@ -6,16 +6,14 @@
  */
 package org.hibernate.sql.ast.expression.instantiation;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
-import org.hibernate.sqm.query.expression.Compatibility;
+import org.hibernate.sql.convert.results.internal.ReturnDynamicInstantiationImpl;
+import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 
 import org.jboss.logging.Logger;
 
@@ -27,10 +25,13 @@ public class DynamicInstantiation<T> implements Expression {
 
 	private final Class<T> target;
 	private List<DynamicInstantiationArgument> arguments;
-	boolean areAllArgumentsAliased = true;
 
 	public DynamicInstantiation(Class<T> target) {
 		this.target = target;
+	}
+
+	public Class<T> getTarget() {
+		return target;
 	}
 
 	public void addArgument(String alias, Expression expression) {
@@ -56,8 +57,6 @@ public class DynamicInstantiation<T> implements Expression {
 			);
 		}
 
-		areAllArgumentsAliased = areAllArgumentsAliased && alias != null;
-
 		if ( arguments == null ) {
 			arguments = new ArrayList<>();
 		}
@@ -79,72 +78,12 @@ public class DynamicInstantiation<T> implements Expression {
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitDynamicInstantiation( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitDynamicInstantiation( this );
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory) {
-		if ( List.class.equals( target ) ) {
-			return new ReturnReaderDynamicInstantiationListImpl( arguments, startPosition, sessionFactory );
-		}
-		else if ( Map.class.equals( target ) ) {
-			return new ReturnReaderDynamicInstantiationMapImpl( arguments, startPosition, sessionFactory );
-		}
-		else {
-			List<AliasedReturnReader> argumentReaders = new ArrayList<>();
-			int numberOfColumnsConsumed = 0;
-			for ( DynamicInstantiationArgument argument : arguments ) {
-				final ReturnReader argumentReader = argument.getExpression().getReturnReader(
-						startPosition + numberOfColumnsConsumed,
-						true,
-						sessionFactory
-				);
-				numberOfColumnsConsumed += argumentReader.getNumberOfColumnsRead( sessionFactory );
-				argumentReaders.add( new AliasedReturnReader( argument.getAlias(), argumentReader ) );
-			}
-
-			// find a constructor matching argument types
-			constructor_loop: for ( Constructor constructor : target.getDeclaredConstructors() ) {
-				if ( constructor.getParameterTypes().length != arguments.size() ) {
-					continue;
-				}
-
-				for ( int i = 0; i < arguments.size(); i++ ) {
-					final ReturnReader argumentReader = argumentReaders.get( i ).getReturnReader();
-					final boolean assignmentCompatible = Compatibility.areAssignmentCompatible(
-							constructor.getParameterTypes()[i],
-							argumentReader.getReturnedJavaType()
-					);
-					if ( !assignmentCompatible ) {
-						log.debugf(
-								"Skipping constructor for dynamic-instantiation match due to argument mismatch [%s] : %s -> %s",
-								i,
-								constructor.getParameterTypes()[i],
-								argumentReader.getReturnedJavaType()
-						);
-						continue constructor_loop;
-					}
-				}
-
-				constructor.setAccessible( true );
-				return new ReturnReaderDynamicInstantiationClassConstructorImpl( constructor, argumentReaders, numberOfColumnsConsumed );
-			}
-
-			log.debugf(
-					"Could not locate appropriate constructor for dynamic instantiation of [%s]; attempting bean-injection instantiation",
-					target.getName()
-			);
-			if ( !areAllArgumentsAliased ) {
-				throw new InstantiationException(
-						"Could not locate appropriate constructor for dynamic instantiation of class [" +
-								target.getName() + "], and not all arguments were aliased so bean-injection could not be used"
-				);
-			}
-
-			return new ReturnReaderDynamicInstantiationClassInjectionImpl( target, argumentReaders, numberOfColumnsConsumed );
-		}
+	public Return toQueryReturn(String resultVariable) {
+		return new ReturnDynamicInstantiationImpl( this, resultVariable );
 	}
-
 }

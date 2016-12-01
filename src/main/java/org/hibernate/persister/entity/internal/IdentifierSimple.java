@@ -6,39 +6,40 @@
  */
 package org.hibernate.persister.entity.internal;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainReferenceImplementor;
-import org.hibernate.persister.common.spi.SingularAttributeImplementor;
+import org.hibernate.persister.common.spi.DomainDescriptor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
-import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class IdentifierSimple implements IdentifierDescriptor, SingularAttributeImplementor {
-	private final DomainReferenceImplementor declaringType;
-	private final String attributeName;
-	private final org.hibernate.type.BasicType ormType;
+public class IdentifierSimple
+		extends AbstractSingularAttributeDescriptor<BasicType>
+		implements IdentifierDescriptor, SingularAttributeDescriptor {
 	private final Column[] columns;
 
 	public IdentifierSimple(
-			DomainReferenceImplementor declaringType,
+			AttributeContainer declaringType,
 			String attributeName,
-			org.hibernate.type.BasicType ormType,
+			BasicType ormType,
 			Column[] columns) {
-		this.declaringType = declaringType;
-		this.attributeName = attributeName;
-		this.ormType = ormType;
+		super( declaringType, attributeName, ormType );
 		this.columns = columns;
 	}
 
 	@Override
 	public BasicType getIdType() {
-		return ormType;
+		return getOrmType();
 	}
 
 	@Override
@@ -52,13 +53,8 @@ public class IdentifierSimple implements IdentifierDescriptor, SingularAttribute
 	}
 
 	@Override
-	public SingularAttributeImplementor getIdAttribute() {
+	public SingularAttributeDescriptor getIdAttribute() {
 		return this;
-	}
-
-	@Override
-	public BasicType getOrmType() {
-		return getIdType();
 	}
 
 	@Override
@@ -67,22 +63,22 @@ public class IdentifierSimple implements IdentifierDescriptor, SingularAttribute
 	}
 
 	@Override
-	public DomainReference getLeftHandSide() {
-		return declaringType;
-	}
-
-	@Override
-	public String getAttributeName() {
-		return attributeName;
-	}
-
-	@Override
 	public String asLoggableText() {
-		return "IdentifierSimple(" + declaringType.asLoggableText() + ")";
+		return "IdentifierSimple(" + getLeftHandSide().asLoggableText() + ")";
 	}
 
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
+		return columns.length;
+	}
+
+	@Override
+	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
+		return Arrays.asList( columns );
 	}
 }

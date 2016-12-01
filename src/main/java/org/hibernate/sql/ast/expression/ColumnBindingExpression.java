@@ -6,10 +6,9 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
-import org.hibernate.sql.exec.results.spi.ReturnReader;
+import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
 /**
@@ -28,13 +27,13 @@ public class ColumnBindingExpression implements Expression {
 	}
 
 	@Override
-	public ReturnReader getReturnReader(int startPosition, boolean shallow, SessionFactoryImplementor sessionFactory) {
-		throw new UnsupportedOperationException( "ColumnBindingExpression cannot be used in select-clause" );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitColumnBindingExpression( this );
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitColumnBindingExpression( this );
+	public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
+		throw new NotYetImplementedException(  );
 	}
 
 	public ColumnBinding getColumnBinding() {

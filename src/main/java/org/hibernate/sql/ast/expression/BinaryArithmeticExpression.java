@@ -6,13 +6,18 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.convert.spi.SqlTreeWalker;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 
 /**
  * @author Steve Ebersole
  */
-public class BinaryArithmeticExpression extends SelfReadingExpressionSupport implements Expression {
+public class BinaryArithmeticExpression
+		implements Expression, SqlSelectable {
 	private final Operation operation;
 	private final Expression lhsOperand;
 	private final Expression rhsOperand;
@@ -35,8 +40,18 @@ public class BinaryArithmeticExpression extends SelfReadingExpressionSupport imp
 	}
 
 	@Override
-	public void accept(SqlTreeWalker sqlTreeWalker) {
-		sqlTreeWalker.visitBinaryArithmeticExpression( this );
+	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		walker.visitBinaryArithmeticExpression( this );
+	}
+
+	@Override
+	public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
+		return new ReturnScalarImpl( this, getType(), resultVariable );
+	}
+
+	@Override
+	public SqlSelectionReader getSqlSelectionReader() {
+		return new SqlSelectionReaderImpl( getType() );
 	}
 
 	public enum Operation {

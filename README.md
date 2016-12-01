@@ -9,4 +9,4 @@ Proposed Changes
 ----------------
 
 * Persisters (entiyt and colection) -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-persisters
-* JPA type model -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-JPA-type-model
+* JPA target model -> https://github.com/sebersole/hibernate-orm-sqm-poc/wiki/Proposed-changes-to-JPA-target-model

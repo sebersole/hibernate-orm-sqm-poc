@@ -28,10 +28,10 @@ MappedSuperclass into the SQM domain model.  Seems that the spec does not allow 
 
 The SQL AST is a syntax tree modelling a SQL query:
 
-* It is produced from SQM by `org.hibernate.sql.convert.spi.SelectStatementInterpreter`
+* It is produced from SQM by `org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter`
 * It is produced from Loaders following the old "LoadPlan" paradigm, although we will probably have
  	room for improvement
-* It is consumed into a `org.hibernate.sql.convert.spi.SqlSelectInterpretation` by `org.hibernate.sql.convert.spi.SqlTreeWalker`.
+* It is consumed into a `org.hibernate.sql.exec.spi.SqlSelectInterpretation` by `org.hibernate.sql.exec.spi.SqlAstSelectInterpreter`.
 	The `SqlSelectInterpretation` combines (composite) the various interpretations needed to execute and consume PreparedStatements.
 
 [note]
@@ -54,7 +54,7 @@ a real table (PhysicalTable) or an inline-view (DerivedTable).
 TableGroup:: Represents a related group of TableBinding instances.  Specifically it models
 the TableBinding instances originating from a given entity/collection persister (see the "improved" persister contracts).
 
-TableGroupJoin:: Represents a joined TableGroup along with the type of join and any predicate.
+TableGroupJoin:: Represents a joined TableGroup along with the target of join and any predicate.
 used to represent joins between "persister references".  These would be joins explicitly defined in the query
 
 TableSpace:: Models what ANSI SQL calls a "table reference".  Easiest way to think of this is the comma separated groups
@@ -149,7 +149,7 @@ There are multiple "parts" to parameter handling...
 
 ==== ParameterSpec
 
-A ParameterSpec is the specification of a query parameter (name/position, type, etc).  It represents the
+A ParameterSpec is the specification of a query parameter (name/position, target, etc).  It represents the
 expectation(s) after parsing a query string.
 
 Consider:
@@ -212,7 +212,7 @@ interface Query {
     // returning this to keep API as before...
 
     Query setParameter(String name, Object value);
-    Query setParameter(String name, Object value, Type type);
+    Query setParameter(String name, Object value, Type target);
     Query setParameter(String name, Date value, TemporalType temporalType);
     Query setParameter(String name, Calendar value, TemporalType temporalType);
 }
@@ -258,12 +258,12 @@ That existing LoadPlan consuming code has a few pieces...
 === Return, Fetch and ReturnReader
 
 The `SelectClause` portion of the SQL AST defines its root return values via an ordered List of the individual
- `org.hibernate.sql.exec.results.spi.Return` descriptors.  Each `Return` in that List represents a single index
+ `org.hibernate.sql.convert.results.spi.Return` descriptors.  Each `Return` in that List represents a single index
   in the naked result `Object[]`.
 
 Some of these `Return`s represent selections of a particular entity.   This also needs to model the relationship with
- any defined join-fetches relative to that particular entity reference (literally `org.hibernate.sql.exec.results.spi.EntityReference`).
- That is the role of `org.hibernate.sql.exec.results.spi.Fetch`.
+ any defined join-fetches relative to that particular entity reference (literally `org.hibernate.sql.exec.results.spi.ResolvedEntityReference`).
+ That is the role of `org.hibernate.sql.exec.results.spi.ResolvedFetch`.
 
 Important because we should be able to store this Return/Fetch tree along with results in the cache and be
 able to reconstruct fetch graphs.
@@ -271,7 +271,7 @@ able to reconstruct fetch graphs.
 `Return` and `Fetch` know how to construct `org.hibernate.sql.exec.results.process.spi.ReturnReader`
  (todo : should be renamed `SelectionReader` or something like that)
  instances capable of reading their values from the ResultSet leveraging the `org.hibernate.sql.ast.select.SqlSelectionDescriptor`
- from the `org.hibernate.sql.convert.spi.SqlSelectInterpretation`
+ from the `org.hibernate.sql.exec.spi.SqlSelectInterpretation`
 
 todo : would be better to have a delegate that encapsulates the reading of a group of `SqlSelectionDescriptor` pertaining
  to these `Return` and `Fetch`.  LoadPlan handling does this already (see `org.hibernate.loader.plan.exec.process.spi.EntityReferenceInitializer`)
@@ -284,7 +284,7 @@ The `org.hibernate.sql.exec.results.spi` package defines a number of contracts t
 * `EntityReturn` represents selecting an entity either by identification variable (from alias) or to-one association
 * `CollectionReturn` represents selecting a collection as the root.  This is only relevant for collection loaders
 
-`Fetch`:: models a join fetch of a particular embeddable or entity association relative to a `org.hibernate.sql.exec.results.spi.FetchParent`:
+`Fetch`:: models a join fetch of a particular embeddable or entity association relative to a `org.hibernate.sql.exec.results.spi.ResolvedFetchParent`:
 
 * `CompositeFetch` is the fetch of an embeddable (composite)
 * `EntityFetch` the fetch of an entity association
@@ -372,12 +372,12 @@ org.hibernate.cfg.AttributeConverterDefinition::
  */
 ----
 
-org.hibernate.type.converter.spi.AttributeConverterDefinition::
+org.hibernate.target.converter.spi.AttributeConverterDefinition::
 [source]
 ----
 /*
  * Internal descriptor for an AttributeConverter implementation, with the intent of being
- * incorporated into a {@link org.hibernate.type.spi.BasicType}
+ * incorporated into a {@link org.hibernate.target.spi.BasicType}
  */
 ----
 
@@ -395,3 +395,17 @@ org.hibernate.boot.spi.AttributeConverterDescriptor::
 Is created from a `org.hibernate.cfg.AttributeConverterDefinition` or directly from a
 	`javax.persistence.AttributeConverter` instance.  Used to determine auto-application
 
+
+=== Consider adding Return/Fetch graph as part of SQM
+
+or easily buildable from SQM.  The purpose would be determination of of the cacheability of
+the query-plan for a given SQM.
+
+This could also facilitate caching query-plans in cases where a load/fetch EntityGraph was specified
+assuming the EntityGraph was applied to this SQM "return/fetch graph".  At the moment the presence of a
+fetch graph excludes the query-plan from bing cached.
+
+This comes down to a general decision of where the tipping point is for the effectiveness of caching
+these plans (size of cache versus resources to build plan).
+
+?Maybe config options stating what to to include in the cache key versus what implicitly means excluding from cache?
