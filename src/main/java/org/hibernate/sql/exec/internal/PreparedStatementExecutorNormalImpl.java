@@ -94,6 +94,21 @@ public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatement
 					session
 			);
 
+			// todo : limit handling ought to move into RowReader
+			//		^^ that allows for seamless handling of cached data.
+			//		basically RowReader would get created first
+
+			// actually all of that ^^ needs to happen up higher in SqlTreeExecutor.
+			//		so maybe SqlTreeExecutor builds the RowReader and passes it in.
+			//		that is needed so that we know whether to build the PreparedStatement
+			//		in SqlTreeExecutor and execute it (and get ResultSet) here.
+			//
+			// 		RowReader would encapsulate reading each row, following a ResultSet#next
+			// 		style paradigm.  We'd somehow inject the "currentJdbcRow" into
+			//		RowProcessingState, or give RowProcessingState access back to the
+			//		RowReader (probably via dedicated interface) to get the values for
+			// 		the "currentJdbcRow"
+
 			final RowReader<T> rowReader = new RowReaderStandardImpl<T>( returns, queryCacheDataAccess, rowTransformer );
 
 			final List<T> results = new ArrayList<T>();

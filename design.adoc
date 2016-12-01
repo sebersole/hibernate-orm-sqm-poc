@@ -255,11 +255,17 @@ That existing LoadPlan consuming code has a few pieces...
 
 
 
-=== Return, Fetch and ReturnReader
+=== Return, Fetch and "Reader"
+
+[note]
+----
+Maybe create a `HqlSelectable` interface (corollary to `SqlSelectable`) to define expressions that are valid
+as a `org.hibernate.sql.ast.select.Selection`.
+----
 
 The `SelectClause` portion of the SQL AST defines its root return values via an ordered List of the individual
  `org.hibernate.sql.convert.results.spi.Return` descriptors.  Each `Return` in that List represents a single index
-  in the naked result `Object[]`.
+  in the naked Query's `Object[]` result "rows".
 
 Some of these `Return`s represent selections of a particular entity.   This also needs to model the relationship with
  any defined join-fetches relative to that particular entity reference (literally `org.hibernate.sql.exec.results.spi.ResolvedEntityReference`).
@@ -268,27 +274,49 @@ Some of these `Return`s represent selections of a particular entity.   This also
 Important because we should be able to store this Return/Fetch tree along with results in the cache and be
 able to reconstruct fetch graphs.
 
-`Return` and `Fetch` know how to construct `org.hibernate.sql.exec.results.process.spi.ReturnReader`
- (todo : should be renamed `SelectionReader` or something like that)
- instances capable of reading their values from the ResultSet leveraging the `org.hibernate.sql.ast.select.SqlSelectionDescriptor`
- from the `org.hibernate.sql.exec.spi.SqlSelectInterpretation`
+As far as relationships:
+* As the `Return#getSelectExpression` `Expression` is walked in `SqlAstSelectInterpreter`, we use a
+   `SqlAstSelectInterpreter.SqlSelectableProcessor` to collect any `SqlSelectionDescriptor`s it
+   produces (special handling for dynamic-instantiations).  These `SqlSelectionDescriptor`s represent
+   each of the select expressions in the SQL, positionally.
+* `SqlSelectionDescriptor` encapsulates a `SqlSelectable` such as a ColumnBinding or a AvgFunction call.
+	This `SqlSelectable` knows how to produce a `SqlSelectionReader` for reading its value from the
+	JDBC ResultSet.  This part is the key to improved (imo) integration with the QueryCache.  The first
+	step in processing a row in the JDBC ResultSet is to use these `SqlSelectionReader` to build a
+	`Object[]` view of the JDBC row.  It is this low level of detail that is put into the cache and
+	read back.  The later "ReturnAssemblers" and "initializers" work on top of this "currentJdbcRow".
+	NOTE : that this is currently messed up; see note in
+	`org.hibernate.sql.exec.internal.PreparedStatementExecutorNormalImpl#execute`
+* `Return` knows how to "resolve" itself to a `ResolvedReturn` based on these `SqlSelectionDescriptor`s,
+	whether the Return is to be considered "shallow" and the `Expression` it encapsulates.
+* `ResolvedReturn` resolves to a `ReturnAssembler` which read and "assemble" the return value into the
+	`Query`'s result `Object[]` at the `Return`/`ResolvedReturn`'s position.
+* `ResolvedReturn` may each register different types of "initializers" that perform various
+	levels of "assembly" (fetches, dynamic instantiations, entity and collection multi-phase-loading, etc).
+* The actual process of executing queries and processing results is the purpose of
+	`org.hibernate.sql.exec.spi.SqlTreeExecutor` using `SqlAstSelectInterpreter`, `JdbcServices`,
+	`ParameterBinder`, `PreparedStatementCreator`, `PreparedStatementExecutor`, etc.
+* The "standard" (HQL and Criteria selects) `PreparedStatementExecutor` performs the JDBC
+	PreparedStatement and processes the results using `QueryCacheDataAccessImplementor`,
+	`ResultSetProcessingState`, `RowReader`, etc
 
-todo : would be better to have a delegate that encapsulates the reading of a group of `SqlSelectionDescriptor` pertaining
- to these `Return` and `Fetch`.  LoadPlan handling does this already (see `org.hibernate.loader.plan.exec.process.spi.EntityReferenceInitializer`)
 
 The `org.hibernate.sql.exec.results.spi` package defines a number of contracts that it is probably beneficial to discuss:
 
-`Return`:: models a return from the query.  There are 3 distinct types of `Return`:
+`ResolvedReturn`:: models a return from the query.  There are 4 distinct types of `ResolvedReturn`:
 
-* `ScalarReturn` this is something like selecting a literal, or selecting a basic singular attribute
-* `EntityReturn` represents selecting an entity either by identification variable (from alias) or to-one association
-* `CollectionReturn` represents selecting a collection as the root.  This is only relevant for collection loaders
+* `ResolvedReturnScalar` this is something like selecting a literal, or selecting a basic singular attribute
+* `ResolvedReturnDynamicInstantiation` specialized handling for dynamic-instantiations
+* `ResolvedReturnEntity` represents selecting an entity either by identification variable (from alias) or to-one association
+* `ResolvedReturnCollection` represents selecting a collection as the root.  This is only relevant for collection loaders
 
-`Fetch`:: models a join fetch of a particular embeddable or entity association relative to a `org.hibernate.sql.exec.results.spi.ResolvedFetchParent`:
+`ResolvedFetch`:: models a join fetch of a particular embeddable or entity association relative to a `ResolvedFetchParent`:
 
-* `CompositeFetch` is the fetch of an embeddable (composite)
-* `EntityFetch` the fetch of an entity association
-* `CollectionAttributeFetch` the fetch of a plural attribute
+* `ResolvedFetchComposite` is the fetch of an embeddable (composite)
+* `ResolvedFetchEntity` the fetch of an entity association
+* todo collections (just index and element fetches?)
+
+this stuff below is currently out of date
 
 `CollectionReference`:: defines a reference to a collection as either a `Return` (`CollectionReturn`) or `Fetch` (`CollectionAttributeFetch`).
 
@@ -334,6 +362,31 @@ Much of this comes down to the following comment I added to SqlSelectionDescript
 ----
 
 todo : create a diagram illustrating what I mean wrt this code comment block
+
+
+== ColumnBinding resolution
+
+Resolving a "domain reference" to `ColumnBinding` instances involves multiple actors:
+
+* The "domain reference" expression (and the encapsulated `org.hibernate.persister.common.spi.DomainReferenceImplementor`)
+* The source (lhs, table-group, etc) of the "domain reference" expression
+* The context in which the "domain reference" expression occurs
+* The proper TableGroup(s) are integral as well, as they are needed to convert `Column` -> `ColumnBinding`.  Likely this just gets passed in to the ColumnBinding creation more than being a active actor in the process
+
+
+At the moment this is designed as follows:
+
+* The `DomainReferenceExpression` impls receive a `ColumnBindingSource` reference which is used to convert `Column`s into `ColumnBinding`s
+* `ColumnBindingSource` is generally a `TableGroup`, but in some cases it can be a "composition" of multiple `TableGroup`s.  Can also be a "virtual" source (for `CompositeType`s)
+* `DomainReferenceRenderer` handles the "contextual" aspect of rendering `DomainReferenceExpression`s into `ColumnBinding`s
+
+The general flow is
+
+```
+DomainReferenceRenderer -> DomainReferenceExpression -> ColumnBindingSource -> DomainReference
+```
+
+This is a preliminary design.  I am in no way tied to it if anyone sees something better.
 
 
 == Open Design Questions
