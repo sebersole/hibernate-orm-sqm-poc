@@ -275,6 +275,7 @@ Important because we should be able to store this Return/Fetch tree along with r
 able to reconstruct fetch graphs.
 
 As far as relationships:
+
 * As the `Return#getSelectExpression` `Expression` is walked in `SqlAstSelectInterpreter`, we use a
    `SqlAstSelectInterpreter.SqlSelectableProcessor` to collect any `SqlSelectionDescriptor`s it
    produces (special handling for dynamic-instantiations).  These `SqlSelectionDescriptor`s represent
