@@ -8,12 +8,15 @@ package org.hibernate.sql.ast.expression.domain;
 
 import java.util.List;
 
+import org.hibernate.loader.PropertyPath;
+import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.convert.results.internal.ReturnEntityImpl;
 import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
 import org.hibernate.sql.convert.results.spi.Return;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
@@ -23,12 +26,15 @@ import org.hibernate.type.Type;
 public class SingularAttributeReferenceExpression implements DomainReferenceExpression {
 	private final ColumnBindingSource columnBindingSource;
 	private final SingularAttributeDescriptor referencedAttribute;
+	private final PropertyPath propertyPath;
 
 	public SingularAttributeReferenceExpression(
 			ColumnBindingSource columnBindingSource,
-			SingularAttributeDescriptor referencedAttribute) {
+			SingularAttributeDescriptor referencedAttribute,
+			PropertyPath propertyPath) {
 		this.columnBindingSource = columnBindingSource;
 		this.referencedAttribute = referencedAttribute;
+		this.propertyPath = propertyPath;
 	}
 
 	public SingularAttributeDescriptor getReferencedAttribute() {
@@ -57,12 +63,19 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 			case ANY: {
 				// special reading for ANY types
 				// although maybe this should be an exception, have to see what the old parse does
+				throw new NotYetImplementedException();
+
 			}
 			default: {
-				// many-to-one / one-to-one
+				return new ReturnEntityImpl(
+						getPropertyPath(),
+						columnBindingSource.getTableGroup().getUid(),
+						this,
+						( (SingularAttributeEntity) referencedAttribute ).getEntityPersister(),
+						resultVariable
+				);
 			}
 		}
-		throw new NotYetImplementedException(  );
 	}
 
 	@Override
@@ -73,5 +86,10 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 	@Override
 	public List<ColumnBinding> resolveColumnBindings(boolean shallow) {
 		return columnBindingSource.resolveColumnBindings( this, shallow );
+	}
+
+	@Override
+	public PropertyPath getPropertyPath() {
+		return propertyPath;
 	}
 }

@@ -8,11 +8,11 @@ package org.hibernate.sql.ast.expression.domain;
 
 import java.util.List;
 
-import org.hibernate.persister.common.spi.DomainDescriptor;
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.convert.results.internal.ReturnEntityImpl;
 import org.hibernate.sql.convert.results.spi.Return;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
@@ -23,10 +23,15 @@ import org.hibernate.type.Type;
 public class EntityReferenceExpression implements DomainReferenceExpression {
 	private final ColumnBindingSource columnBindingSource;
 	private final ImprovedEntityPersister improvedEntityPersister;
+	private final PropertyPath propertyPath;
 
-	public EntityReferenceExpression(ColumnBindingSource columnBindingSource, ImprovedEntityPersister improvedEntityPersister) {
+	public EntityReferenceExpression(
+			ColumnBindingSource columnBindingSource,
+			ImprovedEntityPersister improvedEntityPersister,
+			PropertyPath propertyPath) {
 		this.columnBindingSource = columnBindingSource;
 		this.improvedEntityPersister = improvedEntityPersister;
+		this.propertyPath = propertyPath;
 	}
 
 	public ImprovedEntityPersister getImprovedEntityPersister() {
@@ -44,7 +49,13 @@ public class EntityReferenceExpression implements DomainReferenceExpression {
 
 	@Override
 	public Return toQueryReturn(String resultVariable) {
-		throw new NotYetImplementedException(  );
+		return new ReturnEntityImpl(
+				propertyPath,
+				columnBindingSource.getTableGroup().getUid(),
+				this,
+				improvedEntityPersister,
+				resultVariable
+		);
 	}
 
 	@Override
@@ -53,12 +64,17 @@ public class EntityReferenceExpression implements DomainReferenceExpression {
 	}
 
 	@Override
+	public PropertyPath getPropertyPath() {
+		return propertyPath;
+	}
+
+	@Override
 	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
 		walker.visitEntityExpression( this, shallow );
 	}
 
 	@Override
-	public DomainDescriptor getDomainReference() {
+	public ImprovedEntityPersister getDomainReference() {
 		return getImprovedEntityPersister();
 	}
 }

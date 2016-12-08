@@ -7,7 +7,6 @@
 package org.hibernate.sql.exec.results.spi;
 
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
-import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
 
 /**
  * Represents a reference to an entity either as a return, fetch, or collection element or index.
@@ -17,12 +16,15 @@ import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
 public interface ResolvedEntityReference extends ResolvedFetchParent {
 	/**
 	 * Retrieves the entity persister describing the entity associated with this Return.
-	 *
-	 * @return The EntityPersister.
 	 */
 	ImprovedEntityPersister getEntityPersister();
 
+	/**
+	 * Retrieve the Resolved form of an entity's identifier information, which is really
+	 * just static information from the referenced {@link ImprovedEntityPersister}.  This
+	 * reference is generally used as a unified access to an entity's identifier information,
+	 * whether that by any of the simple ids, aggregated-composite ids or
+	 * non-aggregated-composite ids.
+	 */
 	ResolvedEntityIdentifierReference getIdentifierReference();
-
-	EntityReferenceInitializer getEntityReferenceInitializer();
 }

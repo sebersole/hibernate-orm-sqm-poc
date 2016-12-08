@@ -26,6 +26,9 @@
 	org.hibernate.target.descriptor.sql.RecommendedJdbcTypeResolutionContext in this PoC for an initial design.
 * Finish the logic to apply fetches and EntityGraph hints. See `#applyFetchesAndEntityGraph` in
 	`org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter`
+* Implement SingularAttributeDescriptor#isNullable - currently always returns true, except for id-attributes which always
+ 	return false which is actualy ok
+* Who is responsible for adding the SqlSelectionDescriptor for fetches?
 
 Keep track of downcasts on FromElement
 

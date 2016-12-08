@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.TableGroup;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.type.BasicType;
 
 /**
@@ -22,18 +22,26 @@ public abstract class AbstractSingularAttributeDescriptor<O extends org.hibernat
 		extends AbstractAttributeDescriptor
 		implements SingularAttributeDescriptor {
 	private final O ormType;
+	private final boolean nullable;
 
 	public AbstractSingularAttributeDescriptor(
 			AttributeContainer attributeContainer,
 			String name,
-			O ormType) {
+			O ormType,
+			boolean nullable) {
 		super( attributeContainer, name );
 		this.ormType = ormType;
+		this.nullable = nullable;
 	}
 
 	@Override
 	public O getOrmType() {
 		return ormType;
+	}
+
+	@Override
+	public boolean isNullable() {
+		return nullable;
 	}
 
 	@Override

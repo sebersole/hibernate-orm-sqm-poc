@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.convert.spi;
 
+import org.hibernate.loader.spi.AfterLoadAction;
+
 /**
  * Callback to allow SQM interpretation to trigger certain things within ORM.  See the current
  * javadocs for {@link org.hibernate.loader.plan.spi.LoadPlan} for details.  Specifically this would
@@ -14,4 +16,5 @@ package org.hibernate.sql.convert.spi;
  * @author Steve Ebersole
  */
 public interface Callback {
+	void registerAfterLoadAction(AfterLoadAction afterLoadAction);
 }

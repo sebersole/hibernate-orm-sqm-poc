@@ -249,7 +249,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 				tableSpace,
 				fromElement.getUniqueIdentifier(),
 				sqlAliasBaseManager.getSqlAliasBase( fromElement ),
-				this
+				this,
+				Helper.convert( fromElement.getPropertyPath() )
 		);
 
 		fromClauseIndex.crossReference( fromElement, group );

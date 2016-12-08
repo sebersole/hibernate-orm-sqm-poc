@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.ast.from.TableGroup;
 
 import org.jboss.logging.Logger;
 
@@ -23,6 +24,11 @@ public class CompositeColumnBindingSource implements ColumnBindingSource {
 
 	public CompositeColumnBindingSource(ColumnBindingSource... components) {
 		this.components = Arrays.asList( components );
+	}
+
+	@Override
+	public TableGroup getTableGroup() {
+		return (TableGroup) components.get( components.size() - 1 );
 	}
 
 	@Override

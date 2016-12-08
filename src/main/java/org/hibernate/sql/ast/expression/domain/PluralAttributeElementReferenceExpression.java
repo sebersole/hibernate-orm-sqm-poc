@@ -8,12 +8,13 @@ package org.hibernate.sql.ast.expression.domain;
 
 import java.util.List;
 
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.convert.results.spi.Return;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
@@ -23,13 +24,16 @@ import org.hibernate.type.Type;
 public class PluralAttributeElementReferenceExpression implements DomainReferenceExpression {
 	private final ImprovedCollectionPersister collectionPersister;
 	private final ColumnBindingSource columnBindingSource;
+	private final PropertyPath propertyPath;
 
 	public PluralAttributeElementReferenceExpression(
 			ImprovedCollectionPersister collectionPersister,
-			TableGroup columnBindingSource) {
+			TableGroup columnBindingSource,
+			PropertyPath propertyPath) {
 		this.collectionPersister = collectionPersister;
 		this.columnBindingSource = columnBindingSource;
 
+		this.propertyPath = propertyPath;
 	}
 
 	@Override
@@ -50,6 +54,11 @@ public class PluralAttributeElementReferenceExpression implements DomainReferenc
 	@Override
 	public List<ColumnBinding> resolveColumnBindings(boolean shallow) {
 		return columnBindingSource.resolveColumnBindings( this, shallow );
+	}
+
+	@Override
+	public PropertyPath getPropertyPath() {
+		return propertyPath;
 	}
 
 	@Override

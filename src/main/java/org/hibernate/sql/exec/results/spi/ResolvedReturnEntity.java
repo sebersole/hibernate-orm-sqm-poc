@@ -6,10 +6,12 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
+import org.hibernate.sql.exec.results.process.spi2.InitializerSource;
+
 /**
  * Models the an entity as root.
  *
  * @author Steve Ebersole
  */
-public interface ResolvedReturnEntity extends ResolvedEntityReference, ResolvedReturn {
+public interface ResolvedReturnEntity extends ResolvedEntityReference, ResolvedReturn, InitializerSource {
 }

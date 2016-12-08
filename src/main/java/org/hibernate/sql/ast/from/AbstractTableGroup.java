@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.internal.SingularAttributeBasic;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
@@ -20,7 +21,7 @@ import org.hibernate.persister.entity.internal.IdentifierSimple;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
 import org.hibernate.sql.ast.expression.domain.EntityReferenceExpression;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 
 import org.jboss.logging.Logger;
 
@@ -33,14 +34,16 @@ public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSou
 	private final TableSpace tableSpace;
 	private final String uid;
 	private final String aliasBase;
+	private final PropertyPath propertyPath;
 
 	private TableBinding rootTableBinding;
 	private List<TableJoin> tableJoins;
 
-	public AbstractTableGroup(TableSpace tableSpace, String uid, String aliasBase) {
+	public AbstractTableGroup(TableSpace tableSpace, String uid, String aliasBase, PropertyPath propertyPath) {
 		this.tableSpace = tableSpace;
 		this.uid = uid;
 		this.aliasBase = aliasBase;
+		this.propertyPath = propertyPath;
 	}
 
 	@Override
@@ -82,6 +85,11 @@ public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSou
 	}
 
 	@Override
+	public TableGroup getTableGroup() {
+		return this;
+	}
+
+	@Override
 	public ColumnBinding[] resolveBindings(SingularAttributeDescriptor attribute) {
 		final Column[] columns;
 		if ( attribute instanceof SingularAttributeBasic ) {
@@ -112,7 +120,7 @@ public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSou
 	@Override
 	public EntityReferenceExpression resolveEntityReference() {
 		final ImprovedEntityPersister improvedEntityPersister = resolveEntityReferenceBase();
-		return new EntityReferenceExpression( this, improvedEntityPersister );
+		return new EntityReferenceExpression( this, improvedEntityPersister, propertyPath );
 	}
 
 	protected abstract ImprovedEntityPersister resolveEntityReferenceBase();

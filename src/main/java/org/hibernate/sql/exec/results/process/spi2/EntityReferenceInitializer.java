@@ -14,7 +14,7 @@ import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 /**
  * @author Steve Ebersole
  */
-public interface EntityReferenceInitializer {
+public interface EntityReferenceInitializer extends Initializer, InitializerParent {
 	ResolvedEntityReference getEntityReference();
 
 	void hydrateIdentifier(RowProcessingState rowProcessingState) throws SQLException;

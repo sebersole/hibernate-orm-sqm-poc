@@ -18,4 +18,6 @@ import org.hibernate.sqm.domain.SingularAttributeReference;
 public interface SingularAttributeDescriptor extends SingularAttributeReference, OrmTypeExporter, AttributeDescriptor, DomainDescriptor {
 	Column[] getColumns();
 	List<ColumnBinding> resolveColumnBindings(TableGroup tableGroup, boolean shallow);
+
+	boolean isNullable();
 }

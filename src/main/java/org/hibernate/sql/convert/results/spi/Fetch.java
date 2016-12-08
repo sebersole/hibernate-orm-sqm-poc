@@ -6,8 +6,13 @@
  */
 package org.hibernate.sql.convert.results.spi;
 
+import java.util.List;
+
 import org.hibernate.engine.FetchStrategy;
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.exec.results.spi.ResolvedFetch;
+import org.hibernate.sql.exec.results.spi.ResolvedFetchParent;
 import org.hibernate.type.Type;
 
 /**
@@ -52,4 +57,9 @@ public interface Fetch {
 	 * @return true, if this fetch is nullable; false, otherwise.
 	 */
 	boolean isNullable();
+
+	ResolvedFetch resolve(
+			ResolvedFetchParent resolvedFetchParent,
+			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
+			boolean shallow);
 }

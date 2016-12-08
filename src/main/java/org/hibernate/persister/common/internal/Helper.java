@@ -24,10 +24,11 @@ import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassification;
 import org.hibernate.sqm.domain.PluralAttributeReference.CollectionClassification;
 import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
+import org.hibernate.sqm.query.PropertyPath;
 import org.hibernate.type.ArrayType;
 import org.hibernate.type.BagType;
 import org.hibernate.type.BasicType;
@@ -303,6 +304,14 @@ public class Helper {
 
 		domainMetamodel.registerCollectionPersister( persister );
 		return persister;
+	}
+
+	public static org.hibernate.loader.PropertyPath convert(PropertyPath propertyPath) {
+		if ( propertyPath.getParent() == null ) {
+			return new org.hibernate.loader.PropertyPath( null, propertyPath.getLocalPath() );
+		}
+		org.hibernate.loader.PropertyPath parent = convert( propertyPath.getParent() );
+		return parent.append( propertyPath.getLocalPath() );
 	}
 
 	public static interface CollectionMetadata {

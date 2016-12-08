@@ -10,10 +10,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
 import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
@@ -44,13 +44,20 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 
 	@Override
 	public Object read(
-			RowProcessingState rowProcessingState, ResultSetProcessingOptions options, int position)
+			ResultSet resultSet,
+			JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
+			ResultSetProcessingOptions options,
+			SqlSelectionDescriptor sqlSelectionDescriptor)
 			throws SQLException {
-		return reader.read( rowProcessingState, options, position );
+		return reader.read( resultSet, jdbcValuesSourceProcessingState, options, sqlSelectionDescriptor.getJdbcResultSetIndex() );
 	}
 
-	private interface Reader {
-		Object read(RowProcessingState rowProcessingState, ResultSetProcessingOptions options, int position)
+	private static interface Reader {
+		Object read(
+				ResultSet resultSet,
+				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
+				ResultSetProcessingOptions options,
+				int position)
 				throws SQLException;
 	}
 
@@ -63,73 +70,92 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 
 		@Override
 		public Object read(
-				RowProcessingState rowProcessingState,
+				ResultSet resultSet,
+				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
 				ResultSetProcessingOptions options,
 				int position) throws SQLException {
-			final Class javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode( jdbcTypeCode );
-			final JavaTypeDescriptor javaTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor( javaClassMapping );
+			final Class<?> javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode(
+					jdbcTypeCode
+			);
+			final JavaTypeDescriptor javaTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor(
+					javaClassMapping
+			);
 
-			final ResultSet resultSet = rowProcessingState.getResultSetProcessingState().getResultSet();
-
-			switch ( jdbcTypeCode ) {
-				case Types.BIGINT: {
-					return javaTypeDescriptor.wrap( resultSet.getLong( position ), null );
-				}
-				case Types.BIT: {
-					return javaTypeDescriptor.wrap( resultSet.getBoolean( position ), null );
-				}
-				case Types.BOOLEAN: {
-					return javaTypeDescriptor.wrap( resultSet.getBoolean( position ), null );
-				}
-				case Types.CHAR: {
-					return javaTypeDescriptor.wrap( resultSet.getString( position ), null );
-				}
-				case Types.DATE: {
-					return javaTypeDescriptor.wrap( resultSet.getDate( position ), null );
-				}
-				case Types.DECIMAL: {
-					return javaTypeDescriptor.wrap( resultSet.getBigDecimal( position ), null );
-				}
-				case Types.DOUBLE: {
-					return javaTypeDescriptor.wrap( resultSet.getDouble( position ), null );
-				}
-				case Types.FLOAT: {
-					return javaTypeDescriptor.wrap( resultSet.getFloat( position ), null );
-				}
-				case Types.INTEGER: {
-					return javaTypeDescriptor.wrap( resultSet.getInt( position ), null );
-				}
-				case Types.LONGNVARCHAR: {
-					return javaTypeDescriptor.wrap( resultSet.getString( position ), null );
-				}
-				case Types.LONGVARCHAR: {
-					return javaTypeDescriptor.wrap( resultSet.getString( position ), null );
-				}
-				case Types.LONGVARBINARY: {
-					return javaTypeDescriptor.wrap( resultSet.getBytes( position ), null );
-				}
-				case Types.NCHAR: {
-					return javaTypeDescriptor.wrap( resultSet.getString( position ), null );
-				}
-				case Types.NUMERIC: {
-					return javaTypeDescriptor.wrap( resultSet.getBigDecimal( position ), null );
-				}
-				case Types.NVARCHAR: {
-					return javaTypeDescriptor.wrap( resultSet.getString( position ), null );
-				}
-				case Types.TIME: {
-					return javaTypeDescriptor.wrap( resultSet.getTime( position ), null );
-				}
-				case Types.TIMESTAMP: {
-					return javaTypeDescriptor.wrap( resultSet.getTimestamp( position ), null );
-				}
-				case Types.VARCHAR: {
-					return javaTypeDescriptor.wrap( resultSet.getString( position ), null );
-				}
-			}
-
-			throw new UnsupportedOperationException( "JDBC type [" + jdbcTypeCode + " not supported" );
+			return javaTypeDescriptor.wrap(
+					extractJdbcValue( resultSet, jdbcTypeCode, position ),
+					jdbcValuesSourceProcessingState.getPersistenceContext()
+			);
 		}
+	}
+
+	private static Object extractJdbcValue(ResultSet resultSet, int jdbcTypeCode, int position) throws SQLException {
+		switch ( jdbcTypeCode ) {
+			case Types.BIGINT: {
+				return resultSet.getBigDecimal( position );
+			}
+			case Types.BIT: {
+				return resultSet.getBoolean( position );
+			}
+			case Types.BOOLEAN: {
+				return resultSet.getBoolean( position );
+			}
+			case Types.CHAR: {
+				return resultSet.getString( position );
+			}
+			case Types.DATE: {
+				return resultSet.getDate( position );
+			}
+			case Types.DECIMAL: {
+				return resultSet.getBigDecimal( position );
+			}
+			case Types.DOUBLE: {
+				return resultSet.getDouble( position );
+			}
+			case Types.FLOAT: {
+				return resultSet.getFloat( position );
+			}
+			case Types.INTEGER: {
+				return resultSet.getInt( position );
+			}
+			case Types.LONGNVARCHAR: {
+				return resultSet.getNString( position );
+			}
+			case Types.LONGVARCHAR: {
+				return resultSet.getString( position );
+			}
+			case Types.LONGVARBINARY: {
+				return resultSet.getBytes( position );
+			}
+			case Types.NCHAR: {
+				return resultSet.getNString( position );
+			}
+			case Types.NUMERIC: {
+				return resultSet.getBigDecimal( position );
+			}
+			case Types.NVARCHAR: {
+				return resultSet.getNString( position );
+			}
+			case Types.TIME: {
+				return resultSet.getTime( position );
+			}
+			case Types.TIMESTAMP: {
+				return resultSet.getTimestamp( position );
+			}
+			case Types.VARCHAR: {
+				return resultSet.getString( position );
+			}
+			case Types.BLOB: {
+				return resultSet.getBlob( position );
+			}
+			case Types.CLOB: {
+				return resultSet.getClob( position );
+			}
+			case Types.NCLOB: {
+				return resultSet.getNClob( position );
+			}
+		}
+
+		throw new UnsupportedOperationException( "JDBC type [" + jdbcTypeCode + " not supported" );
 	}
 
 	private class BasicTypeReaderAdapterImpl implements Reader {
@@ -141,10 +167,24 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 
 		@Override
 		public Object read(
-				RowProcessingState rowProcessingState,
+				ResultSet resultSet,
+				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
 				ResultSetProcessingOptions options,
 				int position) throws SQLException {
-			throw new NotYetImplementedException( "Type does not support read-by-position" );
+			// Any more than a single column is an error at this level
+			final int jdbcTypeCode = basicType.sqlTypes( jdbcValuesSourceProcessingState.getPersistenceContext().getFactory() )[0];
+
+			final Class<?> javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode(
+					jdbcTypeCode
+			);
+			final JavaTypeDescriptor javaTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor(
+					javaClassMapping
+			);
+
+			return javaTypeDescriptor.wrap(
+					extractJdbcValue( resultSet, jdbcTypeCode, position ),
+					jdbcValuesSourceProcessingState.getPersistenceContext()
+			);
 		}
 	}
 }

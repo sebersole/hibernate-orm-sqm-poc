@@ -10,13 +10,16 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.EntityGraph;
 
 import org.hibernate.AssertionFailure;
+import org.hibernate.engine.FetchStrategy;
+import org.hibernate.engine.FetchStyle;
+import org.hibernate.engine.FetchTiming;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.graph.spi.AttributeNodeImplementor;
 import org.hibernate.graph.spi.EntityGraphImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
@@ -64,13 +67,17 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
+import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.convert.SyntaxException;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
-import org.hibernate.sql.convert.results.spi.CollectionReturn;
+import org.hibernate.sql.convert.results.internal.FetchCompositeAttributeImpl;
+import org.hibernate.sql.convert.results.internal.FetchEntityAttributeImpl;
 import org.hibernate.sql.convert.results.spi.EntityReference;
-import org.hibernate.sql.convert.results.spi.EntityReturn;
 import org.hibernate.sql.convert.results.spi.FetchParent;
 import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.convert.results.spi.ReturnCollection;
+import org.hibernate.sql.convert.results.spi.ReturnEntity;
 import org.hibernate.sql.convert.results.spi.ReturnScalar;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.DomainMetamodel;
@@ -423,8 +430,6 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 			}
 		}
 
-		fromClauseIndex.crossReference( joinedFromElement, group );
-
 		// add any additional join restrictions
 		if ( joinedFromElement.getOnClausePredicate() != null ) {
 			predicate.add( (Predicate) joinedFromElement.getOnClausePredicate().accept( this ) );
@@ -483,22 +488,29 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 			return;
 		}
 
-		if ( queryReturn instanceof EntityReturn ) {
-			applyFetchesAndEntityGraph( (EntityReturn) queryReturn, queryOptions.getEntityGraphQueryHint().getOriginEntityGraph() );
+		if ( queryReturn instanceof ReturnEntity ) {
+			applyFetchesAndEntityGraph( (ReturnEntity) queryReturn, extractEntityGraph() );
 			return;
 		}
 
-		if ( queryReturn instanceof CollectionReturn ) {
+		if ( queryReturn instanceof ReturnCollection ) {
 			// todo : apply fetches/entity-graph
 		}
 	}
 
-	private void applyFetchesAndEntityGraph(EntityReference entityReference, EntityGraph entityGraph) {
+	private EntityGraphImplementor extractEntityGraph() {
+		if ( queryOptions.getEntityGraphQueryHint() == null ) {
+			return null;
+		}
+		else {
+			return (EntityGraphImplementor) queryOptions.getEntityGraphQueryHint().getOriginEntityGraph();
+		}
+	}
+
+	private void applyFetchesAndEntityGraph(EntityReference entityReference, EntityGraphImplementor entityGraph) {
 		final String uniqueIdentifier = entityReference.getTableGroupUniqueIdentifier();
-
-		final EntityGraphImplementor entityGraphImplementor = (EntityGraphImplementor) entityGraph;
-
 		final List<SqmAttributeJoin> fetches = fromClauseIndex.findFetchesByUniqueIdentifier( uniqueIdentifier );
+
 		for ( SqmAttributeJoin fetch : fetches ) {
 			final AttributeBinding fetchedAttributeBinding = fetch.getAttributeBinding();
 			final String attributeName = fetchedAttributeBinding.getAttribute().getAttributeName();
@@ -523,7 +535,37 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		}
 		else if ( attributeJoin.getAttributeBinding() instanceof SingularAttributeBinding ) {
 			// apply the singular attribute fetch join
+			final SingularAttributeBinding attributeBinding = (SingularAttributeBinding) attributeJoin.getAttributeBinding();
+			final SingularAttributeDescriptor boundAttribute = (SingularAttributeDescriptor) attributeBinding.getAttribute();
 
+			switch ( boundAttribute.getAttributeTypeClassification() ) {
+				case ANY:
+				case BASIC: {
+					throw new SyntaxException( "Attributes of BASIC or ANY type cannot be joined" );
+				}
+				case EMBEDDED: {
+					fetchParent.addFetch(
+							new FetchCompositeAttributeImpl(
+									fetchParent,
+									boundAttribute,
+									new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
+							)
+					);
+					break;
+				}
+				case ONE_TO_ONE:
+				case MANY_TO_ONE: {
+					final SingularAttributeEntity attributeAsEntity = (SingularAttributeEntity) boundAttribute;
+					fetchParent.addFetch(
+							new FetchEntityAttributeImpl(
+									fetchParent,
+									boundAttribute,
+									attributeAsEntity.getEntityPersister(),
+									new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
+							)
+					);
+				}
+			}
 		}
 	}
 
@@ -582,7 +624,11 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( attributeBinding.getLhs() );
 
 		if ( attributeBinding.getFromElement() == null ) {
-			return new SingularAttributeReferenceExpression( tableGroup, attribute );
+			return new SingularAttributeReferenceExpression(
+					tableGroup,
+					attribute,
+					org.hibernate.persister.common.internal.Helper.convert( attributeBinding.getPropertyPath() )
+			);
 		}
 		else {
 			return new SingularAttributeReferenceExpression(
@@ -590,7 +636,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 							tableGroup,
 							fromClauseIndex.findResolvedTableGroup( attributeBinding.getFromElement() )
 					),
-					attribute
+					attribute,
+					org.hibernate.persister.common.internal.Helper.convert( attributeBinding.getPropertyPath() )
 			);
 		}
 	}
@@ -913,7 +960,11 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		final TableGroup resolvedTableGroup = fromClauseIndex.findResolvedTableGroup( binding.getFromElement() );
 
 		final ImprovedCollectionPersister collectionPersister = (ImprovedCollectionPersister) binding.getPluralAttributeReference();
-		return new PluralAttributeElementReferenceExpression( collectionPersister, resolvedTableGroup );
+		return new PluralAttributeElementReferenceExpression(
+				collectionPersister,
+				resolvedTableGroup,
+				org.hibernate.persister.common.internal.Helper.convert( binding.getPropertyPath() )
+		);
 	}
 
 

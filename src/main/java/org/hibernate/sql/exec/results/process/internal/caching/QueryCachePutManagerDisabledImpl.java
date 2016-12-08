@@ -7,13 +7,19 @@
 package org.hibernate.sql.exec.results.process.internal.caching;
 
 /**
+ * QueryCachePutManager implementation for cases where we will not be putting
+ * Query results into the cache.
+ *
  * @author Steve Ebersole
  */
-public class QueryCachePutManagerDisabledImpl implements QueryCacheDataAccessImplementor.QueryCachePutManagerImplementor {
+public class QueryCachePutManagerDisabledImpl implements QueryCachePutManager {
 	/**
 	 * Singleton access
 	 */
 	public static final QueryCachePutManagerDisabledImpl INSTANCE = new QueryCachePutManagerDisabledImpl();
+
+	private QueryCachePutManagerDisabledImpl() {
+	}
 
 	@Override
 	public void registerJdbcRow(Object[] values) {

@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.exec.spi;
 
+import java.sql.SQLException;
+
 import org.hibernate.Incubating;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
@@ -55,13 +57,13 @@ public interface SqlTreeExecutor {
 	<R,T> R executeSelect(
 			SelectQuery sqlTree,
 			PreparedStatementCreator statementCreator,
-			PreparedStatementExecutor<R, T> preparedStatementExecutor,
+			PreparedStatementExecutor preparedStatementExecutor,
 			QueryOptions queryOptions,
 			QueryParameterBindings queryParameterBindings,
 			RowTransformer<T> rowTransformer,
 			Callback callback,
 			SharedSessionContractImplementor persistenceContext,
-			ExecutionContext executionContext);
+			ExecutionContext executionContext) throws SQLException;
 
 	Object[] executeInsert(
 			Object sqlTree,

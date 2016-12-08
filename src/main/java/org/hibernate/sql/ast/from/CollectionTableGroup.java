@@ -10,6 +10,7 @@ package org.hibernate.sql.ast.from;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.collection.internal.PluralAttributeElementEntity;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.common.spi.Column;
@@ -30,8 +31,9 @@ public class CollectionTableGroup extends AbstractTableGroup {
 			TableSpace tableSpace,
 			String uid,
 			String aliasBase,
-			ImprovedCollectionPersister persister) {
-		super( tableSpace, uid, aliasBase );
+			ImprovedCollectionPersister persister,
+			PropertyPath propertyPath) {
+		super( tableSpace, uid, aliasBase, propertyPath );
 		this.persister = persister;
 	}
 

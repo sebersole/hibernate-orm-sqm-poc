@@ -22,16 +22,9 @@ public interface EntityReference extends FetchParent {
 	ImprovedEntityPersister getEntityPersister();
 
 	/**
-	 * Obtain the unique-identifier of the TableGroup (specifically a
-	 * {@link org.hibernate.sql.ast.from.EntityTableGroup}) that this
-	 * EntityReference refers to.
-	 *
-	 * @return The unique-identifier
-	 */
-	String getTableGroupUniqueIdentifier();
-
-	/**
 	 * Get the description of the entity's identifier, specific to this query
+	 *
+	 * @todo DO we need this?
 	 *
 	 * @return The identifier description.
 	 */

@@ -32,7 +32,7 @@ public class SqlSelectionDescriptorImpl implements SqlSelectionDescriptor {
 	}
 
 	@Override
-	public int getPosition() {
+	public int getValuesArrayPosition() {
 		return position;
 	}
 }

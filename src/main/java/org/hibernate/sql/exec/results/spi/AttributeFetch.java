@@ -7,13 +7,14 @@
 package org.hibernate.sql.exec.results.spi;
 
 import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.sql.convert.results.spi.Fetch;
 
 /**
  * Models a fetch that is specifically for an attribute.
  *
  * @author Gail Badner
  */
-public interface AttributeFetch extends ResolvedFetch {
+public interface AttributeFetch extends Fetch {
 
 	/**
 	 * Returns the descriptor for attribute being fetched.

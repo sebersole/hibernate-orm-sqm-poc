@@ -10,7 +10,7 @@ import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 
 /**
- * Represents a reference to a persistent collection either as a Return or as a {@link CollectionAttributeFetch}.
+ * Represents a reference to a persistent collection either as a Return or as a {@link FetchCollectionAttribute}.
  *
  * @author Steve Ebersole
  */

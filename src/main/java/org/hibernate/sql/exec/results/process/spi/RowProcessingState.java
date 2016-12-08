@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.exec.results.process.spi;
 
+import java.sql.SQLException;
+
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
 import org.hibernate.persister.entity.spi.EntityReference ;
@@ -13,14 +15,15 @@ import org.hibernate.loader.plan.spi.Fetch;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 
 /**
- * State pertaining to the processing of a single row of a ResultSet
+ * State pertaining to the processing of a single row of a JdbcValuesSource
  *
  * @author Steve Ebersole
  */
 public interface RowProcessingState {
-	ResultSetProcessingState getResultSetProcessingState();
+	JdbcValuesSourceProcessingState getJdbcValuesSourceProcessingState();
 
-	Object[] getJdbcValues();
+	boolean next() throws SQLException;
+	Object[] getJdbcValues() throws SQLException;
 
 	void registerNonExists(EntityFetch fetch);
 	void registerHydratedEntity(EntityReference entityReference, EntityKey entityKey, Object entityInstance);

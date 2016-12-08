@@ -7,7 +7,7 @@
 package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 

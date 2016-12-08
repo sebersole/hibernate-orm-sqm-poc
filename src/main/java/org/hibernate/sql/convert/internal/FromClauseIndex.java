@@ -9,14 +9,18 @@ package org.hibernate.sql.convert.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.convert.ConversionException;
 import org.hibernate.sqm.query.expression.domain.DomainReferenceBinding;
+import org.hibernate.sqm.query.from.AbstractFrom;
 import org.hibernate.sqm.query.from.SqmAttributeJoin;
 import org.hibernate.sqm.query.from.SqmFrom;
 
@@ -34,7 +38,7 @@ public class FromClauseIndex {
 
 	private final Map<String,SqmFrom> sqmFromByUid = new HashMap<>();
 	private final Map<SqmFrom, TableGroup> tableGroupBySqmFromXref = new HashMap<>();
-	private Map<String, List<SqmAttributeJoin>> sqmFetchesByParentUid = new HashMap<>();
+	private Map<String, List<SqmAttributeJoin>> sqmFetchesByParentUid;
 
 
 	public void pushFromClause(FromClause fromClause) {
@@ -145,8 +149,28 @@ public class FromClauseIndex {
 	}
 
 	public List<SqmAttributeJoin> findFetchesByUniqueIdentifier(String uniqueIdentifier) {
+		if ( sqmFetchesByParentUid == null ) {
+			return Collections.emptyList();
+		}
+
 		final List<SqmAttributeJoin> fetches = sqmFetchesByParentUid.get( uniqueIdentifier );
-		return fetches == null ? Collections.emptyList() : Collections.unmodifiableList( fetches );
+		if ( fetches == null ) {
+			return Collections.emptyList();
+		}
+		else {
+			assert noDuplicates( fetches, uniqueIdentifier );
+			return Collections.unmodifiableList( fetches );
+		}
+	}
+
+	private boolean noDuplicates(List<SqmAttributeJoin> fetches, String uniqueIdentifier) {
+		final Set<String> unigueUids = fetches.stream()
+				.map( AbstractFrom::getUniqueIdentifier )
+				.collect( Collectors.toSet() );
+		if ( unigueUids.size() != fetches.size() ) {
+			throw new IllegalStateException( "Found duplicate fetches (by uid) for parent uid : " + uniqueIdentifier );
+		}
+		return true;
 	}
 
 	public static class FromClauseStackNode {

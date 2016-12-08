@@ -9,16 +9,12 @@ package org.hibernate.sql.exec.internal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 
 import org.hibernate.ScrollableResults;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
-import org.hibernate.sql.exec.spi.RowTransformer;
 
 /**
  * PreparedStatement execution for building {@link ScrollableResults}, which:<ol>
@@ -28,18 +24,19 @@ import org.hibernate.sql.exec.spi.RowTransformer;
  *
  * @author Steve Ebersole
  */
-public class PreparedStatementExecutorScrollableImpl<T> implements PreparedStatementExecutor<ScrollableResults, T> {
+public class PreparedStatementExecutorScrollableImpl implements PreparedStatementExecutor {
 	/**
 	 * Singleton access
 	 */
 	public static final PreparedStatementExecutorScrollableImpl INSTANCE = new PreparedStatementExecutorScrollableImpl();
 
+	private PreparedStatementExecutorScrollableImpl() {
+	}
+
 	@Override
-	public ScrollableResults execute(
+	public ResultSet execute(
 			PreparedStatement ps,
 			QueryOptions queryOptions,
-			List<ResolvedReturn> returns,
-			RowTransformer<T> rowTransformer,
 			SharedSessionContractImplementor session) throws SQLException {
 		final LogicalConnectionImplementor logicalConnection = session.getJdbcCoordinator().getLogicalConnection();
 
@@ -47,14 +44,6 @@ public class PreparedStatementExecutorScrollableImpl<T> implements PreparedState
 		final ResultSet resultSet = ps.executeQuery();
 		logicalConnection.getResourceRegistry().register( resultSet, ps );
 
-//		new ScrollableResultsImpl(
-//				resultSet,
-//				rowTransformer,
-//				new ScrollableRowReader(
-//						returns,
-//		...
-//		)
-//		);
-		throw new NotYetImplementedException();
+		return resultSet;
 	}
 }

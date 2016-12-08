@@ -9,6 +9,8 @@ package org.hibernate.sql.exec.results.process.spi;
 import java.io.Serializable;
 
 /**
+ * Essentially processing options only for entity loading
+ *
  * @author Steve Ebersole
  */
 public interface ResultSetProcessingOptions {

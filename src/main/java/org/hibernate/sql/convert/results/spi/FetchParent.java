@@ -28,7 +28,7 @@ public interface FetchParent {
 	 *
 	 * @return The query space UID.
 	 */
-	String getQuerySpaceUid();
+	String getTableGroupUniqueIdentifier();
 
 
 	void addFetch(Fetch fetch);

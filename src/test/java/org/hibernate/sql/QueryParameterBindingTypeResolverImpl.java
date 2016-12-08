@@ -8,7 +8,6 @@ package org.hibernate.sql;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBindingTypeResolver;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
 import org.hibernate.type.Type;
 
 /**

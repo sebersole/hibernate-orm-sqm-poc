@@ -7,7 +7,7 @@
 package org.hibernate.sql.ast.from;
 
 import org.hibernate.sql.ast.predicate.Predicate;
-import org.hibernate.sql.convert.spi.IllegalJoinSpecificationException;
+import org.hibernate.sql.convert.IllegalJoinSpecificationException;
 import org.hibernate.sqm.query.JoinType;
 
 /**

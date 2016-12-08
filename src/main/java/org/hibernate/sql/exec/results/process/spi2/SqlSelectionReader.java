@@ -6,15 +6,20 @@
  */
 package org.hibernate.sql.exec.results.process.spi2;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
 import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
  * @author Steve Ebersole
  */
 public interface SqlSelectionReader {
-	Object read(RowProcessingState rowProcessingState, ResultSetProcessingOptions options, int position)
-			throws SQLException;
+	Object read(
+			ResultSet resultSet,
+			JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
+			ResultSetProcessingOptions options,
+			SqlSelectionDescriptor sqlSelectionDescriptor) throws SQLException;
 }

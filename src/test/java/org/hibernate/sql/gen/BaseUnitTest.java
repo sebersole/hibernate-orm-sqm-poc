@@ -11,6 +11,7 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.loader.spi.AfterLoadAction;
 import org.hibernate.persister.common.internal.PersisterFactoryImpl;
 import org.hibernate.persister.internal.PersisterFactoryInitiator;
 import org.hibernate.query.proposed.QueryOptions;
@@ -98,6 +99,10 @@ public abstract class BaseUnitTest {
 
 	protected Callback callBack() {
 		return new Callback() {
+			@Override
+			public void registerAfterLoadAction(AfterLoadAction afterLoadAction) {
+				// do nothing here
+			}
 		};
 	}
 

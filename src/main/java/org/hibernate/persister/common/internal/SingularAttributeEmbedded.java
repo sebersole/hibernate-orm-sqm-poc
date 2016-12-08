@@ -13,7 +13,6 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.sqm.domain.EntityReference;
@@ -32,7 +31,7 @@ public class SingularAttributeEmbedded
 			AttributeContainer declaringType,
 			String attributeName,
 			EmbeddablePersister embeddablePersister) {
-		super( declaringType, attributeName, embeddablePersister.getOrmType() );
+		super( declaringType, attributeName, embeddablePersister.getOrmType(), true );
 		this.embeddablePersister = embeddablePersister;
 	}
 

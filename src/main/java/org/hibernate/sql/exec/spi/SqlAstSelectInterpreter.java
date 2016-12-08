@@ -39,7 +39,6 @@ import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.expression.SumFunction;
 import org.hibernate.sql.ast.expression.UnaryOperationExpression;
 import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
-import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.EntityReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.PluralAttributeIndexReferenceExpression;
@@ -72,17 +71,22 @@ import org.hibernate.sql.convert.expression.internal.DomainReferenceRendererSele
 import org.hibernate.sql.convert.expression.internal.DomainReferenceRendererStandardImpl;
 import org.hibernate.sql.convert.expression.spi.DomainReferenceRenderer;
 import org.hibernate.sql.convert.internal.SqlSelectInterpretationImpl;
+import org.hibernate.sql.convert.results.spi.Fetch;
+import org.hibernate.sql.convert.results.spi.FetchParent;
 import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.results.spi.ReturnDynamicInstantiation;
 import org.hibernate.sql.convert.spi.Helper;
-import org.hibernate.sql.convert.spi.NotYetImplementedException;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.convert.spi.Stack;
 import org.hibernate.sql.exec.results.internal.instantiation.ResolvedReturnDynamicInstantiationImpl.ResolvedArgumentImpl;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionDescriptorImpl;
+import org.hibernate.sql.exec.results.spi.ResolvedFetch;
+import org.hibernate.sql.exec.results.spi.ResolvedFetchParent;
 import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.results.spi.ResolvedReturnDynamicInstantiation;
 import org.hibernate.sql.exec.results.spi.ResolvedReturnDynamicInstantiation.ResolvedArgument;
 import org.hibernate.sql.spi.ParameterBinder;
+import org.hibernate.sqm.parser.ParsingException;
 import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.LiteralType;
 import org.hibernate.type.Type;
@@ -344,12 +348,38 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 
 		@Override
 		public void processReturn(Return queryReturn) {
-			registerReturn(
-					queryReturn.resolve(
-							makeSelectionDescriptorListCopy(),
-							shallow
-					)
+			final ResolvedReturn resolvedReturn = queryReturn.resolve(
+					makeSelectionDescriptorListCopy(),
+					shallow
 			);
+			applyFetches( resolvedReturn, queryReturn );
+			registerReturn( resolvedReturn );
+		}
+
+		private void applyFetches(ResolvedReturn resolvedReturn, Return queryReturn) {
+			if ( queryReturn instanceof FetchParent ) {
+				if ( ! (resolvedReturn instanceof ResolvedFetchParent) ) {
+					throw new ParsingException( "Non-matching Return and ResolvedReturn as fetch parent" );
+				}
+			}
+		}
+
+		private void applyFetches(ResolvedFetchParent resolvedReturn, FetchParent queryReturn) {
+			for ( Fetch fetch : queryReturn.getFetches() ) {
+			// todo : need to build SqlSelectionDescriptor List for the fetch...
+				final List<SqlSelectionDescriptor> sqlSelectionDescriptors = null;
+				final ResolvedFetch resolvedFetch = resolvedReturn.addFetch(
+						sqlSelectionDescriptors,
+						shallow,
+						fetch
+				);
+				if ( fetch instanceof FetchParent ) {
+					if ( ! (resolvedFetch instanceof ResolvedFetchParent) ) {
+						throw new ParsingException( "Non-matching Return and ResolvedReturn as fetch parent" );
+					}
+					applyFetches( resolvedReturn, queryReturn );
+				}
+			}
 		}
 
 		@Override

@@ -13,10 +13,12 @@ import org.hibernate.cache.spi.QueryCache;
 import org.hibernate.cache.spi.QueryKey;
 
 /**
+ * QueryCachePutManager implementation for cases where we will be putting
+ * Query results into the cache.
+ *
  * @author Steve Ebersole
  */
-public class QueryCachePutManagerEnabledImpl
-		implements QueryCacheDataAccessImplementor.QueryCachePutManagerImplementor {
+public class QueryCachePutManagerEnabledImpl implements QueryCachePutManager {
 
 	private final QueryCache queryCache;
 	private final QueryKey queryKey;

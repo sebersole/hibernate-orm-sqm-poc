@@ -23,7 +23,7 @@ import org.hibernate.sql.exec.results.spi.ResolvedReturn;
  * @see ReturnScalar
  * @see ReturnDynamicInstantiation
  * @see EntityReturn
- * @see CollectionReturn
+ * @see ReturnCollection
  *
  * @author Steve Ebersole
  */

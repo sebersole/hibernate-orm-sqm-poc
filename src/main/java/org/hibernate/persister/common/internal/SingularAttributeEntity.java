@@ -37,7 +37,7 @@ public class SingularAttributeEntity extends AbstractSingularAttributeDescriptor
 			EntityType ormType,
 			ImprovedEntityPersister entityPersister,
 			Column[] columns) {
-		super( declaringType, name, ormType );
+		super( declaringType, name, ormType, true );
 		this.classification = classification;
 		this.entityPersister = entityPersister;
 		this.columns = columns;

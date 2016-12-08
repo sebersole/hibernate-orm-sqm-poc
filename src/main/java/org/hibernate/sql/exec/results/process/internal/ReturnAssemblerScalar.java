@@ -47,7 +47,7 @@ public class ReturnAssemblerScalar implements ReturnAssembler {
 			final Object[] values = new Object[ selectionSpan ];
 			for ( int i = 0; i < selectionSpan; i++ ) {
 				values[i] = rowProcessingState.getJdbcValues()[
-						resolvedReturn.getSqlSelectionDescriptors().get( i ).getPosition()
+						resolvedReturn.getSqlSelectionDescriptors().get( i ).getValuesArrayPosition()
 				];
 			}
 			try {
@@ -61,7 +61,7 @@ public class ReturnAssemblerScalar implements ReturnAssembler {
 		}
 		else {
 			return rowProcessingState.getJdbcValues()[
-					resolvedReturn.getSqlSelectionDescriptors().get( 0 ).getPosition()
+					resolvedReturn.getSqlSelectionDescriptors().get( 0 ).getValuesArrayPosition()
 			];
 		}
 	}

@@ -32,7 +32,7 @@ public class IdentifierCompositeNonAggregated
 	private final EmbeddablePersister embeddablePersister;
 
 	public IdentifierCompositeNonAggregated(AttributeContainer declaringType, EmbeddablePersister embeddablePersister) {
-		super( declaringType, "<id>", embeddablePersister.getOrmType() );
+		super( declaringType, "<id>", embeddablePersister.getOrmType(), false );
 		this.embeddablePersister = embeddablePersister;
 	}
 

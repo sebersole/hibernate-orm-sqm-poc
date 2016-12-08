@@ -33,7 +33,7 @@ public class IdentifierCompositeAggregated
 			AttributeContainer declaringType,
 			String attributeName,
 			EmbeddablePersister embeddablePersister) {
-		super( declaringType, attributeName, embeddablePersister.getOrmType() );
+		super( declaringType, attributeName, embeddablePersister.getOrmType(), false );
 		this.embeddablePersister = embeddablePersister;
 	}
 

@@ -6,27 +6,13 @@
  */
 package org.hibernate.sql.exec.internal;
 
-import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
-import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
-import org.hibernate.sql.exec.results.process.internal.caching.QueryCacheDataAccessEnabled;
-import org.hibernate.sql.exec.results.process.internal.caching.QueryCacheDataAccessImplementor;
-import org.hibernate.sql.exec.results.process.internal.caching.QueryCacheDataAccessNoCachingImpl;
-import org.hibernate.sql.exec.results.process.internal.ResultSetProcessingStateStandardImpl;
-import org.hibernate.sql.exec.results.process.internal.RowReaderStandardImpl;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingState;
-import org.hibernate.sql.exec.results.process.spi.RowReader;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
-import org.hibernate.sql.exec.spi.RowTransformer;
 
 /**
  * Normal PreparedStatement execution which:<ol>
@@ -36,122 +22,17 @@ import org.hibernate.sql.exec.spi.RowTransformer;
  *
  * @author Steve Ebersole
  */
-public class PreparedStatementExecutorNormalImpl<T> implements PreparedStatementExecutor<List<T>, T> {
+public class PreparedStatementExecutorNormalImpl implements PreparedStatementExecutor {
 	/**
 	 * Singleton access
 	 */
 	public static final PreparedStatementExecutorNormalImpl INSTANCE = new PreparedStatementExecutorNormalImpl();
 
-	/**
-	 * Processing options effectively are only used for entity loading.  Here we don't need these values.
-	 */
-	private final ResultSetProcessingOptions processingOptions = new ResultSetProcessingOptions() {
-		@Override
-		public Object getEffectiveOptionalObject() {
-			return null;
-		}
-
-		@Override
-		public String getEffectiveOptionalEntityName() {
-			return null;
-		}
-
-		@Override
-		public Serializable getEffectiveOptionalId() {
-			return null;
-		}
-
-		@Override
-		public boolean shouldReturnProxies() {
-			return true;
-		}
-	};
-
 	@Override
-	public List<T> execute(
-			PreparedStatement ps,
+	public ResultSet execute(
+			PreparedStatement preparedStatement,
 			QueryOptions queryOptions,
-			List<ResolvedReturn> returns,
-			RowTransformer<T> rowTransformer,
 			SharedSessionContractImplementor session) throws SQLException {
-		final LogicalConnectionImplementor logicalConnection = session.getJdbcCoordinator().getLogicalConnection();
-
-		// Execute the query
-		final ResultSet resultSet = ps.executeQuery();
-		logicalConnection.getResourceRegistry().register( resultSet, ps );
-
-		try {
-			int position = 1;
-
-			// Prepare the ResultSetProcessingState...
-			final QueryCacheDataAccessImplementor queryCacheDataAccess = resolveQueryCacheDataAccess( queryOptions, session );
-			final ResultSetProcessingState resultSetProcessingState = new ResultSetProcessingStateStandardImpl(
-					resultSet,
-					queryCacheDataAccess,
-					queryOptions,
-					processingOptions,
-					returns,
-					session
-			);
-
-			// todo : limit handling ought to move into RowReader
-			//		^^ that allows for seamless handling of cached data.
-			//		basically RowReader would get created first
-
-			// actually all of that ^^ needs to happen up higher in SqlTreeExecutor.
-			//		so maybe SqlTreeExecutor builds the RowReader and passes it in.
-			//		that is needed so that we know whether to build the PreparedStatement
-			//		in SqlTreeExecutor and execute it (and get ResultSet) here.
-			//
-			// 		RowReader would encapsulate reading each row, following a ResultSet#next
-			// 		style paradigm.  We'd somehow inject the "currentJdbcRow" into
-			//		RowProcessingState, or give RowProcessingState access back to the
-			//		RowReader (probably via dedicated interface) to get the values for
-			// 		the "currentJdbcRow"
-
-			final RowReader<T> rowReader = new RowReaderStandardImpl<T>( returns, queryCacheDataAccess, rowTransformer );
-
-			final List<T> results = new ArrayList<T>();
-			final Integer maxRows = queryOptions.getLimit().getMaxRows();
-
-			try {
-				while ( ( maxRows != null && position <= maxRows ) || resultSet.next() ) {
-					results.add(
-							rowReader.readRow(
-									resultSetProcessingState.getCurrentRowProcessingState(),
-									processingOptions
-							)
-					);
-
-					position++;
-					resultSetProcessingState.getCurrentRowProcessingState().finishRowProcessing();
-				}
-
-				resultSetProcessingState.finishResultSetProcessing();
-			}
-			finally {
-				resultSetProcessingState.release();
-			}
-
-			return results;
-		}
-		finally {
-			logicalConnection.getResourceRegistry().release( resultSet, ps );
-			logicalConnection.getResourceRegistry().release( ps );
-		}
-	}
-
-	private QueryCacheDataAccessImplementor resolveQueryCacheDataAccess(
-			QueryOptions queryOptions,
-			SharedSessionContractImplementor session) {
-		if ( ! session.getFactory().getSessionFactoryOptions().isQueryCacheEnabled() ) {
-			return QueryCacheDataAccessNoCachingImpl.INSTANCE;
-		}
-
-		return new QueryCacheDataAccessEnabled(
-				queryOptions.getCacheMode(),
-				session.getFactory().getCache().getQueryCache( queryOptions.getResultCacheRegionName() ),
-				null
-		);
+		return preparedStatement.executeQuery();
 	}
 }

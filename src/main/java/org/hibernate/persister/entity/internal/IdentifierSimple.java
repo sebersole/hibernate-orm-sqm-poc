@@ -14,7 +14,6 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.sqm.domain.EntityReference;
@@ -33,7 +32,7 @@ public class IdentifierSimple
 			String attributeName,
 			BasicType ormType,
 			Column[] columns) {
-		super( declaringType, attributeName, ormType );
+		super( declaringType, attributeName, ormType, false );
 		this.columns = columns;
 	}
 

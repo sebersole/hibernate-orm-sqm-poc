@@ -8,6 +8,8 @@ package org.hibernate.sql.exec.results.spi;
 
 import org.hibernate.engine.FetchStrategy;
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.sql.exec.results.process.spi2.FetchInitializer;
+import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 import org.hibernate.type.Type;
 
 /**
@@ -52,4 +54,6 @@ public interface ResolvedFetch {
 	 * @return true, if this fetch is nullable; false, otherwise.
 	 */
 	boolean isNullable();
+
+	FetchInitializer getFetchInitializer(InitializerParent parent);
 }

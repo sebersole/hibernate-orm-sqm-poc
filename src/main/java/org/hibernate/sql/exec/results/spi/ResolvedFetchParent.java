@@ -9,6 +9,9 @@ package org.hibernate.sql.exec.results.spi;
 import java.util.List;
 
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.convert.results.spi.Fetch;
+import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 
 /**
  * Contract for things that can be the parent of a fetch
@@ -24,15 +27,11 @@ public interface ResolvedFetchParent {
 	PropertyPath getPropertyPath();
 
 	/**
-	 * Get the UID for this fetch source's query space.
-	 *
-	 * @return The query space UID.
+	 * Get the unique-identifier for this fetch parent's table-group.
 	 */
-	String getQuerySpaceUid();
-	/**
-	 * Retrieve the fetches owned by this fetch source.
-	 *
-	 * @return The owned fetches.
-	 */
-	List<ResolvedFetch> getFetches();
+	String getTableGroupUniqueIdentifier();
+
+	InitializerParent getInitializerParentForFetchInitializers();
+
+	ResolvedFetch addFetch(List<SqlSelectionDescriptor> sqlSelectionDescriptors, boolean shallow, Fetch queryFetch);
 }

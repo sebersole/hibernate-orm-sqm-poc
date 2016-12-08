@@ -9,6 +9,7 @@ package org.hibernate.sql.ast.from;
 import java.util.List;
 
 import org.hibernate.internal.util.collections.CollectionHelper;
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
@@ -21,8 +22,13 @@ import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 public class EntityTableGroup extends AbstractTableGroup {
 	private final ImprovedEntityPersister persister;
 
-	public EntityTableGroup(TableSpace tableSpace, String uid, String aliasBase, ImprovedEntityPersister persister) {
-		super( tableSpace, uid, aliasBase );
+	public EntityTableGroup(
+			TableSpace tableSpace,
+			String uid,
+			String aliasBase,
+			ImprovedEntityPersister persister,
+			PropertyPath propertyPath) {
+		super( tableSpace, uid, aliasBase, propertyPath );
 		this.persister = persister;
 	}
 

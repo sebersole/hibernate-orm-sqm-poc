@@ -262,7 +262,8 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 				tableSpace,
 				joinedFromElement.getUniqueIdentifier(),
 				sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ),
-				this
+				this,
+				Helper.convert( joinedFromElement.getPropertyPath() )
 		);
 
 		fromClauseIndex.crossReference( joinedFromElement, group );

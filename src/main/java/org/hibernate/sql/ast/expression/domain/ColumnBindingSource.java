@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.ast.from.TableGroup;
 
 /**
  * Defines a "source" for ColumnBindings related to a DomainReference (relative
@@ -18,6 +19,8 @@ import org.hibernate.sql.ast.from.ColumnBinding;
  * @author Steve Ebersole
  */
 public interface ColumnBindingSource {
+	TableGroup getTableGroup();
+
 	/**
 	 * Resolve the ColumnBindings for the passed DomainReferenceExpression.  Generally
 	 * this resolves the bindings for the columns as returned from

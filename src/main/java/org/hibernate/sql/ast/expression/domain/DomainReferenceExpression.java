@@ -8,6 +8,7 @@ package org.hibernate.sql.ast.expression.domain;
 
 import java.util.List;
 
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.sql.ast.expression.Expression;
 import org.hibernate.sql.ast.from.ColumnBinding;
@@ -26,4 +27,6 @@ public interface DomainReferenceExpression extends Expression {
 	DomainDescriptor getDomainReference();
 
 	List<ColumnBinding> resolveColumnBindings(boolean shallow);
+
+	PropertyPath getPropertyPath();
 }

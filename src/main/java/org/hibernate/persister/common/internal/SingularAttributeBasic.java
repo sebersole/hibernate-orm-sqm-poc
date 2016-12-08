@@ -28,7 +28,7 @@ public class SingularAttributeBasic extends AbstractSingularAttributeDescriptor<
 			String name,
 			BasicType ormType,
 			Column[] columns) {
-		super( declaringType, name, ormType );
+		super( declaringType, name, ormType, true );
 		this.columns = columns;
 	}
 

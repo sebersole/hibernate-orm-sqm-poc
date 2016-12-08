@@ -6,8 +6,6 @@
  */
 package org.hibernate.sql.ast.select;
 
-import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
-
 /**
  * @author Steve Ebersole
  */
@@ -31,9 +29,12 @@ public interface SqlSelectionDescriptor {
 
 	SqlSelectable getSqlSelectable();
 
-	int getPosition();
+	/**
+	 * Get the position within the values array
+	 */
+	int getValuesArrayPosition();
 
-	default int getIndex() {
-		return getPosition() + 1;
+	default int getJdbcResultSetIndex() {
+		return getValuesArrayPosition() + 1;
 	}
 }

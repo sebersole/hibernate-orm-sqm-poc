@@ -7,9 +7,6 @@
 package org.hibernate.sql.exec.results.process.spi;
 
 import java.sql.SQLException;
-import java.util.List;
-
-import org.hibernate.loader.spi.AfterLoadAction;
 
 /**
  * Clean-room impl of {@link org.hibernate.loader.plan.exec.process.spi.RowReader}
@@ -19,5 +16,5 @@ import org.hibernate.loader.spi.AfterLoadAction;
 public interface RowReader<R> {
 	R readRow(RowProcessingState processingState, ResultSetProcessingOptions options) throws SQLException;
 
-	void finishUp(ResultSetProcessingState context, List<AfterLoadAction> afterLoadActionList);
+	void finishUp(JdbcValuesSourceProcessingState context);
 }

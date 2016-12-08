@@ -14,6 +14,7 @@ import java.util.List;
 import org.hibernate.Incubating;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 
 /**
@@ -21,20 +22,20 @@ import org.hibernate.sql.exec.results.spi.ResolvedReturn;
  * execution.  That might mean reading the rows of a {@link ResultSet} obtained from executing
  * a query.  Or in the case of a {@link org.hibernate.ScrollableResults} e.g. it might just
  * mean holding the results open and handing them to the ScrollableResults object.
- * <p/>
- * todo : ideally this also caters to consuming ProcedureCall executions as well.
  *
  * @author Steve Ebersole
  */
 @Incubating
-public interface PreparedStatementExecutor<R,T> {
+public interface PreparedStatementExecutor {
+	// todo : ideally this also caters to consuming ProcedureCall executions as well.
+	//		another option would be a CallableStatementExecutor (corollary to PreparedStatementExecutor)
+	// 		and a ProcedureCallExecutor (corollary to SqlTreeExecutor)
+
 	/**
 	 * Do the consumption
 	 *
 	 * @param ps The PreparedStatement that the ResultSet was obtained from (mainly
 	 * used to interact with the ResourceRegistry)
-	 * @param returns
-	 * @param rowTransformer
 	 * @param queryOptions
 	 * @param session
 	 *
@@ -42,10 +43,8 @@ public interface PreparedStatementExecutor<R,T> {
 	 *
 	 * @throws SQLException
 	 */
-	R execute(
+	ResultSet execute(
 			PreparedStatement ps,
 			QueryOptions queryOptions,
-			List<ResolvedReturn> returns,
-			RowTransformer<T> rowTransformer,
 			SharedSessionContractImplementor session) throws SQLException;
 }

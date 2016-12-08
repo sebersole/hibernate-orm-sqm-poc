@@ -17,6 +17,7 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.hibernate.engine.query.spi.EntityGraphQueryHint;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.internal.util.collections.streams.StingArrayCollector;
+import org.hibernate.loader.spi.AfterLoadAction;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.query.proposed.IllegalQueryOperationException;
 import org.hibernate.query.proposed.QueryOptions;
@@ -158,7 +159,12 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 			QueryParameterBindings inputParameterBindings) {
 		verifyQueryIsSelect();
 
-		final Callback callback = new Callback() {};
+		final Callback callback = new Callback() {
+			@Override
+			public void registerAfterLoadAction(AfterLoadAction afterLoadAction) {
+				// do nothing here
+			}
+		};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
 		final SelectQuery sqlTree = SqmSelectToSqlAstConverter.interpret(
@@ -211,7 +217,12 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 			ScrollMode scrollMode) {
 		verifyQueryIsSelect();
 
-		final Callback callback = new Callback() {};
+		final Callback callback = new Callback() {
+			@Override
+			public void registerAfterLoadAction(AfterLoadAction afterLoadAction) {
+				// do nothing here
+			}
+		};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
 		final SelectQuery sqlTree = SqmSelectToSqlAstConverter.interpret(
