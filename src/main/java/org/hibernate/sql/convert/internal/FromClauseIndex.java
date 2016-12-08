@@ -164,10 +164,10 @@ public class FromClauseIndex {
 	}
 
 	private boolean noDuplicates(List<SqmAttributeJoin> fetches, String uniqueIdentifier) {
-		final Set<String> unigueUids = fetches.stream()
+		final Set<String> uniqueUids = fetches.stream()
 				.map( AbstractFrom::getUniqueIdentifier )
 				.collect( Collectors.toSet() );
-		if ( unigueUids.size() != fetches.size() ) {
+		if ( uniqueUids.size() != fetches.size() ) {
 			throw new IllegalStateException( "Found duplicate fetches (by uid) for parent uid : " + uniqueIdentifier );
 		}
 		return true;

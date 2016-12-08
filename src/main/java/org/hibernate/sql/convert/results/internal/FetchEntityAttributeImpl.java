@@ -9,6 +9,7 @@ package org.hibernate.sql.convert.results.internal;
 import java.util.List;
 
 import org.hibernate.engine.FetchStrategy;
+import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
@@ -32,12 +33,11 @@ public class FetchEntityAttributeImpl extends AbstractFetchParent implements Fet
 
 	public FetchEntityAttributeImpl(
 			FetchParent fetchParent,
+			PropertyPath propertyPath,
+			String tableGroupUid,
 			SingularAttributeDescriptor fetchedAttribute,
 			ImprovedEntityPersister entityPersister, FetchStrategy fetchStrategy) {
-		super(
-				fetchParent.getPropertyPath().append( fetchedAttribute.getAttributeName() ),
-				fetchParent.getTableGroupUniqueIdentifier()
-		);
+		super( propertyPath, tableGroupUid );
 		this.fetchParent = fetchParent;
 		this.fetchedAttribute = fetchedAttribute;
 		this.entityPersister = entityPersister;

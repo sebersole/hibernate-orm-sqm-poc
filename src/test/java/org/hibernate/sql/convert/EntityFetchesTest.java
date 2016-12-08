@@ -15,6 +15,8 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.select.Selection;
+import org.hibernate.sql.convert.results.spi.Fetch;
+import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.results.spi.ReturnEntity;
 import org.hibernate.sql.gen.BaseUnitTest;
@@ -40,6 +42,22 @@ public class EntityFetchesTest extends BaseUnitTest {
 		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
 		assertThat( entity.getFetches().size(), is(1) );
+	}
+	@Test
+	public void testNestedFetching() {
+		final SelectQuery sqlAstQuery = interpretSelectQuery( "select t from Trunk t join fetch t.tree t2 join fetch t2.forest" );
+
+		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
+		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
+		final Return queryReturn = selection.getQueryReturn();
+		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
+		final ReturnEntity entity = (ReturnEntity) queryReturn;
+
+		assertThat( entity.getFetches().size(), is(1) );
+		FetchEntityAttribute treeFetch = (FetchEntityAttribute) entity.getFetches().get( 0 );
+
+		assertThat( treeFetch.getFetches().size(), is(1) );
+		FetchEntityAttribute forestFetch = (FetchEntityAttribute) entity.getFetches().get( 0 );
 	}
 
 	@Test

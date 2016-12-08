@@ -8,8 +8,10 @@ package org.hibernate.sql.convert.spi;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.hibernate.AssertionFailure;
 import org.hibernate.engine.FetchStrategy;
@@ -24,6 +26,7 @@ import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.query.proposed.QueryOptions;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AvgFunction;
@@ -67,18 +70,14 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.Selection;
-import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.convert.SyntaxException;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sql.convert.results.internal.FetchCompositeAttributeImpl;
 import org.hibernate.sql.convert.results.internal.FetchEntityAttributeImpl;
-import org.hibernate.sql.convert.results.spi.EntityReference;
 import org.hibernate.sql.convert.results.spi.FetchParent;
 import org.hibernate.sql.convert.results.spi.Return;
-import org.hibernate.sql.convert.results.spi.ReturnCollection;
-import org.hibernate.sql.convert.results.spi.ReturnEntity;
-import org.hibernate.sql.convert.results.spi.ReturnScalar;
+import org.hibernate.sql.convert.results.spi.ReturnDynamicInstantiation;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.domain.DomainReference;
@@ -152,6 +151,8 @@ import org.hibernate.sqm.query.select.SqmSelection;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
 
+import org.jboss.logging.Logger;
+
 /**
  * Interprets an SqmSelectStatement as a SQL-AST SelectQuery.
  *
@@ -159,6 +160,8 @@ import org.hibernate.type.Type;
  * @author John O'Hara
  */
 public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
+	private static final Logger log = Logger.getLogger( SqmSelectToSqlAstConverter.class );
+
 	/**
 	 * Main entry point into SQM SelectStatement interpretation
 	 *
@@ -483,19 +486,16 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	}
 
 	private void applyFetchesAndEntityGraph(Return queryReturn) {
-		if ( queryReturn instanceof ReturnScalar ) {
-			// nothing to do
-			return;
+		if ( queryReturn instanceof FetchParent ) {
+			applyFetchesAndEntityGraph( (FetchParent) queryReturn, extractEntityGraph() );
 		}
 
-		if ( queryReturn instanceof ReturnEntity ) {
-			applyFetchesAndEntityGraph( (ReturnEntity) queryReturn, extractEntityGraph() );
-			return;
+		// todo : dynamic-instantiations *if* the dynamic-instantiation takes the entity as an argument
+		if ( queryReturn instanceof ReturnDynamicInstantiation ) {
+
 		}
 
-		if ( queryReturn instanceof ReturnCollection ) {
-			// todo : apply fetches/entity-graph
-		}
+		// otherwise, nothing to do
 	}
 
 	private EntityGraphImplementor extractEntityGraph() {
@@ -507,19 +507,25 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		}
 	}
 
-	private void applyFetchesAndEntityGraph(EntityReference entityReference, EntityGraphImplementor entityGraph) {
-		final String uniqueIdentifier = entityReference.getTableGroupUniqueIdentifier();
-		final List<SqmAttributeJoin> fetches = fromClauseIndex.findFetchesByUniqueIdentifier( uniqueIdentifier );
+	private Set<String> alreadyProcessedFetchParentTableGroupUids = new HashSet<>();
 
-		for ( SqmAttributeJoin fetch : fetches ) {
-			final AttributeBinding fetchedAttributeBinding = fetch.getAttributeBinding();
-			final String attributeName = fetchedAttributeBinding.getAttribute().getAttributeName();
-			// todo  : need this method added to EntityGraphImplementor
-			//final AttributeNodeImplementor attributeNode = entityGraphImplementor.findAttributeNode( attributeName );
-			final AttributeNodeImplementor attributeNode = null;
-			applyFetchesAndEntityGraph( entityReference, fetch, attributeNode );
+	private void applyFetchesAndEntityGraph(FetchParent fetchParent, EntityGraphImplementor entityGraph) {
+		final String uniqueIdentifier = fetchParent.getTableGroupUniqueIdentifier();
+		if ( !alreadyProcessedFetchParentTableGroupUids.add( uniqueIdentifier ) ) {
+			log.errorf( "Found duplicate tableGroupUid as FetchParent [%s]", uniqueIdentifier );
+			return;
 		}
 
+		final List<SqmAttributeJoin> fetchedJoins = fromClauseIndex.findFetchesByUniqueIdentifier( uniqueIdentifier );
+
+		for ( SqmAttributeJoin fetchedJoin : fetchedJoins ) {
+			final AttributeBinding fetchedAttributeBinding = fetchedJoin.getAttributeBinding();
+			// todo  : need this method added to EntityGraphImplementor
+			//final String attributeName = fetchedAttributeBinding.getAttribute().getAttributeName();
+			//final AttributeNodeImplementor attributeNode = entityGraphImplementor.findAttributeNode( attributeName );
+			final AttributeNodeImplementor attributeNode = null;
+			applyFetchesAndEntityGraph( fetchParent, fetchedJoin, attributeNode );
+		}
 	}
 
 	private void applyFetchesAndEntityGraph(FetchParent fetchParent, SqmAttributeJoin attributeJoin, AttributeNodeImplementor attributeNode) {
@@ -544,26 +550,28 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 					throw new SyntaxException( "Attributes of BASIC or ANY type cannot be joined" );
 				}
 				case EMBEDDED: {
-					fetchParent.addFetch(
-							new FetchCompositeAttributeImpl(
-									fetchParent,
-									boundAttribute,
-									new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
-							)
+					final FetchCompositeAttributeImpl fetch = new FetchCompositeAttributeImpl(
+							fetchParent,
+							boundAttribute,
+							new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
 					);
+					fetchParent.addFetch( fetch );
+					applyFetchesAndEntityGraph( fetch, null );
 					break;
 				}
 				case ONE_TO_ONE:
 				case MANY_TO_ONE: {
 					final SingularAttributeEntity attributeAsEntity = (SingularAttributeEntity) boundAttribute;
-					fetchParent.addFetch(
-							new FetchEntityAttributeImpl(
-									fetchParent,
-									boundAttribute,
-									attributeAsEntity.getEntityPersister(),
-									new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
-							)
+					final FetchEntityAttributeImpl fetch = new FetchEntityAttributeImpl(
+							fetchParent,
+							org.hibernate.persister.common.internal.Helper.convert( attributeJoin.getPropertyPath() ),
+							attributeJoin.getUniqueIdentifier(),
+							boundAttribute,
+							attributeAsEntity.getEntityPersister(),
+							new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
 					);
+					fetchParent.addFetch( fetch );
+					applyFetchesAndEntityGraph( fetch, null );
 				}
 			}
 		}
