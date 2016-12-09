@@ -13,7 +13,7 @@ import java.sql.Types;
 import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
@@ -46,7 +46,7 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 	public Object read(
 			ResultSet resultSet,
 			JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-			ResultSetProcessingOptions options,
+			JdbcValuesSourceProcessingOptions options,
 			SqlSelectionDescriptor sqlSelectionDescriptor)
 			throws SQLException {
 		return reader.read( resultSet, jdbcValuesSourceProcessingState, options, sqlSelectionDescriptor.getJdbcResultSetIndex() );
@@ -56,7 +56,7 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 		Object read(
 				ResultSet resultSet,
 				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-				ResultSetProcessingOptions options,
+				JdbcValuesSourceProcessingOptions options,
 				int position)
 				throws SQLException;
 	}
@@ -72,7 +72,7 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 		public Object read(
 				ResultSet resultSet,
 				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-				ResultSetProcessingOptions options,
+				JdbcValuesSourceProcessingOptions options,
 				int position) throws SQLException {
 			final Class<?> javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode(
 					jdbcTypeCode
@@ -88,7 +88,7 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 		}
 	}
 
-	private static Object extractJdbcValue(ResultSet resultSet, int jdbcTypeCode, int position) throws SQLException {
+	public static Object extractJdbcValue(ResultSet resultSet, int jdbcTypeCode, int position) throws SQLException {
 		switch ( jdbcTypeCode ) {
 			case Types.BIGINT: {
 				return resultSet.getBigDecimal( position );
@@ -169,7 +169,7 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 		public Object read(
 				ResultSet resultSet,
 				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-				ResultSetProcessingOptions options,
+				JdbcValuesSourceProcessingOptions options,
 				int position) throws SQLException {
 			// Any more than a single column is an error at this level
 			final int jdbcTypeCode = basicType.sqlTypes( jdbcValuesSourceProcessingState.getPersistenceContext().getFactory() )[0];

@@ -6,8 +6,6 @@
  */
 package org.hibernate.sql.exec.results.process.spi2;
 
-import java.sql.SQLException;
-
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
@@ -17,11 +15,9 @@ import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 public interface EntityReferenceInitializer extends Initializer, InitializerParent {
 	ResolvedEntityReference getEntityReference();
 
-	void hydrateIdentifier(RowProcessingState rowProcessingState) throws SQLException;
+	void hydrateIdentifier(RowProcessingState rowProcessingState);
 
-	void resolveEntityKey(RowProcessingState rowProcessingState) throws SQLException;
+	void resolveEntityKey(RowProcessingState rowProcessingState);
 
-	void hydrateEntityState(RowProcessingState rowProcessingState) throws SQLException;
-
-	void finishUpRow(RowProcessingState rowProcessingState) throws SQLException;
+	void hydrateEntityState(RowProcessingState rowProcessingState);
 }

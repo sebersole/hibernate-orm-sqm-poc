@@ -17,6 +17,11 @@ public class RowTransformerSingularReturnImpl<R> implements RowTransformer<R> {
 	 */
 	public static final RowTransformerSingularReturnImpl INSTANCE = new RowTransformerSingularReturnImpl();
 
+	@SuppressWarnings("unchecked")
+	public static <R> RowTransformerSingularReturnImpl<R> instance() {
+		return INSTANCE;
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public R transformRow(Object[] row) {

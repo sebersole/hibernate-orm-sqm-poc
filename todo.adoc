@@ -29,6 +29,10 @@
 * Implement SingularAttributeDescriptor#isNullable - currently always returns true, except for id-attributes which always
  	return false which is actualy ok
 * Who is responsible for adding the SqlSelectionDescriptor for fetches?
+* Be sure to add test emulating org.hibernate.test.loadplans.plans.LoadPlanStructureAssertionTest#testEncapsulatedCompositeIdWithFetches2
+	which tests BidirectionalEntityReference (stand in for circular tree references, to avoid real circularities)
+* ? BasicType#getSqlSelectionReader ?  Would make SqlSelectable#getSqlSelectionReader much easier
+
 
 Keep track of downcasts on FromElement
 
@@ -73,3 +77,20 @@ add a TREAT reference to the FromElement.
 
 Another option is to just keep a list of the referenced attributes for each FromElement. On the "back end" we can
 work out the subclass table inclusion based on that info.
+
+
+== TwoPhaseLoad.addUninitializedEntity
+
+The perf team had once identified this as a hot spot.  Check with them whether it still is.  If it is, I think
+a possibly better approach would be to keep JdbcValuesSource handling as a set of stacked (as in Stack) of
+these with knowledge about its "parent".  This would allow us to ask "up the Stack" whether it knows of a
+particular EntityKey being processed.  We could just skip processing that row in handling that child
+JdbcValuesSource stack-element
+
+The existing code instead works by adding a temporary "still loading" EntityEntry as a means for other
+"nested" JdbcValuesSource processors to see that that entity is still being loaded in a "parent"
+JdbcValuesSource.  Later, the parent JdbcValuesSource processor that registered this temp
+EntityEntry will complete loading the entity and then register the "real" EntityEntry.  But this creation
+of 2 EntityEntry instances (for each load!) ended up being a big hot spot.
+
+To we need similar handling for collection loading?

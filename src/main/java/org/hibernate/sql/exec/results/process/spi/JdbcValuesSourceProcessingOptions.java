@@ -13,7 +13,7 @@ import java.io.Serializable;
  *
  * @author Steve Ebersole
  */
-public interface ResultSetProcessingOptions {
+public interface JdbcValuesSourceProcessingOptions {
 	Object getEffectiveOptionalObject();
 	String getEffectiveOptionalEntityName();
 	Serializable getEffectiveOptionalId();

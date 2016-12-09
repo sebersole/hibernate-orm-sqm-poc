@@ -10,6 +10,8 @@ import org.hibernate.engine.FetchStrategy;
 import org.hibernate.engine.FetchStyle;
 import org.hibernate.engine.FetchTiming;
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.sql.exec.results.process.internal.CompositeReferenceInitializerImpl;
 import org.hibernate.sql.exec.results.process.spi2.CompositeReferenceInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
@@ -30,6 +32,7 @@ public class ResolvedFetchCompositeImpl
 	);
 
 	private final ResolvedFetchParent resolvedFetchParent;
+	private final SingularAttributeEmbedded fetchedAttribute;
 	private final PropertyPath propertyPath;
 	private final CompositeType compositeType;
 	private final String tableGroupUid;
@@ -38,9 +41,11 @@ public class ResolvedFetchCompositeImpl
 
 	public ResolvedFetchCompositeImpl(
 			ResolvedFetchParent resolvedFetchParent,
+			SingularAttributeEmbedded fetchedAttribute,
 			PropertyPath propertyPath,
 			CompositeType compositeType, String tableGroupUid) {
 		this.resolvedFetchParent = resolvedFetchParent;
+		this.fetchedAttribute = fetchedAttribute;
 		this.propertyPath = propertyPath;
 		this.compositeType = compositeType;
 		this.tableGroupUid = tableGroupUid;
@@ -58,6 +63,11 @@ public class ResolvedFetchCompositeImpl
 	@Override
 	public ResolvedFetchParent getFetchParent() {
 		return resolvedFetchParent;
+	}
+
+	@Override
+	public SingularAttributeEmbedded getFetchedAttributeDescriptor() {
+		return null;
 	}
 
 	@Override

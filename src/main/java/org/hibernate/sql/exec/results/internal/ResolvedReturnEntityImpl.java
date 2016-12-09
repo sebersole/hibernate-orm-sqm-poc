@@ -54,6 +54,7 @@ public class ResolvedReturnEntityImpl extends AbstractResolvedFetchParent implem
 	private EntityReturnInitializerImpl buildInitializer() {
 		return new EntityReturnInitializerImpl(
 				this,
+				sqlSelectionDescriptors,
 				isShallow()
 		);
 	}

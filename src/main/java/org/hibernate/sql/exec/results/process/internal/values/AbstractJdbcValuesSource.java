@@ -9,7 +9,7 @@ package org.hibernate.sql.exec.results.process.internal.values;
 import java.sql.SQLException;
 
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManager;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
@@ -31,14 +31,14 @@ public abstract class AbstractJdbcValuesSource implements JdbcValuesSource {
 	}
 
 	@Override
-	public boolean next(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException {
+	public boolean next(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
 		if ( getCurrentRowJdbcValues() != null ) {
 			queryCachePutManager.registerJdbcRow( getCurrentRowJdbcValues() );
 		}
 		return processNext( rowProcessingState, options );
 	}
 
-	protected abstract boolean processNext(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException;
+	protected abstract boolean processNext(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException;
 
 	@Override
 	public final void finishUp() {

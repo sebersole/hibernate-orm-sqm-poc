@@ -10,10 +10,11 @@ import java.util.List;
 
 import org.hibernate.engine.FetchStrategy;
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
-import org.hibernate.sql.convert.results.internal.FetchEntityAttributeImpl;
+import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.exec.results.process.internal.EntityFetchInitializerImpl;
 import org.hibernate.sql.exec.results.process.spi2.FetchInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
@@ -28,16 +29,14 @@ import org.hibernate.type.Type;
 public class ResolvedFetchEntityImpl
 		extends AbstractResolvedFetchParent
 		implements ResolvedFetchEntity {
-	private final FetchEntityAttributeImpl fetch;
+	private final FetchEntityAttribute fetch;
 	private final ResolvedFetchParent fetchParent;
 	private final FetchStrategy fetchStrategy;
-	private final List<SqlSelectionDescriptor> sqlSelectionDescriptors;
-	private final boolean shallow;
 
 	private final EntityFetchInitializerImpl initializer;
 
 	public ResolvedFetchEntityImpl(
-			FetchEntityAttributeImpl fetch,
+			FetchEntityAttribute fetch,
 			ResolvedFetchParent fetchParent,
 			FetchStrategy fetchStrategy,
 			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
@@ -45,14 +44,18 @@ public class ResolvedFetchEntityImpl
 		this.fetch = fetch;
 		this.fetchParent = fetchParent;
 		this.fetchStrategy = fetchStrategy;
-		this.sqlSelectionDescriptors = sqlSelectionDescriptors;
-		this.shallow = shallow;
 
 		this.initializer = new EntityFetchInitializerImpl(
 				fetchParent.getInitializerParentForFetchInitializers(),
 				this,
+				sqlSelectionDescriptors,
 				shallow
 		);
+	}
+
+	@Override
+	public SingularAttributeEntity getFetchedAttributeDescriptor() {
+		return fetch.getFetchedAttributeDescriptor();
 	}
 
 	@Override

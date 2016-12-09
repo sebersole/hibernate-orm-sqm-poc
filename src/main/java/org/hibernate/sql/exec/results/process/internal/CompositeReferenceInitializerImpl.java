@@ -6,6 +6,7 @@
  */
 package org.hibernate.sql.exec.results.process.internal;
 
+import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.CompositeReferenceInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 
@@ -21,6 +22,11 @@ public class CompositeReferenceInitializerImpl
 
 	@Override
 	public void link(Object fkValue) {
+
+	}
+
+	@Override
+	public void finishUpRow(RowProcessingState rowProcessingState) {
 
 	}
 }

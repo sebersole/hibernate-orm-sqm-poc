@@ -6,13 +6,12 @@
  */
 package org.hibernate.sql.exec.results.process.spi;
 
-import java.sql.SQLException;
-
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
-import org.hibernate.persister.entity.spi.EntityReference ;
 import org.hibernate.loader.plan.spi.Fetch;
+import org.hibernate.persister.entity.spi.EntityReference;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
+import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
 /**
  * State pertaining to the processing of a single row of a JdbcValuesSource
@@ -22,11 +21,13 @@ import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 public interface RowProcessingState {
 	JdbcValuesSourceProcessingState getJdbcValuesSourceProcessingState();
 
-	boolean next() throws SQLException;
-	Object[] getJdbcValues() throws SQLException;
+//	boolean next() throws SQLException;
+	Object[] getJdbcValues();
 
 	void registerNonExists(EntityFetch fetch);
 	void registerHydratedEntity(EntityReference entityReference, EntityKey entityKey, Object entityInstance);
+
+	EntityReferenceProcessingState getProcessingState(ResolvedEntityReference resolvedEntityReference);
 
 	EntityReferenceProcessingState getProcessingState(DomainReferenceExpression expression);
 	EntityReferenceProcessingState getOwnerProcessingState(Fetch fetch);

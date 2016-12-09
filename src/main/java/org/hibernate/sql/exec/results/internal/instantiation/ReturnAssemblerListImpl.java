@@ -10,8 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.internal.util.StringHelper;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
@@ -35,7 +34,7 @@ public class ReturnAssemblerListImpl implements ReturnAssembler {
 	}
 
 	@Override
-	public Object assemble(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException {
+	public Object assemble(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
 		final ArrayList<Object> result = new ArrayList<>();
 		for ( ArgumentReader argumentReader : argumentReaders ) {
 			result.add( argumentReader.assemble( rowProcessingState, options ) );

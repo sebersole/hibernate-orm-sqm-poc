@@ -9,7 +9,7 @@ package org.hibernate.sql.exec.results.process.internal;
 import java.sql.SQLException;
 
 import org.hibernate.EntityMode;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 import org.hibernate.sql.exec.results.spi.ResolvedReturnScalar;
@@ -33,7 +33,7 @@ public class ReturnAssemblerScalar implements ReturnAssembler {
 	@Override
 	public Object assemble(
 			RowProcessingState rowProcessingState,
-			ResultSetProcessingOptions options) throws SQLException {
+			JdbcValuesSourceProcessingOptions options) throws SQLException {
 
 		// NOTE : atm we only support reading scalar values.  Further we assume that the
 		//		jdbcValue is already the correct type.

@@ -9,12 +9,12 @@ package org.hibernate.sql.exec.results.process.internal;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.hibernate.loader.spi.AfterLoadAction;
 import org.hibernate.sql.convert.spi.Callback;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi.RowReader;
+import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
 import org.hibernate.sql.exec.results.process.spi2.Initializer;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 import org.hibernate.sql.exec.spi.RowTransformer;
@@ -44,13 +44,11 @@ public class RowReaderStandardImpl<T> implements RowReader<T> {
 	}
 
 	@Override
-	public T readRow(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException {
+	public T readRow(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
 		// NOTE : atm we only support reading scalar values...
 		// todo : support other stuff ^^
 
-		for ( Initializer initializer : initializers ) {
-			executeInitializer( initializer );
-		}
+		coordinateInitializers( rowProcessingState, options );
 
 		// finally assemble the results
 
@@ -64,7 +62,32 @@ public class RowReaderStandardImpl<T> implements RowReader<T> {
 		return rowTransformer.transformRow( result );
 	}
 
-	private void executeInitializer(Initializer initializer) {
+	private void coordinateInitializers(
+			RowProcessingState rowProcessingState,
+			JdbcValuesSourceProcessingOptions options) {
+		// todo : figure out CompositeReferenceInitializer handling
+		// todo : figure out CollectionReferenceInitializer handling
+		for ( Initializer initializer : initializers ) {
+			if ( initializer instanceof EntityReferenceInitializer ) {
+				( (EntityReferenceInitializer) initializer ).hydrateIdentifier( rowProcessingState );
+			}
+		}
+
+		for ( Initializer initializer : initializers ) {
+			if ( initializer instanceof EntityReferenceInitializer ) {
+				( (EntityReferenceInitializer) initializer ).resolveEntityKey( rowProcessingState );
+			}
+		}
+
+		for ( Initializer initializer : initializers ) {
+			if ( initializer instanceof EntityReferenceInitializer ) {
+				( (EntityReferenceInitializer) initializer ).hydrateEntityState( rowProcessingState );
+			}
+		}
+
+		for ( Initializer initializer : initializers ) {
+			initializer.finishUpRow( rowProcessingState );
+		}
 
 	}
 

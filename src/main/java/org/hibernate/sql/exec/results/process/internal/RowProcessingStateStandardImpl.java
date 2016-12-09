@@ -7,6 +7,8 @@
 package org.hibernate.sql.exec.results.process.internal;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
@@ -17,8 +19,9 @@ import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 import org.hibernate.sql.exec.results.process.spi.EntityReferenceProcessingState;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
+import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
 /**
  * @author Steve Ebersole
@@ -26,7 +29,7 @@ import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 public class RowProcessingStateStandardImpl implements RowProcessingState {
 	private final JdbcValuesSourceProcessingStateStandardImpl resultSetProcessingState;
 	private final QueryOptions queryOptions;
-	private final ResultSetProcessingOptions resultSetProcessingOptions;
+	private final JdbcValuesSourceProcessingOptions resultSetProcessingOptions;
 
 	private final JdbcValuesSource jdbcValuesSource;
 	private Object[] currentRowJdbcValues;
@@ -34,7 +37,7 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 	public RowProcessingStateStandardImpl(
 			JdbcValuesSourceProcessingStateStandardImpl resultSetProcessingState,
 			QueryOptions queryOptions,
-			ResultSetProcessingOptions resultSetProcessingOptions,
+			JdbcValuesSourceProcessingOptions resultSetProcessingOptions,
 			JdbcValuesSource jdbcValuesSource) {
 		this.resultSetProcessingState = resultSetProcessingState;
 		this.queryOptions = queryOptions;
@@ -47,7 +50,7 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 		return resultSetProcessingState;
 	}
 
-	@Override
+//	@Override
 	public boolean next() throws SQLException {
 		if ( jdbcValuesSource.next( this, resultSetProcessingOptions ) ) {
 			currentRowJdbcValues = jdbcValuesSource.getCurrentRowJdbcValues();
@@ -60,7 +63,7 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 	}
 
 	@Override
-	public Object[] getJdbcValues() throws SQLException {
+	public Object[] getJdbcValues() {
 		return currentRowJdbcValues;
 	}
 
@@ -70,6 +73,34 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 
 	@Override
 	public void registerHydratedEntity(EntityReference entityReference, EntityKey entityKey, Object entityInstance) {
+	}
+
+	private Map<ResolvedEntityReference, EntityReferenceProcessingState> entityReferenceProcessingStateMap;
+
+	@Override
+	public EntityReferenceProcessingState getProcessingState(ResolvedEntityReference resolvedEntityReference) {
+		// todo : this might be better served being inlined in to the EntityReferenceInitializer itself as instance state
+		//		especially now that initializers are hierarchical.  i believe only the ResolvedEntityReference
+		//		instance and its child initializers would need this information, and they can get that via
+		//		their parent initializer.
+
+		EntityReferenceProcessingState processingState = null;
+		if ( entityReferenceProcessingStateMap == null ) {
+			entityReferenceProcessingStateMap = new HashMap<>();
+		}
+		else {
+			processingState = entityReferenceProcessingStateMap.get( resolvedEntityReference );
+		}
+
+		if ( processingState == null ) {
+			processingState = new EntityReferenceProcessingStateImpl(
+					this,
+					resolvedEntityReference
+			);
+			entityReferenceProcessingStateMap.put( resolvedEntityReference, processingState );
+		}
+
+		return processingState;
 	}
 
 	@Override

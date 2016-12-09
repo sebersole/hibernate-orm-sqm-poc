@@ -6,8 +6,12 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
+import org.hibernate.persister.common.internal.SingularAttributeEntity;
+
 /**
  * @author Steve Ebersole
  */
 public interface ResolvedFetchEntity extends ResolvedFetch, ResolvedFetchParent, ResolvedEntityReference {
+	@Override
+	SingularAttributeEntity getFetchedAttributeDescriptor();
 }

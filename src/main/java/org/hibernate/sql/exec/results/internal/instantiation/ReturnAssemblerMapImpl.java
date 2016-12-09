@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
@@ -49,7 +49,7 @@ public class ReturnAssemblerMapImpl implements ReturnAssembler {
 	@Override
 	public Object assemble(
 			RowProcessingState rowProcessingState,
-			ResultSetProcessingOptions options) throws SQLException {
+			JdbcValuesSourceProcessingOptions options) throws SQLException {
 		final HashMap<String,Object> result = new HashMap<>();
 
 		for ( ArgumentReader argumentReader : argumentReaders ) {

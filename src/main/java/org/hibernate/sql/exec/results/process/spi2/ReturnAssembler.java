@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.process.spi2;
 
 import java.sql.SQLException;
 
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
@@ -19,5 +19,5 @@ import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
  */
 public interface ReturnAssembler {
 	Class getReturnedJavaType();
-	Object assemble(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException;
+	Object assemble(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException;
 }

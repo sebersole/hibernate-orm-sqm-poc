@@ -29,7 +29,7 @@ import org.hibernate.sql.exec.results.process.internal.RowReaderStandardImpl;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSourceCacheHit;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSourceResultSetImpl;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi.RowReader;
 import org.hibernate.sql.exec.results.process.spi2.Initializer;
@@ -127,7 +127,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 		/*
 		 * Processing options effectively are only used for entity loading.  Here we don't need these values.
 		 */
-		final ResultSetProcessingOptions processingOptions = new ResultSetProcessingOptions() {
+		final JdbcValuesSourceProcessingOptions processingOptions = new JdbcValuesSourceProcessingOptions() {
 			@Override
 			public Object getEffectiveOptionalObject() {
 				return null;
@@ -162,7 +162,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 				rowTransformer,
 				callback
 		);
-		final RowProcessingState rowProcessingState = new RowProcessingStateStandardImpl(
+		final RowProcessingStateStandardImpl rowProcessingState = new RowProcessingStateStandardImpl(
 				jdbcValuesSourceProcessingState,
 				queryOptions,
 				processingOptions,

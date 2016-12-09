@@ -8,18 +8,18 @@ package org.hibernate.sql.exec.results.process.internal;
 
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
-import org.hibernate.loader.plan.spi.EntityReference;
 import org.hibernate.sql.exec.results.process.spi.EntityReferenceProcessingState;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
+import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
 /**
  * @author Steve Ebersole
  */
 public class EntityReferenceProcessingStateImpl implements EntityReferenceProcessingState {
 	private final RowProcessingState rowProcessingState;
-	private final EntityReference entityReference;
+	private final ResolvedEntityReference entityReference;
 
-	private boolean wasMissingIdentifier;
+	private Boolean wasMissingIdentifier;
 	private Object identifierHydratedForm;
 	private EntityKey entityKey;
 	private Object[] hydratedState;
@@ -27,13 +27,13 @@ public class EntityReferenceProcessingStateImpl implements EntityReferenceProces
 
 	public EntityReferenceProcessingStateImpl(
 			RowProcessingState rowProcessingState,
-			EntityReference entityReference) {
+			ResolvedEntityReference entityReference) {
 		this.rowProcessingState = rowProcessingState;
 		this.entityReference = entityReference;
 	}
 
 	@Override
-	public EntityReference getEntityReference() {
+	public ResolvedEntityReference getEntityReference() {
 		return entityReference;
 	}
 
@@ -47,7 +47,7 @@ public class EntityReferenceProcessingStateImpl implements EntityReferenceProces
 	}
 
 	@Override
-	public boolean isMissingIdentifier() {
+	public Boolean isMissingIdentifier() {
 		return wasMissingIdentifier;
 	}
 

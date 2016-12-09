@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.sql.ast.expression.instantiation.InstantiationException;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
@@ -38,7 +38,7 @@ public class ReturnAssemblerConstructorImpl implements ReturnAssembler {
 	@Override
 	public Object assemble(
 			RowProcessingState rowProcessingState,
-			ResultSetProcessingOptions options) throws SQLException {
+			JdbcValuesSourceProcessingOptions options) throws SQLException {
 		final int numberOfArgs = argumentReaders.size();
 		Object[] args = new Object[ numberOfArgs ];
 		for ( int i = 0; i < numberOfArgs; i++ ) {

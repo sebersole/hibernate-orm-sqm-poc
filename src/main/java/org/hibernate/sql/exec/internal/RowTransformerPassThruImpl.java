@@ -13,14 +13,20 @@ import org.hibernate.sql.exec.spi.RowTransformer;
  * @author Steve Ebersole
  */
 @Incubating
-public class RowTransformerPassThruImpl implements RowTransformer<Object[]> {
+public class RowTransformerPassThruImpl<T> implements RowTransformer<T> {
 	/**
 	 * Singleton access
 	 */
 	public static final RowTransformerPassThruImpl INSTANCE = new RowTransformerPassThruImpl();
 
+	@SuppressWarnings("unchecked")
+	public static <T> RowTransformerPassThruImpl<T> instance() {
+		return INSTANCE;
+	}
+
 	@Override
-	public Object[] transformRow(Object[] row) {
-		return row;
+	@SuppressWarnings("unchecked")
+	public T transformRow(Object[] row) {
+		return row.length == 1 ? (T) row[0] : (T) row;
 	}
 }

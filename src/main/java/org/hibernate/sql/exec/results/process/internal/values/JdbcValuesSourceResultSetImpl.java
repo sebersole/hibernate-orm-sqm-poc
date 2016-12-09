@@ -25,9 +25,8 @@ import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManager;
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManagerDisabledImpl;
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManagerEnabledImpl;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
-import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
 import org.hibernate.sql.exec.spi.SqlSelectInterpretation;
@@ -109,7 +108,7 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 		}
 	}
 
-	protected final boolean processNext(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException {
+	protected final boolean processNext(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
 		if ( position == 0 ) {
 			return false;
 		}
@@ -140,7 +139,7 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 
 	private Object[] readCurrentRowValues(
 			RowProcessingState rowProcessingState,
-			ResultSetProcessingOptions options) throws SQLException {
+			JdbcValuesSourceProcessingOptions options) throws SQLException {
 		final int numberOfSqlSelections = sqlSelectionDescriptors.size();
 		final Object[] row = new Object[numberOfSqlSelections];
 		for ( int i = 0; i < numberOfSqlSelections; i++ ) {

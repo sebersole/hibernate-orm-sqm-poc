@@ -6,6 +6,9 @@
  */
 package org.hibernate.sql.exec.results.process.internal;
 
+import java.util.List;
+
+import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
 import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
@@ -17,12 +20,8 @@ public class EntityReturnInitializerImpl
 		implements EntityReferenceInitializer {
 	public EntityReturnInitializerImpl(
 			ResolvedEntityReference entityReference,
+			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
 			boolean isShallow) {
-		super( null, entityReference, true, isShallow );
-	}
-
-	@Override
-	public void link(Object fkValue) {
-		// nothing to do here
+		super( null, entityReference, true, sqlSelectionDescriptors, isShallow );
 	}
 }

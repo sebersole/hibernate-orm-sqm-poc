@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManagerDisabledImpl;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
@@ -39,7 +39,7 @@ public class JdbcValuesSourceCacheHit extends AbstractJdbcValuesSource {
 	@Override
 	protected boolean processNext(
 			RowProcessingState rowProcessingState,
-			ResultSetProcessingOptions options) throws SQLException {
+			JdbcValuesSourceProcessingOptions options) throws SQLException {
 		// NOTE : explicitly skipping limit handling under the truth that
 		//		because the cached state ought to be the same size since
 		//		the cache key includes limits

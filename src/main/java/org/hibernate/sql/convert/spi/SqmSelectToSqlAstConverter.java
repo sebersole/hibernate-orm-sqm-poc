@@ -21,6 +21,7 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.graph.spi.AttributeNodeImplementor;
 import org.hibernate.graph.spi.EntityGraphImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
@@ -516,7 +517,20 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 			return;
 		}
 
+		// todo : to do this well we are going to need a way to get all of the attributes related to this FetchParent
+		//		that way we can drive this process across all of the attributes defined for the
+		//		FetchParent type at once (one iteration)
+
+		// todo : look to define a vistor-based walker
+		//		I think this (^^) helps too with recognizing graph circularities.  Peek at how load-plans
+		//		recognize such circularities.
+		//
+		//		Possibly add a AttributeNodeImplementor#applyFetches method (returning Subgraphs?)
+
+		// todo : fetches coming from an EntityGraph most likely need a "from element" (TableGroup)
+
 		final List<SqmAttributeJoin> fetchedJoins = fromClauseIndex.findFetchesByUniqueIdentifier( uniqueIdentifier );
+
 
 		for ( SqmAttributeJoin fetchedJoin : fetchedJoins ) {
 			final AttributeBinding fetchedAttributeBinding = fetchedJoin.getAttributeBinding();
@@ -552,7 +566,7 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 				case EMBEDDED: {
 					final FetchCompositeAttributeImpl fetch = new FetchCompositeAttributeImpl(
 							fetchParent,
-							boundAttribute,
+							(SingularAttributeEmbedded) boundAttribute,
 							new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
 					);
 					fetchParent.addFetch( fetch );
@@ -561,13 +575,13 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 				}
 				case ONE_TO_ONE:
 				case MANY_TO_ONE: {
-					final SingularAttributeEntity attributeAsEntity = (SingularAttributeEntity) boundAttribute;
+					final SingularAttributeEntity boundAttributeAsEntity = (SingularAttributeEntity) boundAttribute;
 					final FetchEntityAttributeImpl fetch = new FetchEntityAttributeImpl(
 							fetchParent,
 							org.hibernate.persister.common.internal.Helper.convert( attributeJoin.getPropertyPath() ),
 							attributeJoin.getUniqueIdentifier(),
-							boundAttribute,
-							attributeAsEntity.getEntityPersister(),
+							boundAttributeAsEntity,
+							boundAttributeAsEntity.getEntityPersister(),
 							new FetchStrategy( FetchTiming.IMMEDIATE, FetchStyle.JOIN )
 					);
 					fetchParent.addFetch( fetch );

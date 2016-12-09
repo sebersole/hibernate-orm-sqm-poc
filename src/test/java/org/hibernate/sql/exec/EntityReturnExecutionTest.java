@@ -53,7 +53,7 @@ public class EntityReturnExecutionTest extends BaseUnitTestCase {
 	// Tests
 
 	@Test
-	@FailureExpected( jiraKey = "none", message = "Initializers not yet hooked in")
+	@FailureExpected( jiraKey = "none", message = "Initializers only partially hooked in")
 	public void testSelectionOfIdentificationVariable() {
 		doInSession(
 				session -> {

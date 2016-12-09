@@ -10,7 +10,7 @@ import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 
 /**
  * @author Steve Ebersole
@@ -23,7 +23,7 @@ public class JdbcValuesSourceProcessingStateStandardImpl implements JdbcValuesSo
 	public JdbcValuesSourceProcessingStateStandardImpl(
 			JdbcValuesSource jdbcValuesSource,
 			QueryOptions queryOptions,
-			ResultSetProcessingOptions processingOptions,
+			JdbcValuesSourceProcessingOptions processingOptions,
 			SharedSessionContractImplementor persistenceContext) {
 		this.jdbcValuesSource = jdbcValuesSource;
 		this.persistenceContext = persistenceContext;

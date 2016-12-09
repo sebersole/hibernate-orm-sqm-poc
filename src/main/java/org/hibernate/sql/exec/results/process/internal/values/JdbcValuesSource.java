@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.process.internal.values;
 
 import java.sql.SQLException;
 
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**
@@ -32,7 +32,7 @@ public interface JdbcValuesSource {
 	 * null); false indicates we are now beyond the end of the available results
 	 * ({@link #getCurrentRowJdbcValues} will return null)
 	 */
-	boolean next(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException;
+	boolean next(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException;
 
 	/**
 	 * Get the JDBC values for the row currently positioned at within

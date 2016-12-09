@@ -21,7 +21,7 @@ import org.hibernate.loader.spi.AfterLoadAction;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.query.proposed.IllegalQueryOperationException;
 import org.hibernate.query.proposed.QueryOptions;
-import org.hibernate.query.proposed.TupleBuilder;
+import org.hibernate.query.proposed.JpaTupleBuilder;
 import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.query.proposed.spi.ScrollableResultsImplementor;
@@ -79,7 +79,7 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 				return makeRowTransformerTupleTransformerAdapter( sqm, queryOptions );
 			}
 			else {
-				return (RowTransformer<R>) RowTransformerPassThruImpl.INSTANCE;
+				return RowTransformerPassThruImpl.instance();
 			}
 		}
 
@@ -109,14 +109,14 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 //				);
 			}
 
-			// there can be a TupleTransformer IF it is a TupleBuilder,
+			// there can be a TupleTransformer IF it is a JpaTupleBuilder,
 			// otherwise this is considered an error
-			if ( queryOptions.getTupleTransformer() instanceof TupleBuilder ) {
+			if ( queryOptions.getTupleTransformer() instanceof JpaTupleBuilder ) {
 				return makeRowTransformerTupleTransformerAdapter( sqm, queryOptions );
 			}
 
 			throw new IllegalArgumentException(
-					"Illegal combination of Tuple resultType and (non-TupleBuilder) TupleTransformer : " +
+					"Illegal combination of Tuple resultType and (non-JpaTupleBuilder) TupleTransformer : " +
 							queryOptions.getTupleTransformer()
 			);
 		}
@@ -133,7 +133,7 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 			throw new IllegalQueryOperationException( "Query defined multiple selections, return cannot be typed (other that Object[] or Tuple)" );
 		}
 		else {
-			return (RowTransformer<R>) RowTransformerSingularReturnImpl.INSTANCE;
+			return RowTransformerSingularReturnImpl.instance();
 		}
 	}
 

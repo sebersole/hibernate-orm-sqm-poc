@@ -7,7 +7,7 @@
 package org.hibernate.sql.exec.results.process.spi;
 
 import org.hibernate.engine.spi.EntityKey;
-import org.hibernate.loader.plan.spi.EntityReference;
+import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
 /**
  * Holds all pieces of information known about an EntityReference in relation to
@@ -18,11 +18,9 @@ import org.hibernate.loader.plan.spi.EntityReference;
  */
 public interface EntityReferenceProcessingState {
 	/**
-	 * The EntityReference for which this is collecting process state
-	 *
-	 * @return The EntityReference
+	 * The ResolvedEntityReference for which this is collecting process state
 	 */
-	EntityReference getEntityReference();
+	ResolvedEntityReference getEntityReference();
 
 	/**
 	 * Register the fact that no identifier was found on attempt to hydrate it from ResultSet
@@ -33,7 +31,7 @@ public interface EntityReferenceProcessingState {
 	 *
 	 * @return
 	 */
-	boolean isMissingIdentifier();
+	Boolean isMissingIdentifier();
 
 	/**
 	 * Register the hydrated form (raw Type-read ResultSet values) of the entity's identifier for the row

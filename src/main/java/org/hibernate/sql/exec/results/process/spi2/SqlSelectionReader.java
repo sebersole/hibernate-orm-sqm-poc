@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 
 /**
  * @author Steve Ebersole
@@ -20,6 +20,6 @@ public interface SqlSelectionReader {
 	Object read(
 			ResultSet resultSet,
 			JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-			ResultSetProcessingOptions options,
+			JdbcValuesSourceProcessingOptions options,
 			SqlSelectionDescriptor sqlSelectionDescriptor) throws SQLException;
 }

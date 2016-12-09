@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.internal.instantiation;
 
 import java.sql.SQLException;
 
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
@@ -30,7 +30,7 @@ class ArgumentReader implements ReturnAssembler {
 	}
 
 	@Override
-	public Object assemble(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException {
+	public Object assemble(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
 		return returnAssembler.assemble( rowProcessingState, options );
 	}
 

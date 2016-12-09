@@ -8,9 +8,8 @@ package org.hibernate.sql.exec.results.process.internal;
 
 import java.sql.SQLException;
 
-import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.exec.results.internal.ResolvedReturnEntityImpl;
-import org.hibernate.sql.exec.results.process.spi.ResultSetProcessingOptions;
+import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
@@ -30,7 +29,7 @@ public class ReturnAssemblerEntity implements ReturnAssembler {
 	}
 
 	@Override
-	public Object assemble(RowProcessingState rowProcessingState, ResultSetProcessingOptions options) throws SQLException {
-		throw new NotYetImplementedException(  );
+	public Object assemble(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
+		return rowProcessingState.getProcessingState( resolvedReturnEntity ).getEntityInstance();
 	}
 }

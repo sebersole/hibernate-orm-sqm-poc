@@ -6,10 +6,13 @@
  */
 package org.hibernate.sql.exec.results.process.internal;
 
+import java.util.List;
+
 import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.exec.results.process.spi2.FetchInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
-import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
+import org.hibernate.sql.exec.results.spi.ResolvedFetchEntity;
 
 /**
  * @author Steve Ebersole
@@ -17,9 +20,23 @@ import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 public class EntityFetchInitializerImpl extends AbstractEntityReferenceInitializer implements FetchInitializer {
 	public EntityFetchInitializerImpl(
 			InitializerParent parent,
-			ResolvedEntityReference entityReference,
+			ResolvedFetchEntity entityReference,
+			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
 			boolean isShallow) {
-		super( parent, entityReference, false, isShallow );
+		super( parent, entityReference, false, sqlSelectionDescriptors, isShallow );
+	}
+
+	@Override
+	public ResolvedFetchEntity getEntityReference() {
+		return (ResolvedFetchEntity) super.getEntityReference();
+	}
+
+
+	@Override
+	protected boolean shouldBatchFetch() {
+		// todo : add this method to SingularAttributeEntity
+		//return !getEntityReference().getFetchedAttributeDescriptor().isReferenceToNonPk();
+		return true;
 	}
 
 	@Override

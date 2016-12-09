@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.exec.results.process.spi2;
 
+import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
+
 /**
  * Common interface for EntityReferenceInitializer and
  * CollectionReferenceInitializer contracts for the sole purpose
@@ -15,4 +17,5 @@ package org.hibernate.sql.exec.results.process.spi2;
  * @author Steve Ebersole
  */
 public interface Initializer {
+	void finishUpRow(RowProcessingState rowProcessingState);
 }

@@ -15,5 +15,5 @@ import javax.persistence.Tuple;
  *
  * @author Steve Ebersole
  */
-public interface TupleBuilder extends TupleTransformer<Tuple> {
+public interface JpaTupleBuilder extends TupleTransformer<Tuple> {
 }

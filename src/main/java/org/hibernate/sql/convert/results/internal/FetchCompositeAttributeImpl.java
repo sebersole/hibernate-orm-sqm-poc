@@ -9,9 +9,7 @@ package org.hibernate.sql.convert.results.internal;
 import java.util.List;
 
 import org.hibernate.engine.FetchStrategy;
-import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.convert.results.spi.FetchCompositeAttribute;
 import org.hibernate.sql.convert.results.spi.FetchParent;
@@ -19,19 +17,18 @@ import org.hibernate.sql.exec.results.internal.ResolvedFetchCompositeImpl;
 import org.hibernate.sql.exec.results.spi.ResolvedFetchComposite;
 import org.hibernate.sql.exec.results.spi.ResolvedFetchParent;
 import org.hibernate.type.CompositeType;
-import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
 public class FetchCompositeAttributeImpl extends AbstractFetchParent implements FetchCompositeAttribute {
 	private final FetchParent fetchParent;
-	private final SingularAttributeDescriptor fetchedAttribute;
+	private final SingularAttributeEmbedded fetchedAttribute;
 	private final FetchStrategy fetchStrategy;
 
 	public FetchCompositeAttributeImpl(
 			FetchParent fetchParent,
-			SingularAttributeDescriptor fetchedAttribute,
+			SingularAttributeEmbedded fetchedAttribute,
 			FetchStrategy fetchStrategy) {
 		super(
 				fetchParent.getPropertyPath().append( fetchedAttribute.getAttributeName() ),
@@ -48,7 +45,7 @@ public class FetchCompositeAttributeImpl extends AbstractFetchParent implements 
 	}
 
 	@Override
-	public AttributeDescriptor getFetchedAttributeDescriptor() {
+	public SingularAttributeEmbedded getFetchedAttributeDescriptor() {
 		return fetchedAttribute;
 	}
 
@@ -74,6 +71,7 @@ public class FetchCompositeAttributeImpl extends AbstractFetchParent implements 
 			boolean shallow) {
 		return new ResolvedFetchCompositeImpl(
 				resolvedFetchParent,
+				this.getFetchedAttributeDescriptor(),
 				getPropertyPath(),
 				getFetchedType(),
 				getTableGroupUniqueIdentifier()
