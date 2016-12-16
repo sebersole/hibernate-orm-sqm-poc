@@ -6,9 +6,10 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
 import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.convert.results.spi.ReturnResolutionContext;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.type.BasicType;
@@ -16,8 +17,7 @@ import org.hibernate.type.BasicType;
 /**
  * @author Steve Ebersole
  */
-public abstract class AbstractAggregateFunction
-		implements AggregateFunction, SqlSelectable {
+public abstract class AbstractAggregateFunction implements AggregateFunction {
 	private final Expression argument;
 	private final boolean distinct;
 	private final BasicType resultType;
@@ -26,16 +26,6 @@ public abstract class AbstractAggregateFunction
 		this.argument = argument;
 		this.distinct = distinct;
 		this.resultType = resultType;
-	}
-
-	@Override
-	public Expression getArgument() {
-		return argument;
-	}
-
-	@Override
-	public Return toQueryReturn(String resultVariable) {
-		return new ReturnScalarImpl( this, getType(), resultVariable );
 	}
 
 	@Override
@@ -49,7 +39,32 @@ public abstract class AbstractAggregateFunction
 	}
 
 	@Override
+	public Selectable getSelectable() {
+		return this;
+	}
+
+	@Override
+	public Expression getSelectedExpression() {
+		return this;
+	}
+
+	@Override
+	public Expression getArgument() {
+		return argument;
+	}
+
+	@Override
 	public SqlSelectionReader getSqlSelectionReader() {
 		return new SqlSelectionReaderImpl( getType() );
+	}
+
+	@Override
+	public Return toQueryReturn(ReturnResolutionContext returnResolutionContext, String resultVariable) {
+		return new ReturnScalarImpl(
+				this,
+				returnResolutionContext.resolveSqlSelection( this ),
+				resultVariable,
+				getType()
+		);
 	}
 }

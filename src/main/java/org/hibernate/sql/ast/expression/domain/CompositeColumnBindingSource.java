@@ -6,24 +6,29 @@
  */
 package org.hibernate.sql.ast.expression.domain;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableGroup;
-
-import org.jboss.logging.Logger;
 
 /**
  * @author Steve Ebersole
  */
 public class CompositeColumnBindingSource implements ColumnBindingSource {
-	private static final Logger log = Logger.getLogger( CompositeColumnBindingSource.class );
-
-	final List<ColumnBindingSource> components;
+	private final List<ColumnBindingSource> components;
 
 	public CompositeColumnBindingSource(ColumnBindingSource... components) {
-		this.components = Arrays.asList( components );
+		final List<ColumnBindingSource> componentList = new ArrayList<>();
+		for ( ColumnBindingSource component : components ) {
+			if ( component != null ) {
+				componentList.add( component );
+			}
+		}
+		this.components = componentList;
 	}
 
 	@Override
@@ -32,22 +37,26 @@ public class CompositeColumnBindingSource implements ColumnBindingSource {
 	}
 
 	@Override
-	public List<ColumnBinding> resolveColumnBindings(
-			DomainReferenceExpression domainReference,
-			boolean shallow) {
+	public TableBinding locateTableBinding(Table table) {
 		for ( ColumnBindingSource component : components ) {
-			try {
-				return component.resolveColumnBindings( domainReference, shallow );
-			}
-			catch (Exception e) {
-				// go on to the next
-				log.debugf(
-						"Could not resolve column bindings from component source [%s], continuing search",
-						component
-				);
+			final TableBinding tableBinding = component.locateTableBinding( table );
+			if ( tableBinding != null ) {
+				return tableBinding;
 			}
 		}
 
-		throw new IllegalStateException( "Could not resolve column bindings : " + domainReference );
+		throw new IllegalStateException( "Could not locate TableBinding for Table : " + table );
+	}
+
+	@Override
+	public ColumnBinding resolveColumnBinding(Column column) {
+		for ( ColumnBindingSource component : components ) {
+			final ColumnBinding columnBinding = component.resolveColumnBinding( column );
+			if ( columnBinding != null ) {
+				return columnBinding;
+			}
+		}
+
+		throw new IllegalStateException( "Could not locate ColumnBinding for Column : " + column.toLoggableString() );
 	}
 }

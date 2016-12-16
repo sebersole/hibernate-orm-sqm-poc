@@ -6,45 +6,51 @@
  */
 package org.hibernate.sql.convert.results.internal;
 
-import java.util.List;
-
+import org.hibernate.sql.ast.expression.Expression;
 import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.convert.results.spi.ReturnDynamicInstantiation;
-import org.hibernate.sql.exec.results.internal.instantiation.ResolvedReturnDynamicInstantiationImpl;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
+import org.hibernate.sql.exec.results.process.spi2.InitializerCollector;
+import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnDynamicInstantiationImpl implements ReturnDynamicInstantiation {
-	private final DynamicInstantiation selectExpression;
-	private final Class target;
-	private final String resultVariableName;
+	private final DynamicInstantiation dynamicInstantiation;
+	private final String resultVariable;
+	private final ReturnAssembler assembler;
 
-	public ReturnDynamicInstantiationImpl(DynamicInstantiation selectExpression, String resultVariableName) {
-		this.selectExpression = selectExpression;
-		this.target = selectExpression.getTarget();
-		this.resultVariableName = resultVariableName;
-	}
-
-	@Override
-	public DynamicInstantiation getSelectExpression() {
-		return selectExpression;
+	public ReturnDynamicInstantiationImpl(
+			DynamicInstantiation dynamicInstantiation,
+			String resultVariable,
+			ReturnAssembler assembler) {
+		this.dynamicInstantiation = dynamicInstantiation;
+		this.resultVariable = resultVariable;
+		this.assembler = assembler;
 	}
 
 	@Override
 	public Class getInstantiationTarget() {
-		return target;
+		return dynamicInstantiation.getTarget();
 	}
 
 	@Override
-	public String getResultVariableName() {
-		return resultVariableName;
+	public Expression getSelectedExpression() {
+		return dynamicInstantiation;
 	}
 
 	@Override
-	public ResolvedReturn resolve(List<SqlSelectionDescriptor> sqlSelectionDescriptors, boolean shallow) {
-		return new ResolvedReturnDynamicInstantiationImpl( target );
+	public String getResultVariable() {
+		return resultVariable;
+	}
+
+	@Override
+	public Class getReturnedJavaType() {
+		return dynamicInstantiation.getTarget();
+	}
+
+	@Override
+	public ReturnAssembler getReturnAssembler() {
+		return assembler;
 	}
 }

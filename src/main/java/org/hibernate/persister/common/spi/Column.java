@@ -16,6 +16,9 @@ import org.hibernate.persister.common.internal.PhysicalColumn;
  */
 public interface Column {
 	Table getSourceTable();
+
+	String getExpression();
+
 	// todo : SqlTypeDescriptor would be better, along with nullable, etc information
 	int getJdbcType();
 	String toLoggableString();

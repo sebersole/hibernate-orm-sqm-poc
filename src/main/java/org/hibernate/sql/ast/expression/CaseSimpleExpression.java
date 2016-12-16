@@ -9,9 +9,12 @@ package org.hibernate.sql.ast.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.ast.select.SqlSelectable;
 import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
 import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.convert.results.spi.ReturnResolutionContext;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
@@ -21,7 +24,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class CaseSimpleExpression implements Expression, SqlSelectable {
+public class CaseSimpleExpression implements Expression, Selectable, SqlSelectable {
 	private final Type type;
 	private final Expression fixture;
 
@@ -43,13 +46,28 @@ public class CaseSimpleExpression implements Expression, SqlSelectable {
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitCaseSimpleExpression( this );
 	}
 
 	@Override
-	public Return toQueryReturn(String resultVariable) {
-		return new ReturnScalarImpl( this, getType(), resultVariable );
+	public Selectable getSelectable() {
+		return this;
+	}
+
+	@Override
+	public Expression getSelectedExpression() {
+		return this;
+	}
+
+	@Override
+	public Return toQueryReturn(ReturnResolutionContext returnResolutionContext, String resultVariable) {
+		return new ReturnScalarImpl(
+				this,
+				returnResolutionContext.resolveSqlSelection( this ),
+				resultVariable,
+				getType()
+		);
 	}
 
 	public List<WhenFragment> getWhenFragments() {

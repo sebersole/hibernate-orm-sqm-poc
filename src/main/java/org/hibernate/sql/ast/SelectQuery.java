@@ -38,7 +38,7 @@ public class SelectQuery {
 
 	public void addSortSpecification(SortSpecification sortSpecification) {
 		if ( sortSpecifications == null ) {
-			sortSpecifications = new ArrayList<SortSpecification>();
+			sortSpecifications = new ArrayList<>();
 		}
 		sortSpecifications.add( sortSpecification );
 	}

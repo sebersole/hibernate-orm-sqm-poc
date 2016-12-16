@@ -6,11 +6,9 @@
  */
 package org.hibernate.persister.collection.internal;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
@@ -24,12 +22,12 @@ import org.hibernate.type.BasicType;
 public class PluralAttributeElementBasic implements PluralAttributeElement<BasicType> {
 	private final ImprovedCollectionPersister persister;
 	private final BasicType type;
-	private final Column[] columns;
+	private final List<Column> columns;
 
 	public PluralAttributeElementBasic(
 			ImprovedCollectionPersister persister,
 			BasicType type,
-			Column[] columns) {
+			List<Column> columns) {
 		this.persister = persister;
 		this.type = type;
 		this.columns = columns;
@@ -50,7 +48,8 @@ public class PluralAttributeElementBasic implements PluralAttributeElement<Basic
 		return type;
 	}
 
-	public Column[] getColumns() {
+	@Override
+	public List<Column> getColumns() {
 		return columns;
 	}
 
@@ -62,15 +61,5 @@ public class PluralAttributeElementBasic implements PluralAttributeElement<Basic
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return columns.length;
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return Arrays.asList( columns );
 	}
 }

@@ -6,6 +6,8 @@
  */
 package org.hibernate.persister.collection.spi;
 
+import java.util.List;
+
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.type.Type;
@@ -15,10 +17,10 @@ import org.hibernate.type.Type;
  */
 public class PluralAttributeKey implements OrmTypeExporter {
 	private final Type type;
-	private final Column[] foreignKeyColumns;
+	private final List<Column> foreignKeyColumns;
 	// todo : referenced values?
 
-	public PluralAttributeKey(Type type, Column[] foreignKeyValues) {
+	public PluralAttributeKey(Type type, List<Column> foreignKeyValues) {
 		this.type = type;
 		this.foreignKeyColumns = foreignKeyValues;
 	}
@@ -28,7 +30,7 @@ public class PluralAttributeKey implements OrmTypeExporter {
 		return type;
 	}
 
-	public Column[] getForeignKeyColumns() {
+	public List<Column> getForeignKeyColumns() {
 		return foreignKeyColumns;
 	}
 }

@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.process.internal;
 
 import java.sql.SQLException;
 
-import org.hibernate.sql.exec.results.internal.ResolvedReturnEntityImpl;
+import org.hibernate.sql.convert.results.internal.ReturnEntityImpl;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
@@ -17,19 +17,19 @@ import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
  * @author Steve Ebersole
  */
 public class ReturnAssemblerEntity implements ReturnAssembler {
-	private final ResolvedReturnEntityImpl resolvedReturnEntity;
+	private final ReturnEntityImpl returnEntity;
 
-	public ReturnAssemblerEntity(ResolvedReturnEntityImpl resolvedReturnEntity) {
-		this.resolvedReturnEntity = resolvedReturnEntity;
+	public ReturnAssemblerEntity(ReturnEntityImpl returnEntity) {
+		this.returnEntity = returnEntity;
 	}
 
 	@Override
 	public Class getReturnedJavaType() {
-		return resolvedReturnEntity.getEntityPersister().getOrmType().getReturnedClass();
+		return returnEntity.getEntityPersister().getOrmType().getReturnedClass();
 	}
 
 	@Override
 	public Object assemble(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
-		return rowProcessingState.getProcessingState( resolvedReturnEntity ).getEntityInstance();
+		return returnEntity.getInitializer().getEntityInstance();
 	}
 }

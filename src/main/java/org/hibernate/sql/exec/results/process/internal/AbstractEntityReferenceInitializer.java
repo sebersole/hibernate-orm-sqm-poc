@@ -7,19 +7,28 @@
 package org.hibernate.sql.exec.results.process.internal;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
-import org.hibernate.MappingException;
+import org.hibernate.HibernateException;
+import org.hibernate.LockMode;
+import org.hibernate.WrongClassException;
+import org.hibernate.bytecode.enhance.spi.LazyPropertyInitializer;
+import org.hibernate.engine.internal.TwoPhaseLoad;
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.internal.util.MarkerObject;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.PluralAttributeDescriptor;
+import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.entity.Loadable;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
-import org.hibernate.sql.NotYetImplementedException;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
-import org.hibernate.sql.exec.results.process.spi.EntityReferenceProcessingState;
+import org.hibernate.sql.convert.results.spi.EntityReference;
+import org.hibernate.sql.exec.ExecutionException;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
-import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionGroup;
+import org.hibernate.type.CollectionType;
 
 /**
  * @author Steve Ebersole
@@ -28,68 +37,61 @@ public abstract class AbstractEntityReferenceInitializer
 		extends AbstractFetchParentInitializer
 		implements EntityReferenceInitializer {
 
-	// todo : it might be better to simply keep this information here on the initializer.
-	//		especially now that initializers are hierarchical.  i believe only the ResolvedEntityReference
-	//		instance and its child initializers would need this information, and they can get that via
-	//		their parent initializer.
-
-	private final ResolvedEntityReference entityReference;
+	private final EntityReference entityReference;
 	private final boolean isEntityReturn;
-	private final List<SqlSelectionDescriptor> sqlSelectionDescriptors;
+	private final Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap;
 	private final boolean isShallow;
+
+	// in-flight processing state
+	private Object identifierHydratedState;
+	private ImprovedEntityPersister concretePersister;
+	private EntityKey entityKey;
+	private Object entityInstance;
 
 	public AbstractEntityReferenceInitializer(
 			InitializerParent parent,
-			ResolvedEntityReference entityReference,
+			EntityReference entityReference,
 			boolean isEntityReturn,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
+			Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap,
 			boolean isShallow) {
 		super( parent );
 		this.entityReference = entityReference;
 		this.isEntityReturn = isEntityReturn;
-		this.sqlSelectionDescriptors = sqlSelectionDescriptors;
+		this.sqlSelectionGroupMap = sqlSelectionGroupMap;
 		this.isShallow = isShallow;
 	}
 
 	@Override
-	public ResolvedEntityReference getEntityReference() {
+	public EntityReference getEntityReference() {
 		return entityReference;
 	}
 
 	@Override
-	public void hydrateIdentifier(RowProcessingState rowProcessingState) {
-		final EntityReferenceProcessingState entityProcessingState = rowProcessingState.getProcessingState( entityReference );
-
-		// get any previously registered identifier hydrated-state
-		Object identifierHydratedForm = entityProcessingState.getIdentifierHydratedForm();
-		if ( identifierHydratedForm == null ) {
-			// if there is none, read it from the result set
-			identifierHydratedForm = buildIdentifierHydratedForm( rowProcessingState, entityProcessingState );
-
-			// broadcast the fact that a hydrated identifier value just became associated with
-			// this entity reference
-			entityProcessingState.registerIdentifierHydratedForm( identifierHydratedForm );
-		}
+	public Object getEntityInstance() {
+		return entityInstance;
 	}
 
-	private Object buildIdentifierHydratedForm(
-			RowProcessingState rowProcessingState,
-			EntityReferenceProcessingState entityProcessingState) {
-		// todo : we need to decide whether this should be a slice of the current JDBC row values (an Object[]) or the actual id representation (composite, etc)
+	@Override
+	public void hydrateIdentifier(RowProcessingState rowProcessingState) {
+		if ( identifierHydratedState != null ) {
+			// its already been read...
+			return;
+		}
 
-		// for now assume the JDBC row values slice approach
-		//		see how many selections the identifier consumes
-		final int selectionsConsumed = entityReference.getEntityPersister().getIdentifierDescriptor().getColumnCount(
-				isShallow,
-				rowProcessingState.getJdbcValuesSourceProcessingState().getPersistenceContext().getFactory()
-		);
+		identifierHydratedState = buildIdentifierHydratedForm( rowProcessingState );
+	}
+
+	private Object buildIdentifierHydratedForm(RowProcessingState rowProcessingState) {
+		final SqlSelectionGroup sqlSelectionGroup = sqlSelectionGroupMap.get( entityReference.getEntityPersister().getIdentifierDescriptor() );
+
+		final int selectionsConsumed = sqlSelectionGroup.getSqlSelections().size();
 		if ( selectionsConsumed == 1 ) {
-			return rowProcessingState.getJdbcValues()[ sqlSelectionDescriptors.get( 0 ).getValuesArrayPosition() ];
+			return rowProcessingState.getJdbcValues()[ sqlSelectionGroup.getSqlSelections().get( 0 ).getValuesArrayPosition() ];
 		}
 		else {
 			final Object[] value = new Object[selectionsConsumed];
 			for ( int i = 0; i < selectionsConsumed; i++ ){
-				value[i] = rowProcessingState.getJdbcValues()[ sqlSelectionDescriptors.get( i ).getValuesArrayPosition() ];
+				value[i] = rowProcessingState.getJdbcValues()[ sqlSelectionGroup.getSqlSelections().get( i ).getValuesArrayPosition() ];
 			}
 			return value;
 		}
@@ -97,42 +99,32 @@ public abstract class AbstractEntityReferenceInitializer
 
 	@Override
 	public void resolveEntityKey(RowProcessingState rowProcessingState) {
-		final EntityReferenceProcessingState entityProcessingState = rowProcessingState.getProcessingState( entityReference );
-
-		if ( entityProcessingState.getEntityKey() != null ) {
+		if ( entityKey != null ) {
+			// its already been resolved
 			return;
 		}
 
-		// based on assumption as stated in buildIdentifierHydratedForm, here we'd need to:
-		//		1) resolve the value(s) into its identifier representation
-		//		2) build and register an EntityKey
+		if ( identifierHydratedState == null ) {
+			throw new ExecutionException( "Entity identifier state not yet hydrated on call to resolve EntityKey" );
+		}
 
-		// Step 1
-		// todo : need some way on Type to resolve an Object[] into an instance of its Java type.
-		//		kind of similar to Type#assemble, although taking the Object[] from cache
-		final ImprovedEntityPersister persister = getEntityReference().getEntityPersister();
 		final SharedSessionContractImplementor persistenceContext = rowProcessingState.getJdbcValuesSourceProcessingState().getPersistenceContext();
+		concretePersister = resolveConcreteEntityPersister( rowProcessingState, persistenceContext );
 
-		final Object id = persister.getEntityPersister().getIdentifierType().assemble(
-				(Serializable) entityProcessingState.getIdentifierHydratedForm(),
+		//		1) resolve the value(s) into its identifier representation
+		final Object id = concretePersister.getEntityPersister().getIdentifierType().assemble(
+				(Serializable) identifierHydratedState,
 				persistenceContext,
 				null
 		);
 
-		// Step 2
-		final EntityKey entityKey = new EntityKey( (Serializable) id, persister.getEntityPersister() );
-		entityProcessingState.registerEntityKey( entityKey );
+		//		2) build and register an EntityKey
+		this.entityKey = new EntityKey( (Serializable) id, concretePersister.getEntityPersister() );
 
-		scheduleBatchLoadIfNeeded( persister, entityKey, persistenceContext );
-	}
-
-	private void scheduleBatchLoadIfNeeded(
-			ImprovedEntityPersister entityPersister,
-			EntityKey entityKey,
-			SharedSessionContractImplementor session) throws MappingException {
-		if ( shouldBatchFetch() && entityPersister.getEntityPersister().isBatchLoadable() ) {
-			if ( !session.getPersistenceContext().containsEntity( entityKey ) ) {
-				session.getPersistenceContext().getBatchFetchQueue().addBatchLoadableEntityKey( entityKey );
+		//		3) schedule the EntityKey for batch loading, if possible
+		if ( shouldBatchFetch() && concretePersister.getEntityPersister().isBatchLoadable() ) {
+			if ( !persistenceContext.getPersistenceContext().containsEntity( entityKey ) ) {
+				persistenceContext.getPersistenceContext().getBatchFetchQueue().addBatchLoadableEntityKey( entityKey );
 			}
 		}
 	}
@@ -144,13 +136,168 @@ public abstract class AbstractEntityReferenceInitializer
 		return true;
 	}
 
+	// From CollectionType.
+	//		todo : expose CollectionType#NOT_NULL_COLLECTION as public
+	private static final Object NOT_NULL_COLLECTION = new MarkerObject( "NOT NULL COLLECTION" );
+
 	@Override
 	public void hydrateEntityState(RowProcessingState rowProcessingState) {
-		throw new NotYetImplementedException(  );
+		if ( entityInstance != null ) {
+			return;
+		}
+
+		if ( entityKey == null ) {
+			throw new ExecutionException( "EntityKey not yet resolved on call to hydrated entity state" );
+		}
+
+		if ( isShallow ) {
+			return;
+		}
+
+		int numberOfNonIdentifierAttributes = concretePersister.getNonIdentifierAttributes().size();
+
+		final Object rowId;
+		if ( concretePersister.getRowIdDescriptor() != null ) {
+			final SqlSelectionGroup sqlSelectionGroup = sqlSelectionGroupMap.get( entityReference.getEntityPersister()
+																						  .getRowIdDescriptor() );
+
+			numberOfNonIdentifierAttributes -= 1;
+			rowId = rowProcessingState.getJdbcValues()[sqlSelectionGroup.getSqlSelections()
+					.get( 0 )
+					.getValuesArrayPosition()];
+
+			if ( rowId == null ) {
+				throw new HibernateException(
+						"Could not read entity row-id from JDBC : " + entityKey
+				);
+			}
+		}
+		else {
+			rowId = null;
+		}
+
+		final Object[] hydratedState = new Object[ numberOfNonIdentifierAttributes ];
+		int i = 0;
+		for ( AttributeDescriptor attributeDescriptor : concretePersister.getNonIdentifierAttributes() ) {
+			// todo : need to account for non-eager entities by calling something other than Type#resolve (which loads the entity)
+			//		something akin to org.hibernate.persister.entity.AbstractEntityPersister.hydrate() but that operates on Object[], not ResultSet
+			//
+			//		really at this point any fetches are known which should help - here we'd simply get the instance for that fetch's
+			// 		initializer and that fetch's initializer would take care of initializing the state
+			//
+			//		alternative is something like: AttributeDescriptor#getHydrator#hydrate(Object[] jdbcValues, ...)
+			//		and later something like: AttributeDescriptor#getResolver#resolve(Object[] hydratedValues, ...)
+
+			final Object hydratedValue;
+			if ( attributeDescriptor instanceof PluralAttributeDescriptor ) {
+				assert attributeDescriptor.getOrmType() instanceof CollectionType;
+				hydratedValue = NOT_NULL_COLLECTION;
+			}
+			else {
+				SingularAttributeDescriptor singularAttributeDescriptor = (SingularAttributeDescriptor) attributeDescriptor;
+				final SqlSelectionGroup selectionGroup = sqlSelectionGroupMap.get( singularAttributeDescriptor );
+				if ( selectionGroup == null ) {
+					// not selected (lazy group, etc)
+					hydratedValue = LazyPropertyInitializer.UNFETCHED_PROPERTY;
+				}
+				else {
+					final int numberOfSelections = selectionGroup.getSqlSelections().size();
+					if ( numberOfSelections == 1 ) {
+						hydratedValue = rowProcessingState.getJdbcValues()[ selectionGroup.getSqlSelections().get( 0 ).getValuesArrayPosition() ];
+					}
+					else {
+						final Object[] sliceValues = new Object[ numberOfSelections ];
+						for ( int x = 0; x < numberOfSelections; x++ ) {
+							sliceValues[x] = rowProcessingState.getJdbcValues()[ selectionGroup.getSqlSelections().get( x ).getValuesArrayPosition() ];
+						}
+						hydratedValue = sliceValues;
+					}
+				}
+			}
+
+
+			hydratedState[i] = hydratedValue;
+			i++;
+		}
+
+		final SharedSessionContractImplementor persistenceContext = rowProcessingState.getJdbcValuesSourceProcessingState().getPersistenceContext();
+
+		// this isEntityReturn bit is just for entity loaders, not hql/criteria
+		if ( isEntityReturn ) {
+			final Serializable requestedEntityId = rowProcessingState.getJdbcValuesSourceProcessingState().getProcessingOptions().getEffectiveOptionalId();
+			if ( requestedEntityId != null && requestedEntityId.equals( entityKey.getIdentifier() ) ) {
+				entityInstance = rowProcessingState.getJdbcValuesSourceProcessingState().getProcessingOptions().getEffectiveOptionalObject();
+			}
+		}
+		if ( entityInstance == null ) {
+			entityInstance = persistenceContext.instantiate( concretePersister.getEntityName(), entityKey.getIdentifier() );
+		}
+
+		rowProcessingState.getJdbcValuesSourceProcessingState().registerLoadingEntity(
+				entityKey,
+				concretePersister,
+				entityInstance,
+				hydratedState
+		);
+
+		TwoPhaseLoad.postHydrate(
+				concretePersister.getEntityPersister(),
+				entityKey.getIdentifier(),
+				hydratedState,
+				// ROW_ID
+				null,
+				entityInstance,
+				// LockMode
+				isEntityReturn ? LockMode.READ : LockMode.NONE,
+				persistenceContext
+		);
+	}
+
+	private ImprovedEntityPersister resolveConcreteEntityPersister(
+			RowProcessingState rowProcessingState,
+			SharedSessionContractImplementor persistenceContext) throws WrongClassException {
+		final ImprovedEntityPersister persister = getEntityReference().getEntityPersister();
+		if ( persister.getDiscriminatorDescriptor() == null ) {
+			return persister;
+		}
+
+		final SqlSelectionGroup selectionGroup = sqlSelectionGroupMap.get( persister.getDiscriminatorDescriptor() );
+		// simple assert here since this should have been validate when building the metamodel
+		assert selectionGroup.getSqlSelections().size() != 1;
+
+		final Object discriminatorValue = rowProcessingState.getJdbcValues()[
+				selectionGroup.getSqlSelections().get( 0 ).getValuesArrayPosition()
+		];
+
+		final Loadable legacyLoadable = (Loadable) persister.getEntityPersister();
+		final String result = legacyLoadable.getSubclassForDiscriminatorValue( discriminatorValue );
+
+		if ( result == null ) {
+			//woops we got an instance of another class hierarchy branch
+			throw new WrongClassException(
+					"Discriminator: " + discriminatorValue,
+					entityKey.getIdentifier(),
+					legacyLoadable.getEntityName()
+			);
+		}
+
+
+		// Cannot do this until ImprovedEntityPersister is merged into EntityPersister
+		// 		todo : enabled this after ImprovedEntityPersister is merged into EntityPersister
+		//return persistenceContext.getFactory().getMetamodel().entityPersister( result );
+		return persister;
 	}
 
 	@Override
 	public void finishUpRow(RowProcessingState rowProcessingState) {
-		throw new NotYetImplementedException(  );
+	}
+
+	private boolean isReadOnly(
+			RowProcessingState rowProcessingState,
+			SharedSessionContractImplementor persistenceContext) {
+		// todo : need to move #isDefaultReadOnly to SharedSessionContractImplementor
+		//return rowProcessingState.getJdbcValuesSourceProcessingState().getQueryOptions().isReadOnly()
+		//		|| persistenceContext.isDefaultReadOnly();
+		return false;
 	}
 }

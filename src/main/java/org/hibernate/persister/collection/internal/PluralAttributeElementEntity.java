@@ -9,7 +9,6 @@ package org.hibernate.persister.collection.internal;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
@@ -25,14 +24,14 @@ public class PluralAttributeElementEntity implements PluralAttributeElement<Enti
 	private final ImprovedEntityPersister elementPersister;
 	private final ElementClassification classification;
 	private final EntityType type;
-	private final Column[] columns;
+	private final List<Column> columns;
 
 	public PluralAttributeElementEntity(
 			ImprovedCollectionPersisterImpl collectionPersister,
 			ImprovedEntityPersister elementPersister,
 			ElementClassification classification,
 			EntityType type,
-			Column[] columns) {
+			List<Column> columns) {
 		this.collectionPersister = collectionPersister;
 		this.elementPersister = elementPersister;
 		this.classification = classification;
@@ -59,7 +58,7 @@ public class PluralAttributeElementEntity implements PluralAttributeElement<Enti
 		return type;
 	}
 
-	public Column[] getColumns() {
+	public List<Column> getColumns() {
 		return columns;
 	}
 
@@ -71,17 +70,5 @@ public class PluralAttributeElementEntity implements PluralAttributeElement<Enti
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.of( elementPersister );
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		// todo : plus the number of columns in the FK?
-		return elementPersister.getColumnCount( shallow, factory );
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		// todo : add the FK column(s)?
-		return elementPersister.getColumns( shallow, factory );
 	}
 }

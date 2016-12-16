@@ -67,6 +67,7 @@ public class RowReaderStandardImpl<T> implements RowReader<T> {
 			JdbcValuesSourceProcessingOptions options) {
 		// todo : figure out CompositeReferenceInitializer handling
 		// todo : figure out CollectionReferenceInitializer handling
+
 		for ( Initializer initializer : initializers ) {
 			if ( initializer instanceof EntityReferenceInitializer ) {
 				( (EntityReferenceInitializer) initializer ).hydrateIdentifier( rowProcessingState );

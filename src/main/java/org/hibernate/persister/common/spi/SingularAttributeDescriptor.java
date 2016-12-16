@@ -8,16 +8,14 @@ package org.hibernate.persister.common.spi;
 
 import java.util.List;
 
-import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sqm.domain.SingularAttributeReference;
 
 /**
  * @author Steve Ebersole
  */
-public interface SingularAttributeDescriptor extends SingularAttributeReference, OrmTypeExporter, AttributeDescriptor, DomainDescriptor {
-	Column[] getColumns();
-	List<ColumnBinding> resolveColumnBindings(TableGroup tableGroup, boolean shallow);
+public interface SingularAttributeDescriptor
+		extends SingularAttributeReference, OrmTypeExporter, AttributeDescriptor, DomainDescriptor {
+	List<Column> getColumns();
 
 	boolean isNullable();
 }

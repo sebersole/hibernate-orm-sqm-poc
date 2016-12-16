@@ -20,9 +20,10 @@ import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.result.Outputs;
 import org.hibernate.sql.NotYetImplementedException;
-import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
+import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.spi.Callback;
+import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
 import org.hibernate.sql.exec.results.process.internal.JdbcValuesSourceProcessingStateStandardImpl;
 import org.hibernate.sql.exec.results.process.internal.RowProcessingStateStandardImpl;
 import org.hibernate.sql.exec.results.process.internal.RowReaderStandardImpl;
@@ -30,12 +31,10 @@ import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSourceCacheHit;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSourceResultSetImpl;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
-import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi.RowReader;
 import org.hibernate.sql.exec.results.process.spi2.Initializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerSource;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
 import org.hibernate.sql.exec.spi.RowTransformer;
@@ -56,7 +55,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <R, T> R executeSelect(
-			SelectQuery sqlTree,
+			SqmSelectInterpretation sqmSelectInterpretation,
 			PreparedStatementCreator statementCreator,
 			PreparedStatementExecutor preparedStatementExecutor,
 			QueryOptions queryOptions,
@@ -89,7 +88,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 //		}
 
 		final SqlSelectInterpretation sqlSelectInterpretation = SqlAstSelectInterpreter.interpret(
-				sqlTree,
+				sqmSelectInterpretation,
 				false,
 				persistenceContext.getFactory(),
 				queryParameterBindings
@@ -97,20 +96,13 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 
 		final List<ReturnAssembler> returnAssemblers = new ArrayList<>();
 		final List<Initializer> initializers = new ArrayList<>();
-		final List<SqlSelectionDescriptor> sqlSelectionDescriptors = new ArrayList<>();
-		for ( ResolvedReturn resolvedReturn : sqlSelectInterpretation.getReturns() ) {
-			if ( resolvedReturn instanceof InitializerSource ) {
-				final Initializer initializer = ( (InitializerSource) resolvedReturn ).getInitializer();
-				if ( initializer != null ) {
-					initializers.add( initializer );
-				}
-			}
-			returnAssemblers.add( resolvedReturn.getReturnAssembler() );
-			for ( SqlSelectionDescriptor descriptor : resolvedReturn.getSqlSelectionDescriptors() ) {
-				sqlSelectionDescriptors.add( descriptor );
-			}
+		for ( Return queryReturn : sqlSelectInterpretation.getReturns() ) {
+			returnAssemblers.add( queryReturn.getReturnAssembler() );
 
-			// todo : should probably collect Initializers here too
+			if ( queryReturn instanceof InitializerSource ) {
+				// todo : break the Initializers out into types
+				( (InitializerSource) queryReturn ).registerInitializers( initializers::add );
+			}
 		}
 
 		final JdbcValuesSource jdbcValuesSource = resolveJdbcValuesSource(
@@ -120,7 +112,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 				statementCreator,
 				preparedStatementExecutor,
 				queryParameterBindings,
-				sqlSelectionDescriptors
+				sqmSelectInterpretation.getSqlSelectAst().getQuerySpec().getSelectClause().getSqlSelections()
 		);
 
 
@@ -165,7 +157,6 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 		final RowProcessingStateStandardImpl rowProcessingState = new RowProcessingStateStandardImpl(
 				jdbcValuesSourceProcessingState,
 				queryOptions,
-				processingOptions,
 				jdbcValuesSource
 		);
 
@@ -187,7 +178,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 		}
 		finally {
 			rowReader.finishUp( jdbcValuesSourceProcessingState );
-			jdbcValuesSourceProcessingState.release();
+			jdbcValuesSourceProcessingState.finishUp();
 			jdbcValuesSource.finishUp();
 		}
 	}
@@ -200,7 +191,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 			PreparedStatementCreator statementCreator,
 			PreparedStatementExecutor statementExecutor,
 			QueryParameterBindings queryParameterBindings,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors) {
+			List<SqlSelection> sqlSelections) {
 		List<Object[]> cachedResults = null;
 
 		final boolean queryCacheEnabled = persistenceContext.getFactory().getSessionFactoryOptions().isQueryCacheEnabled();
@@ -244,7 +235,7 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 					statementCreator,
 					statementExecutor,
 					queryParameterBindings,
-					sqlSelectionDescriptors
+					sqlSelections
 			);
 		}
 		else {

@@ -7,13 +7,11 @@
 package org.hibernate.persister.embeddable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
@@ -31,7 +29,7 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 	private final String compositeName;
 	private final String roleName;
 	private final CompositeType ormType;
-	private final Column[] allColumns;
+	private final List<Column> allColumns;
 
 	private final Map<String, AbstractAttributeDescriptor> attributeMap = new HashMap<>();
 	private final List<AbstractAttributeDescriptor> attributeList = new ArrayList<>();
@@ -42,7 +40,7 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 			CompositeType ormType,
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
-			Column[] allColumns) {
+			List<Column> allColumns) {
 		this.compositeName = compositeName;
 		this.roleName = roleName;
 		this.ormType = ormType;
@@ -57,9 +55,11 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 			final org.hibernate.type.Type propertyType = ormType.getSubtypes()[i];
 
 			final int columnSpan = propertyType.getColumnSpan( domainMetamodel.getSessionFactory() );
-			final Column[] columns = new Column[columnSpan];
+			final List<Column> columns = new ArrayList<>();
 			columnSpanEnd = columnSpanStart + columnSpan;
-			System.arraycopy( allColumns,  columnSpanStart, columns, 0, columnSpan );
+			for ( int j = columnSpanStart; j < columnSpanEnd; j++ ) {
+				columns.add( allColumns.get( j ) );
+			}
 
 			final AbstractAttributeDescriptor attribute = Helper.INSTANCE.buildAttribute(
 					databaseModel,
@@ -76,7 +76,7 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 		}
 	}
 
-	public Column[] collectColumns() {
+	public List<Column> collectColumns() {
 		return allColumns;
 	}
 
@@ -98,15 +98,5 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 	@Override
 	public String asLoggableText() {
 		return "EmdeddablePersister(" + roleName + " [" + compositeName + "])";
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return allColumns.length;
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return Arrays.asList( allColumns );
 	}
 }

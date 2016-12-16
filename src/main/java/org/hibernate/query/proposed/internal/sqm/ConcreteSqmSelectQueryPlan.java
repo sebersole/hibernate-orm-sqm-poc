@@ -20,14 +20,14 @@ import org.hibernate.internal.util.collections.streams.StingArrayCollector;
 import org.hibernate.loader.spi.AfterLoadAction;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.query.proposed.IllegalQueryOperationException;
-import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.query.proposed.JpaTupleBuilder;
+import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.query.proposed.spi.ScrollableResultsImplementor;
 import org.hibernate.query.proposed.spi.SelectQueryPlan;
-import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.convert.spi.Callback;
+import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
 import org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableForwardOnlyImpl;
 import org.hibernate.sql.exec.internal.PreparedStatementCreatorScrollableInsensitiveImpl;
@@ -167,15 +167,16 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
-		final SelectQuery sqlTree = SqmSelectToSqlAstConverter.interpret(
+		final SqmSelectInterpretation interpretation = SqmSelectToSqlAstConverter.interpret(
 				sqm,
 				persistenceContext.getFactory(),
 				domainMetamodel,
 				queryOptions,
+				false,
 				callback
 		);
 		return (List<R>) new SqlTreeExecutorImpl().executeSelect(
-				sqlTree,
+				interpretation,
 				PreparedStatementCreatorStandardImpl.INSTANCE,
 				PreparedStatementExecutorNormalImpl.INSTANCE,
 				queryOptions,
@@ -225,11 +226,12 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		};
 
 		// todo : SelectStatementInterpreter needs to account for the EntityGraph hint
-		final SelectQuery sqlTree = SqmSelectToSqlAstConverter.interpret(
+		final SqmSelectInterpretation interpretation = SqmSelectToSqlAstConverter.interpret(
 				sqm,
 				persistenceContext.getFactory(),
 				domainMetamodel,
 				queryOptions,
+				false,
 				callback
 		);
 
@@ -245,7 +247,7 @@ public class ConcreteSqmSelectQueryPlan<R> implements SelectQueryPlan<R> {
 		}
 
 		return (ScrollableResultsImplementor) new SqlTreeExecutorImpl().executeSelect(
-				sqlTree,
+				interpretation,
 				creator,
 				PreparedStatementExecutorScrollableImpl.INSTANCE,
 				queryOptions,

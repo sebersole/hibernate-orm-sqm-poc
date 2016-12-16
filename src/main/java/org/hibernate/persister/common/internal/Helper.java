@@ -8,6 +8,7 @@ package org.hibernate.persister.common.internal;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -154,7 +155,7 @@ public class Helper {
 		}
 	}
 
-	public static Column[] makeValues(
+	public static List<Column> makeValues(
 			SessionFactoryImplementor factory,
 			AbstractTable containingTable,
 			Type type,
@@ -162,19 +163,19 @@ public class Helper {
 			String[] formulas) {
 		assert formulas == null || columns.length == formulas.length;
 
-		final Column[] values = new Column[columns.length];
+		final List<Column> values = new ArrayList<>();
 
 		for ( int i = 0; i < columns.length; i++ ) {
 			final int jdbcType = type.sqlTypes( factory )[i];
 
 			if ( columns[i] != null ) {
-				values[i] = containingTable.makeColumn( columns[i], jdbcType );
+				values.add( containingTable.makeColumn( columns[i], jdbcType ) );
 			}
 			else {
 				if ( formulas == null ) {
 					throw new IllegalStateException( "Column name was null and no formula information was supplied" );
 				}
-				values[i] = containingTable.makeFormula( formulas[i], jdbcType );
+				values.add( containingTable.makeFormula( formulas[i], jdbcType ) );
 			}
 		}
 
@@ -187,7 +188,7 @@ public class Helper {
 			AttributeContainer source,
 			String propertyName,
 			Type propertyType,
-			Column[] columns) {
+			List<Column> columns) {
 		if ( propertyType.isCollectionType() ) {
 			return buildPluralAttribute(
 					databaseModel,
@@ -216,7 +217,7 @@ public class Helper {
 			AttributeContainer source,
 			String attributeName,
 			Type attributeType,
-			Column[] columns) {
+			List<Column> columns) {
 		final SingularAttributeClassification classification = interpretSingularAttributeClassification( attributeType );
 		if ( classification == SingularAttributeClassification.ANY ) {
 			throw new NotYetImplementedException();
@@ -248,10 +249,10 @@ public class Helper {
 				// the Classification here should be ONE_TO_ONE which could represent either a real PK one-to-one
 				//		or a unique-FK one-to-one (logical).  If this is a real one-to-one then we should have
 				//		no columns passed here and should instead use the LHS (source) PK column(s)
-				assert columns == null || columns.length == 0;
+				assert columns == null || columns.size() == 0;
 				columns = ( (ImprovedEntityPersister) source ).getIdentifierDescriptor().getColumns();
 			}
-			assert columns != null && columns.length > 0;
+			assert columns != null && columns.size() > 0;
 
 			return new SingularAttributeEntity(
 					source,
@@ -269,7 +270,7 @@ public class Helper {
 			DomainMetamodelImpl domainMetamodel,
 			String role,
 			CompositeType compositeType,
-			Column[] columns) {
+			List<Column> columns) {
 		return new EmbeddablePersister(
 				extractEmbeddableName( compositeType ),
 				role,
@@ -291,7 +292,7 @@ public class Helper {
 			AttributeContainer source,
 			String subclassPropertyName,
 			Type attributeType,
-			Column[] columns) {
+			List<Column> columns) {
 		final CollectionType collectionType = (CollectionType) attributeType;
 		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getMetamodel().collectionPersister( collectionType.getRole() );
 

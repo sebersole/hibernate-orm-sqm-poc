@@ -21,11 +21,11 @@ import org.hibernate.query.proposed.Limit;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.resource.jdbc.spi.LogicalConnectionImplementor;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
+import org.hibernate.sql.exec.ExecutionException;
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManager;
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManagerDisabledImpl;
 import org.hibernate.sql.exec.results.process.internal.caching.QueryCachePutManagerEnabledImpl;
-import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.spi.PreparedStatementCreator;
 import org.hibernate.sql.exec.spi.PreparedStatementExecutor;
@@ -47,7 +47,7 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 	private final PreparedStatementCreator statementCreator;
 	private final PreparedStatementExecutor preparedStatementExecutor;
 	private final QueryParameterBindings queryParameterBindings;
-	private final List<SqlSelectionDescriptor> sqlSelectionDescriptors;
+	private final List<SqlSelection> sqlSelections;
 	private final int numberOfRowsToProcess;
 
 	private PreparedStatement preparedStatement;
@@ -63,7 +63,7 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 			PreparedStatementCreator statementCreator,
 			PreparedStatementExecutor preparedStatementExecutor,
 			QueryParameterBindings queryParameterBindings,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors) {
+			List<SqlSelection> sqlSelections) {
 		super( resolveQueryCachePutManager( persistenceContext, queryOptions ) );
 		this.persistenceContext = persistenceContext;
 		this.sqlSelectInterpretation = sqlSelectInterpretation;
@@ -71,7 +71,7 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 		this.statementCreator = statementCreator;
 		this.preparedStatementExecutor = preparedStatementExecutor;
 		this.queryParameterBindings = queryParameterBindings;
-		this.sqlSelectionDescriptors = sqlSelectionDescriptors;
+		this.sqlSelections = sqlSelections;
 
 		this.numberOfRowsToProcess = interpretNumberOfRowsToProcess( queryOptions );
 	}
@@ -108,7 +108,8 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 		}
 	}
 
-	protected final boolean processNext(RowProcessingState rowProcessingState, JdbcValuesSourceProcessingOptions options) throws SQLException {
+	@Override
+	protected final boolean processNext(RowProcessingState rowProcessingState) {
 		if ( position == 0 ) {
 			return false;
 		}
@@ -129,25 +130,43 @@ public class JdbcValuesSourceResultSetImpl extends AbstractJdbcValuesSource {
 			return false;
 		}
 
-		if ( ! resultSet.next() ) {
-			return false;
+		try {
+			if ( !resultSet.next() ) {
+				return false;
+			}
+		}
+		catch (SQLException e) {
+			throw makeExecutionException( "Error advancing JDBC ResultSet", e );
 		}
 
-		currentRowJdbcValues = readCurrentRowValues( rowProcessingState, options );
+		try {
+			currentRowJdbcValues = readCurrentRowValues( rowProcessingState );
+		}
+		catch (SQLException e) {
+			throw makeExecutionException( "Error reading JDBC row values", e );
+		}
+
 		return true;
 	}
 
-	private Object[] readCurrentRowValues(
-			RowProcessingState rowProcessingState,
-			JdbcValuesSourceProcessingOptions options) throws SQLException {
-		final int numberOfSqlSelections = sqlSelectionDescriptors.size();
+	private ExecutionException makeExecutionException(String message, SQLException cause) {
+		return new ExecutionException(
+				message,
+				persistenceContext.getJdbcServices().getSqlExceptionHelper().convert(
+						cause,
+						message
+				)
+		);
+	}
+
+	private Object[] readCurrentRowValues(RowProcessingState rowProcessingState) throws SQLException {
+		final int numberOfSqlSelections = sqlSelections.size();
 		final Object[] row = new Object[numberOfSqlSelections];
 		for ( int i = 0; i < numberOfSqlSelections; i++ ) {
-			row[i] = sqlSelectionDescriptors.get( i ).getSqlSelectable().getSqlSelectionReader().read(
+			row[i] = sqlSelections.get( i ).getSqlSelectable().getSqlSelectionReader().read(
 					resultSet,
 					rowProcessingState.getJdbcValuesSourceProcessingState(),
-					options,
-					sqlSelectionDescriptors.get( i )
+					sqlSelections.get( i )
 			);
 		}
 		return row;

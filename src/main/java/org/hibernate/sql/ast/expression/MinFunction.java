@@ -18,7 +18,7 @@ public class MinFunction extends AbstractAggregateFunction implements AggregateF
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter sqlTreeWalker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter sqlTreeWalker) {
 		sqlTreeWalker.visitMinFunction( this );
 	}
 }

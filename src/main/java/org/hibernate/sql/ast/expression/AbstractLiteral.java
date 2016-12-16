@@ -11,9 +11,12 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.ast.select.SqlSelectable;
 import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
 import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.convert.results.spi.ReturnResolutionContext;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.spi.ParameterBinder;
@@ -29,13 +32,15 @@ import org.hibernate.type.Type;
  * @author Steve Ebersole
  */
 public abstract class AbstractLiteral
-		implements ParameterBinder, Expression, SqlSelectable {
+		implements ParameterBinder, Expression, SqlSelectable, Selectable {
 	private final Object value;
 	private final Type ormType;
+	private final boolean inSelect;
 
-	public AbstractLiteral(Object value, Type ormType) {
+	public AbstractLiteral(Object value, Type ormType, boolean inSelect) {
 		this.value = value;
 		this.ormType = ormType;
+		this.inSelect = inSelect;
 	}
 
 	public Object getValue() {
@@ -47,9 +52,28 @@ public abstract class AbstractLiteral
 		return ormType;
 	}
 
+	public boolean isInSelect() {
+		return inSelect;
+	}
+
 	@Override
-	public Return toQueryReturn(String resultVariable) {
-		return new ReturnScalarImpl( this, ormType, resultVariable );
+	public Selectable getSelectable() {
+		return this;
+	}
+
+	@Override
+	public Expression getSelectedExpression() {
+		return this;
+	}
+
+	@Override
+	public Return toQueryReturn(ReturnResolutionContext returnResolutionContext, String resultVariable) {
+		return new ReturnScalarImpl(
+				this,
+				returnResolutionContext.resolveSqlSelection( this ),
+				resultVariable,
+				getType()
+		);
 	}
 
 	@Override

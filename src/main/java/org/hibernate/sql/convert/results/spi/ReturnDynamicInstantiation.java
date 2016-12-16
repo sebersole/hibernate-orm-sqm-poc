@@ -6,14 +6,9 @@
  */
 package org.hibernate.sql.convert.results.spi;
 
-import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation;
-
 /**
  * @author Steve Ebersole
  */
 public interface ReturnDynamicInstantiation extends Return {
 	Class getInstantiationTarget();
-
-	@Override
-	DynamicInstantiation getSelectExpression();
 }

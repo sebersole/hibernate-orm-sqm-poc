@@ -6,18 +6,23 @@
  */
 package org.hibernate.sql.ast.expression.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
+import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
-import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.convert.results.internal.ReturnEntityImpl;
-import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
-import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.ast.select.SelectableBasicTypeImpl;
+import org.hibernate.sql.ast.select.SelectableEmbeddedTypeImpl;
+import org.hibernate.sql.ast.select.SelectableEntityTypeImpl;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
+import org.hibernate.type.BasicType;
+import org.hibernate.type.CompositeType;
 import org.hibernate.type.Type;
 
 /**
@@ -28,6 +33,9 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 	private final SingularAttributeDescriptor referencedAttribute;
 	private final PropertyPath propertyPath;
 
+	private final Selectable selectable;
+	private List<ColumnBinding> columnBindings;
+
 	public SingularAttributeReferenceExpression(
 			ColumnBindingSource columnBindingSource,
 			SingularAttributeDescriptor referencedAttribute,
@@ -35,6 +43,46 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 		this.columnBindingSource = columnBindingSource;
 		this.referencedAttribute = referencedAttribute;
 		this.propertyPath = propertyPath;
+
+		this.selectable = resolveSelectable( referencedAttribute );
+	}
+
+	private Selectable resolveSelectable(SingularAttributeDescriptor referencedAttribute) {
+		switch ( referencedAttribute.getAttributeTypeClassification() ) {
+			case BASIC: {
+				return new SelectableBasicTypeImpl(
+						this,
+						columnBindingSource.resolveColumnBinding( referencedAttribute.getColumns().get( 0 ) ),
+						(BasicType) referencedAttribute.getOrmType()
+				);
+			}
+			case EMBEDDED: {
+				return new SelectableEmbeddedTypeImpl(
+						this,
+						getColumnBindings(),
+						(CompositeType) referencedAttribute.getOrmType()
+				);
+			}
+			case MANY_TO_ONE:
+			case ONE_TO_ONE: {
+				final SingularAttributeEntity entityTypedAttribute = (SingularAttributeEntity) referencedAttribute;
+				return new SelectableEntityTypeImpl(
+						this,
+						propertyPath,
+						columnBindingSource,
+						entityTypedAttribute.getEntityPersister(),
+						// shallow? dunno...
+						false
+				);
+			}
+			default: {
+				throw new NotYetImplementedException(
+						"Resolution of Selectable for singular attribute type [" +
+								referencedAttribute.getAttributeTypeClassification().name() +
+								"] not yet implemented"
+				);
+			}
+		}
 	}
 
 	public SingularAttributeDescriptor getReferencedAttribute() {
@@ -47,35 +95,13 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
-		walker.visitSingularAttributeReference( this, shallow );
+	public void accept(SqlAstSelectInterpreter walker) {
+		walker.visitSingularAttributeReference( this );
 	}
 
 	@Override
-	public Return toQueryReturn(String resultVariable) {
-		switch ( referencedAttribute.getAttributeTypeClassification() ) {
-			case BASIC: {
-				return new ReturnScalarImpl( this, getType(), resultVariable );
-			}
-			case EMBEDDED: {
-				return new ReturnScalarImpl( this, getType(), resultVariable );
-			}
-			case ANY: {
-				// special reading for ANY types
-				// although maybe this should be an exception, have to see what the old parse does
-				throw new NotYetImplementedException();
-
-			}
-			default: {
-				return new ReturnEntityImpl(
-						getPropertyPath(),
-						columnBindingSource.getTableGroup().getUid(),
-						this,
-						( (SingularAttributeEntity) referencedAttribute ).getEntityPersister(),
-						resultVariable
-				);
-			}
-		}
+	public Selectable getSelectable() {
+		return selectable;
 	}
 
 	@Override
@@ -84,8 +110,19 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 	}
 
 	@Override
-	public List<ColumnBinding> resolveColumnBindings(boolean shallow) {
-		return columnBindingSource.resolveColumnBindings( this, shallow );
+	public List<ColumnBinding> getColumnBindings() {
+		if ( columnBindings == null ) {
+			columnBindings = resolveNonSelectColumnBindings();
+		}
+		return columnBindings;
+	}
+
+	private List<ColumnBinding> resolveNonSelectColumnBindings() {
+		final List<ColumnBinding> columnBindings = new ArrayList<>();
+		for ( Column column : getReferencedAttribute().getColumns() ) {
+			columnBindings.add( columnBindingSource.resolveColumnBinding( column ) );
+		}
+		return columnBindings;
 	}
 
 	@Override

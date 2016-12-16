@@ -6,6 +6,8 @@
  */
 package org.hibernate.persister.entity.spi;
 
+import java.util.List;
+
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.type.Type;
@@ -35,5 +37,5 @@ public interface IdentifierDescriptor extends SingularAttributeDescriptor {
 	 */
 	SingularAttributeDescriptor getIdAttribute();
 
-	Column[] getColumns();
+	List<Column> getColumns();
 }

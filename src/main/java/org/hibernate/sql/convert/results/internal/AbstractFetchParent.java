@@ -13,6 +13,7 @@ import java.util.List;
 import org.hibernate.loader.PropertyPath;
 import org.hibernate.sql.convert.results.spi.Fetch;
 import org.hibernate.sql.convert.results.spi.FetchParent;
+import org.hibernate.sql.exec.results.process.spi2.InitializerCollector;
 
 /**
  * @author Steve Ebersole
@@ -50,5 +51,15 @@ public abstract class AbstractFetchParent implements FetchParent {
 	@Override
 	public List<Fetch> getFetches() {
 		return fetches == null ? Collections.emptyList() : Collections.unmodifiableList( fetches );
+	}
+
+	protected void addFetchInitializers(InitializerCollector collector) {
+		if ( fetches == null ) {
+			return;
+		}
+
+		for ( Fetch fetch : fetches ) {
+			fetch.registerInitializers( collector );
+		}
 	}
 }

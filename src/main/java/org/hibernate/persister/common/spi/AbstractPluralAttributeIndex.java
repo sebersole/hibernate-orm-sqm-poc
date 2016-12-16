@@ -6,10 +6,8 @@
  */
 package org.hibernate.persister.common.spi;
 
-import java.util.Arrays;
 import java.util.List;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.collection.spi.PluralAttributeIndex;
 import org.hibernate.type.Type;
@@ -20,9 +18,9 @@ import org.hibernate.type.Type;
 public abstract class AbstractPluralAttributeIndex<O extends Type> implements PluralAttributeIndex {
 	private final ImprovedCollectionPersisterImpl persister;
 	private final O ormType;
-	private final Column[] columns;
+	private final List<Column> columns;
 
-	public AbstractPluralAttributeIndex(ImprovedCollectionPersisterImpl persister, O ormType, Column[] columns) {
+	public AbstractPluralAttributeIndex(ImprovedCollectionPersisterImpl persister, O ormType, List<Column> columns) {
 		this.persister = persister;
 		this.ormType = ormType;
 		this.columns = columns;
@@ -38,18 +36,8 @@ public abstract class AbstractPluralAttributeIndex<O extends Type> implements Pl
 	}
 
 	@Override
-	public Column[] getColumns() {
+	public List<Column> getColumns() {
 		return columns;
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return columns.length;
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return Arrays.asList( columns );
 	}
 
 	@Override

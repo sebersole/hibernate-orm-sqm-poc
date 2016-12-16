@@ -18,7 +18,7 @@ public class AvgFunction extends AbstractAggregateFunction implements AggregateF
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitAvgFunction( this );
 	}
 }

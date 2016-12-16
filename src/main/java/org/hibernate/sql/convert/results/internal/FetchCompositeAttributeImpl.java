@@ -6,16 +6,14 @@
  */
 package org.hibernate.sql.convert.results.internal;
 
-import java.util.List;
-
 import org.hibernate.engine.FetchStrategy;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.convert.results.spi.FetchCompositeAttribute;
 import org.hibernate.sql.convert.results.spi.FetchParent;
-import org.hibernate.sql.exec.results.internal.ResolvedFetchCompositeImpl;
-import org.hibernate.sql.exec.results.spi.ResolvedFetchComposite;
-import org.hibernate.sql.exec.results.spi.ResolvedFetchParent;
+import org.hibernate.sql.exec.results.process.internal.CompositeReferenceInitializerImpl;
+import org.hibernate.sql.exec.results.process.spi2.CompositeReferenceInitializer;
+import org.hibernate.sql.exec.results.process.spi2.Initializer;
+import org.hibernate.sql.exec.results.process.spi2.InitializerCollector;
 import org.hibernate.type.CompositeType;
 
 /**
@@ -25,6 +23,8 @@ public class FetchCompositeAttributeImpl extends AbstractFetchParent implements 
 	private final FetchParent fetchParent;
 	private final SingularAttributeEmbedded fetchedAttribute;
 	private final FetchStrategy fetchStrategy;
+
+	private final CompositeReferenceInitializer initializer;
 
 	public FetchCompositeAttributeImpl(
 			FetchParent fetchParent,
@@ -37,6 +37,10 @@ public class FetchCompositeAttributeImpl extends AbstractFetchParent implements 
 		this.fetchParent = fetchParent;
 		this.fetchedAttribute = fetchedAttribute;
 		this.fetchStrategy = fetchStrategy;
+
+		this.initializer = new CompositeReferenceInitializerImpl(
+				fetchParent.getInitializerParentForFetchInitializers()
+		);
 	}
 
 	@Override
@@ -56,7 +60,7 @@ public class FetchCompositeAttributeImpl extends AbstractFetchParent implements 
 
 	@Override
 	public CompositeType getFetchedType() {
-		return (CompositeType) fetchedAttribute.getOrmType();
+		return fetchedAttribute.getOrmType();
 	}
 
 	@Override
@@ -65,16 +69,17 @@ public class FetchCompositeAttributeImpl extends AbstractFetchParent implements 
 	}
 
 	@Override
-	public ResolvedFetchComposite resolve(
-			ResolvedFetchParent resolvedFetchParent,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
-			boolean shallow) {
-		return new ResolvedFetchCompositeImpl(
-				resolvedFetchParent,
-				this.getFetchedAttributeDescriptor(),
-				getPropertyPath(),
-				getFetchedType(),
-				getTableGroupUniqueIdentifier()
-		);
+	public CompositeReferenceInitializer getInitializerParentForFetchInitializers() {
+		return initializer;
+	}
+
+	@Override
+	public void registerInitializers(InitializerCollector collector) {
+		collector.addInitializer( initializer );
+	}
+
+	@Override
+	public Initializer getInitializer() {
+		return null;
 	}
 }

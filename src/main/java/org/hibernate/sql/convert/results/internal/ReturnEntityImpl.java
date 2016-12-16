@@ -6,36 +6,55 @@
  */
 package org.hibernate.sql.convert.results.internal;
 
-import java.util.List;
+import java.util.Map;
 
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.convert.results.spi.EntityIdentifierReference;
 import org.hibernate.sql.convert.results.spi.ReturnEntity;
-import org.hibernate.sql.exec.results.internal.ResolvedReturnEntityImpl;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
+import org.hibernate.sql.exec.results.process.internal.EntityReturnInitializerImpl;
+import org.hibernate.sql.exec.results.process.internal.ReturnAssemblerEntity;
+import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
+import org.hibernate.sql.exec.results.process.spi2.InitializerCollector;
+import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
+import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionGroup;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnEntityImpl extends AbstractFetchParent implements ReturnEntity {
-	private final Expression selectExpression;
+	private final Expression expression;
 	private final ImprovedEntityPersister entityPersister;
-	private final String alias;
+	private final String resultVariable;
+	private final Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap;
+
+	private final ReturnAssemblerEntity assembler;
+	private final EntityReturnInitializerImpl initializer;
 
 	public ReturnEntityImpl(
+			Expression expression,
+			ImprovedEntityPersister improvedEntityPersister,
+			String resultVariable,
+			boolean isShallow,
+			Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap,
 			PropertyPath propertyPath,
-			String tableGroupUid,
-			Expression selectExpression,
-			ImprovedEntityPersister entityPersister,
-			String alias) {
+			String tableGroupUid) {
 		super( propertyPath, tableGroupUid );
-		this.selectExpression = selectExpression;
-		this.entityPersister = entityPersister;
-		this.alias = alias;
+		this.expression = expression;
+		this.entityPersister = improvedEntityPersister;
+		this.resultVariable = resultVariable;
+		this.sqlSelectionGroupMap = sqlSelectionGroupMap;
+
+		this.initializer = new EntityReturnInitializerImpl(
+				this,
+				sqlSelectionGroupMap,
+				isShallow
+		);
+		assembler = new ReturnAssemblerEntity( this );
 	}
 
 	@Override
@@ -49,26 +68,37 @@ public class ReturnEntityImpl extends AbstractFetchParent implements ReturnEntit
 	}
 
 	@Override
-	public Expression getSelectExpression() {
-		return selectExpression;
+	public Expression getSelectedExpression() {
+		return expression;
 	}
 
 	@Override
-	public String getResultVariableName() {
-		return alias;
+	public String getResultVariable() {
+		return resultVariable;
 	}
 
 	@Override
-	public ResolvedReturn resolve(
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
-			boolean shallow) {
-		// todo : who is responsible for adding the SqlSelectionDescriptor for fetches?
+	public Class getReturnedJavaType() {
+		return entityPersister.getOrmType().getReturnedClass();
+	}
 
-		return new ResolvedReturnEntityImpl(
-				getEntityPersister(),
-				getPropertyPath(),
-				sqlSelectionDescriptors,
-				shallow
-		);
+	@Override
+	public ReturnAssembler getReturnAssembler() {
+		return assembler;
+	}
+
+	@Override
+	public void registerInitializers(InitializerCollector collector) {
+		collector.addInitializer( initializer );
+	}
+
+	@Override
+	public EntityReferenceInitializer getInitializer() {
+		return initializer;
+	}
+
+	@Override
+	public InitializerParent getInitializerParentForFetchInitializers() {
+		return initializer;
 	}
 }

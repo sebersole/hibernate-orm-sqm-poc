@@ -63,7 +63,7 @@ public class NamedParameter extends AbstractParameter {
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitNamedParameter( this );
 	}
 }

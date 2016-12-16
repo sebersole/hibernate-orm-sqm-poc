@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.spi;
 
 import java.util.List;
 
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
 /**
@@ -17,7 +17,7 @@ import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 public interface ResolvedReturn {
 	int getNumberOfSelectablesConsumed();
 
-	List<SqlSelectionDescriptor> getSqlSelectionDescriptors();
+	List<SqlSelection> getSqlSelections();
 
 	ReturnAssembler getReturnAssembler();
 

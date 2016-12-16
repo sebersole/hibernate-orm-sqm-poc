@@ -18,7 +18,7 @@ public class CountFunction extends AbstractAggregateFunction {
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitCountFunction( this );
 	}
 }

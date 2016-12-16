@@ -6,12 +6,13 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
-import java.util.List;
+import java.util.Map;
 
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.sql.convert.results.spi.Fetch;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionGroup;
 
 /**
  * Contract for things that can be the parent of a fetch
@@ -33,5 +34,5 @@ public interface ResolvedFetchParent {
 
 	InitializerParent getInitializerParentForFetchInitializers();
 
-	ResolvedFetch addFetch(List<SqlSelectionDescriptor> sqlSelectionDescriptors, boolean shallow, Fetch queryFetch);
+	ResolvedFetch addFetch(Map<AttributeDescriptor,SqlSelectionGroup> sqlSelectionGroupMap, boolean shallow, Fetch queryFetch);
 }

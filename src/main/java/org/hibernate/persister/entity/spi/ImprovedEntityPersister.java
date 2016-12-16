@@ -6,12 +6,13 @@
  */
 package org.hibernate.persister.entity.spi;
 
+import java.util.List;
+
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
@@ -57,6 +58,8 @@ public interface ImprovedEntityPersister
 	EntityPersister getEntityPersister();
 
 	IdentifierDescriptor getIdentifierDescriptor();
+	DiscriminatorDescriptor getDiscriminatorDescriptor();
+	RowIdDescriptor getRowIdDescriptor();
 
 	EntityTableGroup buildTableGroup(
 			SqmFrom fromElement,
@@ -79,5 +82,6 @@ public interface ImprovedEntityPersister
 	 * 		- again currently only used from ImprovedCollectionPersister to build
 	 * 			the CollectionTableGroup for entity elements (one2many, many2many)
 	 */
-	void addTableJoins(AbstractTableGroup group, JoinType joinType, Column[] fkColumns, Column[] fkTargetColumns);
+	void addTableJoins(AbstractTableGroup group, JoinType joinType, List<Column> fkColumns, List<Column> fkTargetColumns);
+
 }

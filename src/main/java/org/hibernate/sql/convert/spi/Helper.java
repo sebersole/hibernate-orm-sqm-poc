@@ -8,6 +8,8 @@ package org.hibernate.sql.convert.spi;
 
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.common.internal.SingularAttributeBasic;
+import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;

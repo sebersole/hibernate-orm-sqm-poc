@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.ast.expression;
 
-import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
@@ -21,7 +21,7 @@ public interface Expression {
 	 */
 	Type getType();
 
-	Return toQueryReturn(String resultVariable);
+	Selectable getSelectable();
 
-	void accept(SqlAstSelectInterpreter walker, boolean shallow);
+	void accept(SqlAstSelectInterpreter walker);
 }

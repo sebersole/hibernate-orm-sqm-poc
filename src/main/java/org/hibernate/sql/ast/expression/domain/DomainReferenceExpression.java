@@ -26,7 +26,7 @@ public interface DomainReferenceExpression extends Expression {
 	 */
 	DomainDescriptor getDomainReference();
 
-	List<ColumnBinding> resolveColumnBindings(boolean shallow);
-
 	PropertyPath getPropertyPath();
+
+	List<ColumnBinding> getColumnBindings();
 }

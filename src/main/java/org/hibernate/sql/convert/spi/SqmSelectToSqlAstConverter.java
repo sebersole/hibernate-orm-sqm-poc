@@ -8,6 +8,8 @@ package org.hibernate.sql.convert.spi;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +25,13 @@ import org.hibernate.graph.spi.EntityGraphImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
+import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.ast.Clause;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AvgFunction;
@@ -49,9 +53,8 @@ import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.expression.SumFunction;
 import org.hibernate.sql.ast.expression.UnaryOperationExpression;
-import org.hibernate.sql.ast.expression.domain.CompositeColumnBindingSource;
+import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
-import org.hibernate.sql.ast.expression.domain.SingularAttributeReferenceExpression;
 import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
@@ -70,15 +73,23 @@ import org.hibernate.sql.ast.predicate.NullnessPredicate;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
+import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.ast.select.Selection;
+import org.hibernate.sql.ast.select.SqlSelectable;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.convert.SyntaxException;
+import org.hibernate.sql.convert.expression.internal.DomainReferenceExpressionBuilderImpl;
+import org.hibernate.sql.convert.expression.spi.DomainReferenceExpressionBuilder;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
+import org.hibernate.sql.convert.internal.SqmSelectInterpretationImpl;
 import org.hibernate.sql.convert.results.internal.FetchCompositeAttributeImpl;
 import org.hibernate.sql.convert.results.internal.FetchEntityAttributeImpl;
 import org.hibernate.sql.convert.results.spi.FetchParent;
 import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.results.spi.ReturnDynamicInstantiation;
+import org.hibernate.sql.convert.results.spi.ReturnResolutionContext;
+import org.hibernate.sql.exec.results.process.internal.SqlSelectionImpl;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.domain.DomainReference;
@@ -160,7 +171,9 @@ import org.jboss.logging.Logger;
  * @author Steve Ebersole
  * @author John O'Hara
  */
-public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
+public class SqmSelectToSqlAstConverter
+		extends BaseSemanticQueryWalker
+		implements DomainReferenceExpressionBuilder.BuildingContext, ReturnResolutionContext {
 	private static final Logger log = Logger.getLogger( SqmSelectToSqlAstConverter.class );
 
 	/**
@@ -169,19 +182,23 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	 * @param statement The SQM SelectStatement to interpret
 	 * @param queryOptions The options to be applied to the interpretation
 	 * @param callback to be formally defined
+	 * @param isShallow {@code true} if the interpretation is initiated from Query#iterate; all
+	 * other forms of Query execution would pass {@code false}
 	 *
-	 * @return The SQL AST
+	 * @return The interpretation
 	 */
-	public static SelectQuery interpret(
+	public static SqmSelectInterpretation interpret(
 			SqmSelectStatement statement,
 			SessionFactoryImplementor factory,
 			DomainMetamodel sqmDomainMetamodel,
 			QueryOptions queryOptions,
+			boolean isShallow,
 			Callback callback) {
 		final SqmSelectToSqlAstConverter walker = new SqmSelectToSqlAstConverter(
 				factory,
 				sqmDomainMetamodel,
 				queryOptions,
+				isShallow,
 				callback
 		);
 		return walker.interpret( statement );
@@ -190,34 +207,38 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	private final SessionFactoryImplementor factory;
 	private final DomainMetamodel sqmDomainMetamodel;
 	private final QueryOptions queryOptions;
+	private final boolean isShallow;
 	private final Callback callback;
 
 	private final FromClauseIndex fromClauseIndex = new FromClauseIndex();
 	private final SqlAliasBaseManager sqlAliasBaseManager = new SqlAliasBaseManager();
+	private final Stack<DomainReferenceExpressionBuilder> domainExpressionBuilderStack = new Stack<>();
+	private final Stack<Clause> currentClauseStack = new Stack<>();
+	private final Stack<QuerySpec> querySpecStack = new Stack<>();
+	private int querySpecDepth = 0;
 
-	private SelectQuery sqlAst;
+	private final List<Return> queryReturns = new ArrayList<>();
 
 	private SqmSelectToSqlAstConverter(
 			SessionFactoryImplementor factory,
 			DomainMetamodel sqmDomainMetamodel,
 			QueryOptions queryOptions,
+			boolean isShallow,
 			Callback callback) {
 		this.factory = factory;
 		this.sqmDomainMetamodel = sqmDomainMetamodel;
 		this.queryOptions = queryOptions;
+		this.isShallow = isShallow;
 		this.callback = callback;
+		pushDomainExpressionBuilder( isShallow );
 	}
 
-	private SelectQuery interpret(SqmSelectStatement statement) {
-		visitSelectStatement( statement );
-		// todo : return the new SqmSelectInterpretation composition
-		return getSelectQuery();
+	private SqmSelectInterpretation interpret(SqmSelectStatement statement) {
+		return new SqmSelectInterpretationImpl(
+				visitSelectStatement( statement ),
+				queryReturns
+		);
 	}
-
-	private SelectQuery getSelectQuery() {
-		return sqlAst;
-	}
-
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// walker
@@ -240,15 +261,18 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 
 	@Override
 	public SelectQuery visitSelectStatement(SqmSelectStatement statement) {
-		if ( sqlAst != null ) {
-			throw new AssertionFailure( "SelectQuery already visited" );
-		}
-
-		sqlAst = new SelectQuery( visitQuerySpec( statement.getQuerySpec() ) );
+		final QuerySpec querySpec = visitQuerySpec( statement.getQuerySpec() );
+		final SelectQuery sqlAst = new SelectQuery( querySpec );
 
 		if ( statement.getOrderByClause() != null ) {
-			for ( SortSpecification sortSpecification : statement.getOrderByClause().getSortSpecifications() ) {
-				sqlAst.addSortSpecification( visitSortSpecification( sortSpecification ) );
+			currentClauseStack.push( Clause.ORDER );
+			try {
+				for ( SortSpecification sortSpecification : statement.getOrderByClause().getSortSpecifications() ) {
+					sqlAst.addSortSpecification( visitSortSpecification( sortSpecification ) );
+				}
+			}
+			finally {
+				currentClauseStack.pop();
 			}
 		}
 
@@ -269,12 +293,11 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		);
 	}
 
-	private Stack<QuerySpec> querySpecStack = new Stack<>();
-
 	@Override
 	public QuerySpec visitQuerySpec(SqmQuerySpec querySpec) {
 		final QuerySpec astQuerySpec = new QuerySpec();
 		querySpecStack.push( astQuerySpec );
+		querySpecDepth++;
 
 		fromClauseIndex.pushFromClause( astQuerySpec.getFromClause() );
 
@@ -289,14 +312,24 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 
 			final SqmWhereClause whereClause = querySpec.getWhereClause();
 			if ( whereClause != null ) {
-				querySpecStack.getCurrent().setWhereClauseRestrictions(
-						(Predicate) whereClause.getPredicate().accept( this )
-				);
+				currentClauseStack.push( Clause.WHERE );
+				try {
+					astQuerySpec.setWhereClauseRestrictions(
+							(Predicate) whereClause.getPredicate().accept( this )
+					);
+				}
+				finally {
+					currentClauseStack.pop();
+				}
 			}
+
+			// todo : group-by
+			// todo : having
 
 			return astQuerySpec;
 		}
 		finally {
+			querySpecDepth--;
 			assert querySpecStack.pop() == astQuerySpec;
 			assert fromClauseIndex.popFromClause() == astQuerySpec.getFromClause();
 		}
@@ -304,8 +337,13 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 
 	@Override
 	public Void visitFromClause(SqmFromClause fromClause) {
-		fromClause.getFromElementSpaces().forEach( this::visitFromElementSpace );
-
+		currentClauseStack.push( Clause.FROM );
+		try {
+			fromClause.getFromElementSpaces().forEach( this::visitFromElementSpace );
+		}
+		finally {
+			currentClauseStack.pop();
+		}
 		return null;
 	}
 
@@ -330,7 +368,7 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public Object visitRootEntityFromElement(SqmRoot sqmRoot) {
 		if ( fromClauseIndex.isResolved( sqmRoot ) ) {
 			final TableGroup resolvedTableGroup = fromClauseIndex.findResolvedTableGroup( sqmRoot );
-			return resolvedTableGroup.resolveEntityReference();
+			return resolvedTableGroup;
 		}
 
 		final EntityBinding binding = sqmRoot.getDomainReferenceBinding();
@@ -343,14 +381,13 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		);
 		tableSpace.setRootTableGroup( group );
 
-		return null;
+		return group;
 	}
 
 	@Override
 	public Object visitQualifiedAttributeJoinFromElement(SqmAttributeJoin joinedFromElement) {
 		if ( fromClauseIndex.isResolved( joinedFromElement ) ) {
-			final TableGroup resolvedTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement );
-			return resolvedTableGroup.resolveEntityReference();
+			return fromClauseIndex.findResolvedTableGroup( joinedFromElement );
 		}
 
 		final Junction predicate = new Junction( Junction.Nature.CONJUNCTION );
@@ -368,16 +405,17 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 			final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
 			// I *think* it is a valid assumption here that the underlying TableGroup for an attribute is ultimately an EntityTableGroup
 			// todo : verify this ^^
-			final ColumnBinding[] joinLhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
-			final ColumnBinding[] joinRhsColumns = ( (CollectionTableGroup) group ).resolveKeyColumnBindings();
-			assert joinLhsColumns.length == joinRhsColumns.length;
+			final List<ColumnBinding> joinLhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
+			final List<ColumnBinding> joinRhsColumns = ( (CollectionTableGroup) group ).resolveKeyColumnBindings();
 
-			for ( int i = 0; i < joinLhsColumns.length; i++ ) {
+			assert joinLhsColumns.size() == joinRhsColumns.size();
+
+			for ( int i = 0; i < joinLhsColumns.size(); i++ ) {
 				predicate.add(
 						new RelationalPredicate(
 								RelationalPredicate.Operator.EQUAL,
-								new ColumnBindingExpression( joinLhsColumns[i] ),
-								new ColumnBindingExpression( joinRhsColumns[i] )
+								new ColumnBindingExpression( joinLhsColumns.get( i ) ),
+								new ColumnBindingExpression( joinRhsColumns.get( i ) )
 						)
 				);
 			}
@@ -406,28 +444,30 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 						fromClauseIndex
 				);
 
+				// todo : building the join needs right- and left- hand side join columns...
+
 				final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
-				final ColumnBinding[] joinLhsColumns = lhsTableGroup.resolveBindings( singularAttribute );
-				final ColumnBinding[] joinRhsColumns;
+				final List<ColumnBinding> joinLhsColumns = resolveColumnBindings( lhsTableGroup, singularAttribute.getColumns() );
+
+				final List<ColumnBinding> joinRhsColumns;
 
 				final org.hibernate.type.EntityType ormType = (org.hibernate.type.EntityType) singularAttribute.getOrmType();
 				if ( ormType.getRHSUniqueKeyPropertyName() == null ) {
 					joinRhsColumns = ( (EntityTableGroup) group ).resolveIdentifierColumnBindings();
 				}
 				else {
-					final ImprovedEntityPersister associatedPersister = ( (EntityTableGroup) lhsTableGroup ).getPersister();
-					joinRhsColumns = group.resolveBindings(
-							(SingularAttributeDescriptor) associatedPersister.findAttribute( ormType.getRHSUniqueKeyPropertyName() )
-					);
+					final ImprovedEntityPersister lhsPersister = ( (EntityTableGroup) lhsTableGroup ).getPersister();
+					final SingularAttributeDescriptor referencedRhsAttribute = (SingularAttributeDescriptor) lhsPersister.findAttribute( ormType.getRHSUniqueKeyPropertyName() );
+					joinRhsColumns = resolveColumnBindings( group, referencedRhsAttribute.getColumns() );
 				}
-				assert joinLhsColumns.length == joinRhsColumns.length;
+				assert joinLhsColumns.size() == joinRhsColumns.size();
 
-				for ( int i = 0; i < joinLhsColumns.length; i++ ) {
+				for ( int i = 0; i < joinLhsColumns.size(); i++ ) {
 					predicate.add(
 							new RelationalPredicate(
 									RelationalPredicate.Operator.EQUAL,
-									new ColumnBindingExpression( joinLhsColumns[i] ),
-									new ColumnBindingExpression( joinRhsColumns[i] )
+									new ColumnBindingExpression( joinLhsColumns.get( i ) ),
+									new ColumnBindingExpression( joinRhsColumns.get( i ) )
 							)
 					);
 				}
@@ -440,6 +480,14 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 		}
 
 		return new TableGroupJoin( joinedFromElement.getJoinType(), group, predicate );
+	}
+
+	private List<ColumnBinding> resolveColumnBindings(TableGroup tableGroup, List<Column> columns) {
+		final List<ColumnBinding> columnBindings = new ArrayList<>();
+		for ( Column column : columns ) {
+			columnBindings.add( tableGroup.resolveColumnBinding( column ) );
+		}
+		return columnBindings;
 	}
 
 	@Override
@@ -463,9 +511,17 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 
 	@Override
 	public SelectClause visitSelectClause(SqmSelectClause selectClause) {
-		super.visitSelectClause( selectClause );
-		currentQuerySpec().getSelectClause().makeDistinct( selectClause.isDistinct() );
-		return currentQuerySpec().getSelectClause();
+		currentClauseStack.push( Clause.SELECT );
+		pushDomainExpressionBuilder( querySpecDepth > 1 || isShallow );
+		try {
+			super.visitSelectClause( selectClause );
+			currentQuerySpec().getSelectClause().makeDistinct( selectClause.isDistinct() );
+			return currentQuerySpec().getSelectClause();
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+			currentClauseStack.pop();
+		}
 	}
 
 	private QuerySpec currentQuerySpec() {
@@ -475,11 +531,22 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	@Override
 	public Selection visitSelection(SqmSelection sqmSelection) {
 		final Expression expression = (Expression) sqmSelection.getExpression().accept( this );
+		final Selectable selectable = expression.getSelectable();
+		final Return queryReturn = selectable.toQueryReturn( this, sqmSelection.getAlias() );
 
-		final Return queryReturn = expression.toQueryReturn( sqmSelection.getAlias() );
-		applyFetchesAndEntityGraph( queryReturn );
+		if ( querySpecDepth == 1 ) {
+			queryReturns.add( queryReturn );
+		}
+		final Selection selection = new Selection(
+				this,
+				expression.getSelectable(),
+				expression,
+				sqmSelection.getAlias()
+		);
 
-		final Selection selection = new Selection( queryReturn );
+		if ( !domainExpressionBuilderStack.getCurrent().isShallow() ) {
+			applyFetchesAndEntityGraph( queryReturn );
+		}
 
 		currentQuerySpec().getSelectClause().selection( selection );
 
@@ -595,16 +662,25 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	@SuppressWarnings("unchecked")
 	public DynamicInstantiation visitDynamicInstantiation(SqmDynamicInstantiation dynamicInstantiation) {
 		final Class target = interpret( dynamicInstantiation.getInstantiationTarget() );
-		DynamicInstantiation sqlTree = new DynamicInstantiation( target );
+		final DynamicInstantiation sqlTree = new DynamicInstantiation( target );
 
-		for ( SqmDynamicInstantiationArgument dynamicInstantiationArgument : dynamicInstantiation.getArguments() ) {
-			sqlTree.addArgument(
-					dynamicInstantiationArgument.getAlias(),
-					(Expression) dynamicInstantiationArgument.getExpression().accept( this )
-			);
+		for ( SqmDynamicInstantiationArgument argument : dynamicInstantiation.getArguments() ) {
+			// validate use of aliases
+			validateDynamicInstantiationArgument( target, argument );
+
+			// generate the SqlSelections (if any) and get the SQL AST Expression
+			final Expression expr = (Expression) argument.getExpression().accept( this );
+
+			// now build the ArgumentReader and inject into the SQL AST DynamicInstantiation
+			sqlTree.addArgument( argument.getAlias(), expr );
 		}
 
+		sqlTree.complete();
+
 		return sqlTree;
+	}
+
+	private void validateDynamicInstantiationArgument(Class target, SqmDynamicInstantiationArgument argument) {
 	}
 
 	private Class interpret(SqmDynamicInstantiationTarget instantiationTarget) {
@@ -618,48 +694,17 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	}
 
 	@Override
-	public Object visitAttributeReferenceExpression(AttributeBinding attributeBinding) {
+	public DomainReferenceExpression visitAttributeReferenceExpression(AttributeBinding attributeBinding) {
 		if ( attributeBinding instanceof PluralAttributeBinding ) {
-			return resolvePluralAttributeBinding( (PluralAttributeBinding) attributeBinding );
-		}
-		else {
-			return resolveSingularAttributeBinding( (SingularAttributeBinding) attributeBinding );
-		}
-	}
-
-	private Object resolvePluralAttributeBinding(PluralAttributeBinding attributeBinding) {
-		CollectionTableGroup tableGroup = null;
-		if ( attributeBinding.getFromElement() != null ) {
-			tableGroup = (CollectionTableGroup) fromClauseIndex.findResolvedTableGroup( attributeBinding.getFromElement() );
-		}
-
-		if ( tableGroup == null ) {
-			throw new IllegalStateException( "From-element (join) for plural-attribute is not resolved" );
-		}
-
-
-		throw new NotYetImplementedException( "resolving AttributeBinding for plural-attributes" );
-	}
-
-	private SingularAttributeReferenceExpression resolveSingularAttributeBinding(SingularAttributeBinding attributeBinding) {
-		final SingularAttributeDescriptor attribute = (SingularAttributeDescriptor) attributeBinding.getAttribute();
-		final TableGroup tableGroup = fromClauseIndex.findResolvedTableGroup( attributeBinding.getLhs() );
-
-		if ( attributeBinding.getFromElement() == null ) {
-			return new SingularAttributeReferenceExpression(
-					tableGroup,
-					attribute,
-					org.hibernate.persister.common.internal.Helper.convert( attributeBinding.getPropertyPath() )
+			return getCurrentDomainReferenceExpressionBuilder().buildPluralAttributeExpression(
+					this,
+					(PluralAttributeBinding) attributeBinding
 			);
 		}
 		else {
-			return new SingularAttributeReferenceExpression(
-					new CompositeColumnBindingSource(
-							tableGroup,
-							fromClauseIndex.findResolvedTableGroup( attributeBinding.getFromElement() )
-					),
-					attribute,
-					org.hibernate.persister.common.internal.Helper.convert( attributeBinding.getPropertyPath() )
+			return getCurrentDomainReferenceExpressionBuilder().buildSingularAttributeExpression(
+					this,
+					(SingularAttributeBinding) attributeBinding
 			);
 		}
 	}
@@ -668,7 +713,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralStringExpression(LiteralStringSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), String.class )
+				extractOrmType( expression.getExpressionType(), String.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -692,7 +738,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralCharacterExpression(LiteralCharacterSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), Character.class )
+				extractOrmType( expression.getExpressionType(), Character.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -700,7 +747,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralDoubleExpression(LiteralDoubleSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), Double.class )
+				extractOrmType( expression.getExpressionType(), Double.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -708,7 +756,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralIntegerExpression(LiteralIntegerSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), Integer.class )
+				extractOrmType( expression.getExpressionType(), Integer.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -716,7 +765,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralBigIntegerExpression(LiteralBigIntegerSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), BigInteger.class )
+				extractOrmType( expression.getExpressionType(), BigInteger.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -724,7 +774,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralBigDecimalExpression(LiteralBigDecimalSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), BigDecimal.class )
+				extractOrmType( expression.getExpressionType(), BigDecimal.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -732,7 +783,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralFloatExpression(LiteralFloatSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), Float.class )
+				extractOrmType( expression.getExpressionType(), Float.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -740,7 +792,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralLongExpression(LiteralLongSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getLiteralValue(),
-				extractOrmType( expression.getExpressionType(), Long.class )
+				extractOrmType( expression.getExpressionType(), Long.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -748,7 +801,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralTrueExpression(LiteralTrueSqmExpression expression) {
 		return new QueryLiteral(
 				Boolean.TRUE,
-				extractOrmType( expression.getExpressionType(), Boolean.class )
+				extractOrmType( expression.getExpressionType(), Boolean.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -756,7 +810,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralFalseExpression(LiteralFalseSqmExpression expression) {
 		return new QueryLiteral(
 				Boolean.FALSE,
-				extractOrmType( expression.getExpressionType(), Boolean.class )
+				extractOrmType( expression.getExpressionType(), Boolean.class ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -764,7 +819,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public QueryLiteral visitLiteralNullExpression(LiteralNullSqmExpression expression) {
 		return new QueryLiteral(
 				null,
-				extractOrmType( expression.getExpressionType() )
+				extractOrmType( expression.getExpressionType() ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -772,7 +828,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public Object visitConstantEnumExpression(ConstantEnumSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
-				extractOrmType( expression.getExpressionType(), expression.getValue().getClass() )
+				extractOrmType( expression.getExpressionType(), expression.getValue().getClass() ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -780,7 +837,8 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 	public Object visitConstantFieldExpression(ConstantFieldSqmExpression expression) {
 		return new QueryLiteral(
 				expression.getValue(),
-				extractOrmType( expression.getExpressionType(), expression.getValue().getClass() )
+				extractOrmType( expression.getExpressionType(), expression.getValue().getClass() ),
+				currentClauseStack.getCurrent() == Clause.SELECT
 		);
 	}
 
@@ -802,64 +860,110 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 
 	@Override
 	public AvgFunction visitAvgFunction(AvgFunctionSqmExpression expression) {
-		return new AvgFunction(
-				(Expression) expression.getArgument().accept( this ),
-				expression.isDistinct(),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new AvgFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct(),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
+	}
+
+	private void pushDomainExpressionBuilder(boolean shallow) {
+		domainExpressionBuilderStack.push( new DomainReferenceExpressionBuilderImpl( shallow ) );
 	}
 
 	@Override
 	public MaxFunction visitMaxFunction(MaxFunctionSqmExpression expression) {
-		return new MaxFunction(
-				(Expression) expression.getArgument().accept( this ),
-				expression.isDistinct(),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new MaxFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct(),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	@Override
 	public MinFunction visitMinFunction(MinFunctionSqmExpression expression) {
-		return new MinFunction(
-				(Expression) expression.getArgument().accept( this ),
-				expression.isDistinct(),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new MinFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct(),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	@Override
 	public SumFunction visitSumFunction(SumFunctionSqmExpression expression) {
-		return new SumFunction(
-				(Expression) expression.getArgument().accept( this ),
-				expression.isDistinct(),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new SumFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct(),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	@Override
 	public CountFunction visitCountFunction(CountFunctionSqmExpression expression) {
-		return new CountFunction(
-				(Expression) expression.getArgument().accept( this ),
-				expression.isDistinct(),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new CountFunction(
+					(Expression) expression.getArgument().accept( this ),
+					expression.isDistinct(),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	@Override
 	public CountStarFunction visitCountStarFunction(CountStarFunctionSqmExpression expression) {
-		return new CountStarFunction(
-				expression.isDistinct(),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new CountStarFunction(
+					expression.isDistinct(),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	@Override
 	public Object visitUnaryOperationExpression(UnaryOperationSqmExpression expression) {
-		return new UnaryOperationExpression(
-				interpret( expression.getOperation() ),
-				(Expression) expression.getOperand().accept( this ),
-				(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		pushDomainExpressionBuilder( true );
+		try {
+			return new UnaryOperationExpression(
+					interpret( expression.getOperation() ),
+					(Expression) expression.getOperand().accept( this ),
+					(BasicType) extractOrmType( expression.getExpressionType() )
+			);
+		}
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	private UnaryOperationExpression.Operation interpret(UnaryOperationSqmExpression.Operation operation) {
@@ -877,20 +981,26 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 
 	@Override
 	public Expression visitBinaryArithmeticExpression(BinaryArithmeticSqmExpression expression) {
-		if ( expression.getOperation() == BinaryArithmeticSqmExpression.Operation.MODULO ) {
-			return new NonStandardFunctionExpression(
-					"mod",
-					null, //(BasicType) extractOrmType( expression.getExpressionType() ),
+		pushDomainExpressionBuilder( true );
+		try {
+			if ( expression.getOperation() == BinaryArithmeticSqmExpression.Operation.MODULO ) {
+				return new NonStandardFunctionExpression(
+						"mod",
+						null, //(BasicType) extractOrmType( expression.getExpressionType() ),
+						(Expression) expression.getLeftHandOperand().accept( this ),
+						(Expression) expression.getRightHandOperand().accept( this )
+				);
+			}
+			return new BinaryArithmeticExpression(
+					interpret( expression.getOperation() ),
 					(Expression) expression.getLeftHandOperand().accept( this ),
-					(Expression) expression.getRightHandOperand().accept( this )
+					(Expression) expression.getRightHandOperand().accept( this ),
+					null //(BasicType) extractOrmType( expression.getExpressionType() )
 			);
 		}
-		return new BinaryArithmeticExpression(
-				interpret( expression.getOperation() ),
-				(Expression) expression.getLeftHandOperand().accept( this ),
-				(Expression) expression.getRightHandOperand().accept( this ),
-				null //(BasicType) extractOrmType( expression.getExpressionType() )
-		);
+		finally {
+			domainExpressionBuilderStack.pop();
+		}
 	}
 
 	private BinaryArithmeticExpression.Operation interpret(BinaryArithmeticSqmExpression.Operation operation) {
@@ -1108,5 +1218,61 @@ public class SqmSelectToSqlAstConverter extends BaseSemanticQueryWalker {
 				(org.hibernate.sql.ast.QuerySpec) predicate.getSubQueryExpression().accept( this ),
 				predicate.isNegated()
 		);
+	}
+
+	@Override
+	public SessionFactoryImplementor getSessionFactory() {
+		return factory;
+	}
+
+	@Override
+	public DomainMetamodel getSqmDomainMetamodel() {
+		return sqmDomainMetamodel;
+	}
+
+	@Override
+	public DomainReferenceExpressionBuilder getCurrentDomainReferenceExpressionBuilder() {
+		return domainExpressionBuilderStack.getCurrent();
+	}
+
+	@Override
+	public FromClauseIndex getFromClauseIndex() {
+		return fromClauseIndex;
+	}
+
+	@Override
+	public boolean isShallowQuery() {
+		return isShallow;
+	}
+
+	@Override
+	public Clause getCurrentStatementClause() {
+		return currentClauseStack.getCurrent();
+	}
+
+	@Override
+	public ReturnResolutionContext getReturnResolutionContext() {
+		return this;
+	}
+
+	private final Map<QuerySpec,Map<SqlSelectable,SqlSelection>> sqlSelectionMapByQuerySpec = new HashMap<>();
+
+	@Override
+	public SqlSelection resolveSqlSelection(SqlSelectable sqlSelectable) {
+		final Map<SqlSelectable,SqlSelection> sqlSelectionMap = sqlSelectionMapByQuerySpec.computeIfAbsent(
+				currentQuerySpec(),
+				k -> new HashMap<>()
+		);
+
+		final SqlSelection existing = sqlSelectionMap.get( sqlSelectable );
+		if ( existing != null ) {
+			return existing;
+		}
+
+		final SqlSelection sqlSelection = new SqlSelectionImpl( sqlSelectable, sqlSelectionMap.size() );
+		currentQuerySpec().getSelectClause().addSqlSelection( sqlSelection );
+		sqlSelectionMap.put( sqlSelectable, sqlSelection );
+
+		return sqlSelection;
 	}
 }

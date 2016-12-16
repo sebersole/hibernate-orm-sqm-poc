@@ -6,10 +6,10 @@
  */
 package org.hibernate.sql.ast.expression.domain;
 
-import java.util.List;
-
-import org.hibernate.persister.common.spi.DomainDescriptor;
+import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.sql.ast.from.ColumnBinding;
+import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableGroup;
 
 /**
@@ -21,16 +21,6 @@ import org.hibernate.sql.ast.from.TableGroup;
 public interface ColumnBindingSource {
 	TableGroup getTableGroup();
 
-	/**
-	 * Resolve the ColumnBindings for the passed DomainReferenceExpression.  Generally
-	 * this resolves the bindings for the columns as returned from
-	 * {@link DomainDescriptor#getColumns}
-	 * via {@link DomainReferenceExpression#getDomainReference}
-	 *
-	 * @param expression The DomainReferenceExpression for which to resolve ColumnBindings
-	 * @param shallow Should we perform a shallow resolution?
-	 *
-	 * @return The ColumnBindings
-	 */
-	List<ColumnBinding> resolveColumnBindings(DomainReferenceExpression expression, boolean shallow);
+	TableBinding locateTableBinding(Table table);
+	ColumnBinding resolveColumnBinding(Column column);
 }

@@ -11,9 +11,12 @@ import java.sql.SQLException;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.ast.select.SqlSelectable;
 import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
 import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.convert.results.spi.ReturnResolutionContext;
 import org.hibernate.sql.convert.spi.ParameterSpec;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
@@ -27,7 +30,7 @@ import org.jboss.logging.Logger;
  * @author Steve Ebersole
  */
 public abstract class AbstractParameter
-		implements ParameterSpec, ParameterBinder, Expression, SqlSelectable {
+		implements ParameterSpec, ParameterBinder, Expression, SqlSelectable, Selectable {
 	private static final Logger log = Logger.getLogger( AbstractParameter.class );
 
 	private final Type inferredType;
@@ -46,8 +49,23 @@ public abstract class AbstractParameter
 	}
 
 	@Override
-	public Return toQueryReturn(String resultVariable) {
-		return new ReturnScalarImpl( this, getType(), resultVariable );
+	public Selectable getSelectable() {
+		return this;
+	}
+
+	@Override
+	public Expression getSelectedExpression() {
+		return this;
+	}
+
+	@Override
+	public Return toQueryReturn(ReturnResolutionContext returnResolutionContext, String resultVariable) {
+		return new ReturnScalarImpl(
+				this,
+				returnResolutionContext.resolveSqlSelection( this ),
+				resultVariable,
+				getType()
+		);
 	}
 
 	@Override

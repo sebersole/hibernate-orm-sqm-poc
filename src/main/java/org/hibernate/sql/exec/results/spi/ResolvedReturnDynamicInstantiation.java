@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.spi;
 
 import java.util.List;
 
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
 
 /**
  * @author Steve Ebersole
@@ -23,6 +23,6 @@ public interface ResolvedReturnDynamicInstantiation extends ResolvedReturn {
 
 		String getAlias();
 
-		List<SqlSelectionDescriptor> getSqlSelectionDescriptors();
+		List<SqlSelection> getSqlSelectionDescriptors();
 	}
 }

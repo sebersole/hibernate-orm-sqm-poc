@@ -9,7 +9,6 @@ package org.hibernate.sql.convert.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,7 +18,9 @@ import java.util.stream.Collectors;
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.convert.ConversionException;
+import org.hibernate.sqm.domain.SingularAttributeReference;
 import org.hibernate.sqm.query.expression.domain.DomainReferenceBinding;
+import org.hibernate.sqm.query.expression.domain.SingularAttributeBinding;
 import org.hibernate.sqm.query.from.AbstractFrom;
 import org.hibernate.sqm.query.from.SqmAttributeJoin;
 import org.hibernate.sqm.query.from.SqmFrom;
@@ -95,10 +96,8 @@ public class FromClauseIndex {
 
 		if ( fromElement instanceof SqmAttributeJoin ) {
 			final SqmAttributeJoin sqmAttributeJoin = (SqmAttributeJoin) fromElement;
-			final String fetchParentUid = sqmAttributeJoin.getFetchParentUniqueIdentifier();
-
-			if ( fetchParentUid != null ) {
-				// otherwise, not fetched
+			if ( sqmAttributeJoin.isFetched() ) {
+				final String fetchParentUid = sqmAttributeJoin.getLhsUniqueIdentifier();
 
 				if ( sqmFetchesByParentUid == null ) {
 					sqmFetchesByParentUid = new HashMap<>();
@@ -137,11 +136,26 @@ public class FromClauseIndex {
 	}
 
 	public TableGroup findResolvedTableGroup(DomainReferenceBinding binding) {
-		return findResolvedTableGroup( binding.getFromElement() );
-	}
+		if ( binding == null ) {
+			// todo : or error?
+			return null;
+		}
 
-	public boolean isResolved(DomainReferenceBinding binding) {
-		return isResolved( binding.getFromElement() );
+		TableGroup tableGroup = findResolvedTableGroup( binding.getFromElement() );
+		if ( tableGroup == null ) {
+			if ( binding instanceof SingularAttributeBinding ) {
+				// it might be a composite...
+				final SingularAttributeBinding singularAttributeBinding = (SingularAttributeBinding) binding;
+				final SingularAttributeReference.SingularAttributeClassification classification = singularAttributeBinding
+						.getAttribute()
+						.getAttributeTypeClassification();
+				if ( classification == SingularAttributeReference.SingularAttributeClassification.EMBEDDED ) {
+					tableGroup = findResolvedTableGroup( singularAttributeBinding.getLhs() );
+				}
+			}
+		}
+
+		return tableGroup;
 	}
 
 	public boolean isResolved(SqmFrom fromElement) {

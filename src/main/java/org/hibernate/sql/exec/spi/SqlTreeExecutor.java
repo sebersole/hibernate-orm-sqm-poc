@@ -17,6 +17,7 @@ import org.hibernate.result.Outputs;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.spi.Callback;
+import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
 
 /**
  * NOTE : look at as the clean room representation of "Loader", although possibly for DML as
@@ -55,7 +56,7 @@ public interface SqlTreeExecutor {
 	// todo : ExecutionOptions versus PreparedStatementConfigurer?
 
 	<R,T> R executeSelect(
-			SelectQuery sqlTree,
+			SqmSelectInterpretation sqmSelectInterpretation,
 			PreparedStatementCreator statementCreator,
 			PreparedStatementExecutor preparedStatementExecutor,
 			QueryOptions queryOptions,

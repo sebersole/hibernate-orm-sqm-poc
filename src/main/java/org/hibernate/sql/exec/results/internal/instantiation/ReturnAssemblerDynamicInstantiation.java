@@ -9,7 +9,7 @@ package org.hibernate.sql.exec.results.internal.instantiation;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
@@ -20,7 +20,7 @@ import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 public class ReturnAssemblerDynamicInstantiation implements ReturnAssembler {
 	private final Class target;
 
-	public ReturnAssemblerDynamicInstantiation(Class target, List<SqlSelectionDescriptor> sqlSelectionDescriptors) {
+	public ReturnAssemblerDynamicInstantiation(Class target, List<SqlSelection> sqlSelections) {
 
 		this.target = target;
 	}

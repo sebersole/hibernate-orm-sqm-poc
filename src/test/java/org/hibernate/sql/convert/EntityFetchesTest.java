@@ -13,19 +13,19 @@ import javax.persistence.OneToOne;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.sql.ast.SelectQuery;
-import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.ast.select.Selection;
-import org.hibernate.sql.convert.results.spi.Fetch;
 import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.results.spi.ReturnEntity;
-import org.hibernate.sql.gen.BaseUnitTest;
+import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
+import org.hibernate.sql.BaseUnitTest;
 
 import org.hibernate.testing.FailureExpected;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -34,22 +34,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class EntityFetchesTest extends BaseUnitTest {
 	@Test
 	public void testBasicOneToOneFetching() {
-		final SelectQuery sqlAstQuery = interpretSelectQuery( "select t from Trunk t join fetch t.tree" );
+		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select t from Trunk t join fetch t.tree" );
+		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
 
 		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
+		assertThat(	interpretation.getQueryReturns().size(), is(1) );
+
 		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
-		final Return queryReturn = selection.getQueryReturn();
+		final Return queryReturn = interpretation.getQueryReturns().get( 0 );
+
 		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
+
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
 		assertThat( entity.getFetches().size(), is(1) );
 	}
 	@Test
 	public void testNestedFetching() {
-		final SelectQuery sqlAstQuery = interpretSelectQuery( "select t from Trunk t join fetch t.tree t2 join fetch t2.forest" );
+		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select t from Trunk t join fetch t.tree t2 join fetch t2.forest" );
+		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
 
 		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
-		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
-		final Return queryReturn = selection.getQueryReturn();
+		assertThat(	interpretation.getQueryReturns().size(), is(1) );
+
+		final Return queryReturn = interpretation.getQueryReturns().get( 0 );
+
 		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
 
@@ -63,25 +71,36 @@ public class EntityFetchesTest extends BaseUnitTest {
 	@Test
 	@FailureExpected( jiraKey = "n/a" )
 	public void testBasicOneToOneInverseFetching() {
-		final SelectQuery sqlAstQuery = interpretSelectQuery( "select t from Tree t join fetch t.trunk" );
+		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select t from Tree t join fetch t.trunk" );
+		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
 
 		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
+		assertThat(	interpretation.getQueryReturns().size(), is(1) );
+
 		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
-		final Return queryReturn = selection.getQueryReturn();
+		final Return queryReturn = interpretation.getQueryReturns().get( 0 );
+
+		assertThat( queryReturn.getSelectedExpression(), sameInstance( selection.getSelectExpression() ) );
 		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
+
 		assertThat( entity.getFetches().size(), is(1) );
 	}
 
 	@Test
 	public void testBasicManyToOneFetching() {
-		final SelectQuery sqlAstQuery = interpretSelectQuery( "select t from Tree t join fetch t.forest" );
+		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select t from Tree t join fetch t.forest" );
+		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
 
 		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
+		assertThat(	interpretation.getQueryReturns().size(), is(1) );
+
 		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
-		final Return queryReturn = selection.getQueryReturn();
+		final Return queryReturn = interpretation.getQueryReturns().get( 0 );
+
 		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
+
 		assertThat( entity.getFetches().size(), is(1) );
 	}
 

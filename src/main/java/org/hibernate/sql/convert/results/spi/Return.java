@@ -6,11 +6,8 @@
  */
 package org.hibernate.sql.convert.results.spi;
 
-import java.util.List;
-
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
+import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 
 /**
  * Represents a return value in the query results.
@@ -28,14 +25,11 @@ import org.hibernate.sql.exec.results.spi.ResolvedReturn;
  * @author Steve Ebersole
  */
 public interface Return {
-	Expression getSelectExpression();
+	Expression getSelectedExpression();
 
-	/**
-	 * Get the result variable name associated with this query Return
-	 *
-	 * @return The result variable name
-	 */
-	String getResultVariableName();
+	String getResultVariable();
 
-	ResolvedReturn resolve(List<SqlSelectionDescriptor> sqlSelectionDescriptors, boolean shallow);
+	Class getReturnedJavaType();
+
+	ReturnAssembler getReturnAssembler();
 }

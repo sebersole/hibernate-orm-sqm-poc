@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.internal.util.StringHelper;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 import org.hibernate.sql.exec.results.spi.ResolvedReturn;
 import org.hibernate.sql.exec.results.spi.ResolvedReturnDynamicInstantiation;
@@ -30,7 +30,7 @@ public class ResolvedReturnDynamicInstantiationImpl implements ResolvedReturnDyn
 
 	private final Class target;
 
-	private List<SqlSelectionDescriptor> sqlSelectionDescriptors = new ArrayList<>();
+	private List<SqlSelection> sqlSelections = new ArrayList<>();
 
 	private ReturnAssembler assembler;
 
@@ -58,7 +58,7 @@ public class ResolvedReturnDynamicInstantiationImpl implements ResolvedReturnDyn
 		int numberOfColumnsConsumedSoFar = 0;
 
 		for ( ResolvedArgument argument : arguments ) {
-			sqlSelectionDescriptors.addAll( argument.getSqlSelectionDescriptors() );
+			sqlSelections.addAll( argument.getSqlSelectionDescriptors() );
 
 			if ( argument.getAlias() == null ) {
 				areAllArgumentsAliased = false;
@@ -71,7 +71,7 @@ public class ResolvedReturnDynamicInstantiationImpl implements ResolvedReturnDyn
 			}
 
 			argumentReaders.add(
-					new ArgumentReader( argument.getAlias(), argument.getResolvedArgument().getReturnAssembler() )
+					new ArgumentReader( argument.getResolvedArgument().getReturnAssembler(), argument.getAlias() )
 			);
 		}
 
@@ -161,12 +161,11 @@ public class ResolvedReturnDynamicInstantiationImpl implements ResolvedReturnDyn
 
 	@Override
 	public int getNumberOfSelectablesConsumed() {
-		return getSqlSelectionDescriptors().size();
+		return getSqlSelections().size();
 	}
 
-	@Override
-	public List<SqlSelectionDescriptor> getSqlSelectionDescriptors() {
-		return sqlSelectionDescriptors;
+	public List<SqlSelection> getSqlSelections() {
+		return sqlSelections;
 	}
 
 	@Override
@@ -204,8 +203,8 @@ public class ResolvedReturnDynamicInstantiationImpl implements ResolvedReturnDyn
 		}
 
 		@Override
-		public List<SqlSelectionDescriptor> getSqlSelectionDescriptors() {
-			return resolvedArgument.getSqlSelectionDescriptors();
+		public List<SqlSelection> getSqlSelectionDescriptors() {
+			return resolvedArgument.getSqlSelections();
 		}
 	}
 }

@@ -6,42 +6,48 @@
  */
 package org.hibernate.sql.convert.results.internal;
 
-import java.util.List;
-
 import org.hibernate.sql.ast.expression.Expression;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.convert.results.spi.ReturnScalar;
-import org.hibernate.sql.exec.results.internal.ResolvedReturnScalarImpl;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
+import org.hibernate.sql.exec.results.process.internal.ReturnAssemblerScalar;
+import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnScalarImpl implements ReturnScalar {
-	private final Expression selectExpression;
+	private final Expression selectedExpression;
+	private final String resultVariable;
 	private final Type type;
-	private final String resultVariableName;
 
-	public ReturnScalarImpl(Expression selectExpression, Type type, String resultVariableName) {
-		this.selectExpression = selectExpression;
+	private final ReturnAssembler assembler;
+
+	public ReturnScalarImpl(
+			Expression selectedExpression,
+			SqlSelection sqlSelection,
+			String resultVariable,
+			Type type) {
+		this.selectedExpression = selectedExpression;
+		this.resultVariable = resultVariable;
 		this.type = type;
-		this.resultVariableName = resultVariableName;
+
+		this.assembler = new ReturnAssemblerScalar( sqlSelection, this );
 	}
 
 	@Override
-	public Expression getSelectExpression() {
-		return selectExpression;
+	public Expression getSelectedExpression() {
+		return selectedExpression;
 	}
 
 	@Override
-	public String getResultVariableName() {
-		return resultVariableName;
+	public String getResultVariable() {
+		return resultVariable;
 	}
 
 	@Override
-	public ResolvedReturn resolve(List<SqlSelectionDescriptor> sqlSelectionDescriptors, boolean shallow) {
-		return new ResolvedReturnScalarImpl( sqlSelectionDescriptors, getType() );
+	public Class getReturnedJavaType() {
+		return getType().getReturnedClass();
 	}
 
 	@Override
@@ -49,4 +55,8 @@ public class ReturnScalarImpl implements ReturnScalar {
 		return type;
 	}
 
+	@Override
+	public ReturnAssembler getReturnAssembler() {
+		return assembler;
+	}
 }

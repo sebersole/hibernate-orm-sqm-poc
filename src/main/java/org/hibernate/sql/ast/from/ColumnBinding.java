@@ -10,6 +10,7 @@ import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sql.ast.select.SqlSelectable;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 
 /**
@@ -18,26 +19,24 @@ import org.hibernate.type.BasicType;
  * @author Steve Ebersole
  */
 public class ColumnBinding implements SqlSelectable {
+	private final String identificationVariable;
 	private final Column column;
 	private final SqlSelectionReader sqlSelectionReader;
-	private final String identificationVariable;
 
 	public ColumnBinding(Column column, BasicType type, TableBinding tableBinding) {
+		this.identificationVariable = tableBinding.getIdentificationVariable();
 		this.column = column;
 		this.sqlSelectionReader = new SqlSelectionReaderImpl( type );
-		this.identificationVariable = tableBinding.getIdentificationVariable();
 	}
 
 	public ColumnBinding(Column column, int jdbcTypeCode, TableBinding tableBinding) {
+		this.identificationVariable = tableBinding.getIdentificationVariable();
 		this.column = column;
 		this.sqlSelectionReader = new SqlSelectionReaderImpl( jdbcTypeCode );
-		this.identificationVariable = tableBinding.getIdentificationVariable();
 	}
 
 	public ColumnBinding(Column column, TableBinding tableBinding) {
-		this.column = column;
-		this.sqlSelectionReader = new SqlSelectionReaderImpl( column.getJdbcType() );
-		this.identificationVariable = tableBinding.getIdentificationVariable();
+		this( column, column.getJdbcType(), tableBinding );
 	}
 
 	public Column getColumn() {
@@ -51,5 +50,31 @@ public class ColumnBinding implements SqlSelectable {
 	@Override
 	public SqlSelectionReader getSqlSelectionReader() {
 		return sqlSelectionReader;
+	}
+
+	@Override
+	public void accept(SqlAstSelectInterpreter interpreter) {
+		interpreter.visitColumnBinding( this );
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if ( this == o ) {
+			return true;
+		}
+		if ( o == null || getClass() != o.getClass() ) {
+			return false;
+		}
+
+		final ColumnBinding that = (ColumnBinding) o;
+		return getIdentificationVariable().equals( that.getIdentificationVariable() )
+				&& getColumn().equals( that.getColumn() );
+	}
+
+	@Override
+	public int hashCode() {
+		int result = getIdentificationVariable().hashCode();
+		result = 31 * result + getColumn().hashCode();
+		return result;
 	}
 }

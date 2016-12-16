@@ -6,11 +6,9 @@
  */
 package org.hibernate.persister.common.internal;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
@@ -21,13 +19,13 @@ import org.hibernate.type.BasicType;
  * @author Steve Ebersole
  */
 public class SingularAttributeBasic extends AbstractSingularAttributeDescriptor<BasicType> {
-	private final Column[] columns;
+	private final List<Column> columns;
 
 	public SingularAttributeBasic(
 			AttributeContainer declaringType,
 			String name,
 			BasicType ormType,
-			Column[] columns) {
+			List<Column> columns) {
 		super( declaringType, name, ormType, true );
 		this.columns = columns;
 	}
@@ -38,16 +36,7 @@ public class SingularAttributeBasic extends AbstractSingularAttributeDescriptor<
 	}
 
 	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return columns.length;
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return Arrays.asList( columns );
-	}
-
-	public Column[] getColumns() {
+	public List<Column> getColumns() {
 		return columns;
 	}
 

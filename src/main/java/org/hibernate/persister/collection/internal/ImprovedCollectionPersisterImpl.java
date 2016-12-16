@@ -6,6 +6,8 @@
  */
 package org.hibernate.persister.collection.internal;
 
+import java.util.List;
+
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
@@ -53,7 +55,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 			AttributeContainer declaringType,
 			String attributeName,
 			CollectionPersister persister,
-			Column[] foreignKeyColumns) {
+			List<Column> foreignKeyColumns) {
 		super( declaringType, attributeName );
 
 		this.persister = (AbstractCollectionPersister) persister;
@@ -98,7 +100,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 			this.indexDescriptor = null;
 		}
 		else {
-			final Column[] columns = Helper.makeValues(
+			final List<Column> columns = Helper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					collectionTable,
 					persister.getIndexType(),
@@ -146,7 +148,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 		if ( elementType.isAnyType() ) {
 			assert separateCollectionTable != null;
 
-			final Column[] columns = Helper.makeValues(
+			final List<Column> columns = Helper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					separateCollectionTable,
 					persister.getElementType(),
@@ -163,7 +165,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 		else if ( elementType.isComponentType() ) {
 			assert separateCollectionTable != null;
 
-			final Column[] columns = Helper.makeValues(
+			final List<Column> columns = Helper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					separateCollectionTable,
 					persister.getElementType(),
@@ -187,7 +189,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 			final AbstractTable table = separateCollectionTable != null
 					? separateCollectionTable
 					: ( (ImprovedEntityPersister) domainMetamodel.resolveEntityReference( this.persister.getElementPersister().getEntityName() ) ).getRootTable();
-			final Column[] columns = Helper.makeValues(
+			final List<Column> columns = Helper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					table,
 					persister.getElementType(),
@@ -206,7 +208,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 		else {
 			assert separateCollectionTable != null;
 
-			final Column[] columns = Helper.makeValues(
+			final List<Column> columns = Helper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					separateCollectionTable,
 					persister.getElementType(),
@@ -273,8 +275,8 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 		}
 
 		if ( getElementReference() instanceof PluralAttributeElementEntity ) {
-			Column[] fkColumns = null;
-			Column[] fkTargetColumns = null;
+			List<Column> fkColumns = null;
+			List<Column> fkTargetColumns = null;
 
 			final PluralAttributeElementEntity elementEntity = (PluralAttributeElementEntity) getElementReference();
 			final ImprovedEntityPersister elementPersister = elementEntity.getElementPersister();

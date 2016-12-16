@@ -11,13 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.collection.internal.PluralAttributeElementEntity;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
-import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
-import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
-import org.hibernate.sql.ast.expression.domain.PluralAttributeIndexReferenceExpression;
+import org.hibernate.persister.common.spi.DomainDescriptor;
+import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 
 /**
  * A TableSpecificationGroup for a collection reference
@@ -41,63 +40,34 @@ public class CollectionTableGroup extends AbstractTableGroup {
 		return persister;
 	}
 
-	public ColumnBinding[] resolveKeyColumnBindings() {
-		final Column[] columns = persister.getForeignKeyDescriptor().getForeignKeyColumns();
-
+	public List<ColumnBinding> resolveKeyColumnBindings() {
+		final List<Column> columns = persister.getForeignKeyDescriptor().getForeignKeyColumns();
 		final TableBinding tableBinding = getRootTableBinding();
-		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
-		for ( int i = 0; i < columns.length; i++ ) {
-			bindings[i] = new ColumnBinding( columns[i], columns[i].getJdbcType(), tableBinding );
-		}
-		return bindings;
-	}
-
-	@Override
-	protected ImprovedEntityPersister resolveEntityReferenceBase() {
-		if ( persister.getElementReference() instanceof PluralAttributeElementEntity ) {
-			return ( (PluralAttributeElementEntity) persister.getElementReference() ).getElementPersister();
-		}
-
-		return null;
-	}
-
-	@Override
-	public List<ColumnBinding> resolveColumnBindings(DomainReferenceExpression expression, boolean shallow) {
-		if ( expression instanceof PluralAttributeElementReferenceExpression ) {
-			final PluralAttributeElementReferenceExpression elementExpression = (PluralAttributeElementReferenceExpression) expression;
-			return createColumnBindings(
-					elementExpression.getDomainReference().getColumns(
-							shallow,
-							persister.getPersister().getFactory()
-					)
-			);
-		}
-		else if ( expression instanceof PluralAttributeIndexReferenceExpression ) {
-			final PluralAttributeIndexReferenceExpression indexExpression = (PluralAttributeIndexReferenceExpression) expression;
-			return createColumnBindings(
-					indexExpression.getDomainReference().getColumns( shallow, persister.getPersister().getFactory() )
-			);
-		}
-		else {
-			throw new IllegalArgumentException(
-					"Illegal DomainReferenceExpression [" + expression + "] for ColumnBinding resolution via CollectionTableGroup"
-			);
-		}
-	}
-
-	private List<ColumnBinding> createColumnBindings(List<Column> columns) {
-		final List<ColumnBinding> bindings = new ArrayList<>();
+		final List<ColumnBinding> columnBindings = new ArrayList<>();
 		for ( Column column : columns ) {
-			bindings.add( createBinding( column ) );
+			columnBindings.add( new ColumnBinding( column, tableBinding ) );
 		}
-		return bindings;
+		return columnBindings;
 	}
 
-	private ColumnBinding createBinding(Column column) {
-		return new ColumnBinding(
-				column,
-				column.getJdbcType(),
-				locateTableBinding( column.getSourceTable() )
-		);
+	@Override
+	public Selectable getSelectable() {
+		throw new NotYetImplementedException( );
+	}
+
+	@Override
+	public void accept(SqlAstSelectInterpreter walker) {
+		throw new NotYetImplementedException(  );
+	}
+
+	@Override
+	public DomainDescriptor getDomainReference() {
+		// todo : element?
+		return persister.getElementReference();
+	}
+
+	@Override
+	public List<ColumnBinding> getColumnBindings() {
+		throw new NotYetImplementedException(  );
 	}
 }

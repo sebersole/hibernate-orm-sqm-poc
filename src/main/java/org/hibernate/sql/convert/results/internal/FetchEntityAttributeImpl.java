@@ -6,20 +6,18 @@
  */
 package org.hibernate.sql.convert.results.internal;
 
-import java.util.List;
-
 import org.hibernate.engine.FetchStrategy;
 import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
 import org.hibernate.sql.convert.results.spi.EntityIdentifierReference;
 import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.convert.results.spi.FetchParent;
-import org.hibernate.sql.exec.results.internal.ResolvedFetchEntityImpl;
-import org.hibernate.sql.exec.results.spi.ResolvedFetch;
-import org.hibernate.sql.exec.results.spi.ResolvedFetchParent;
+import org.hibernate.sql.exec.results.process.internal.EntityFetchInitializerImpl;
+import org.hibernate.sql.exec.results.process.spi2.Initializer;
+import org.hibernate.sql.exec.results.process.spi2.InitializerCollector;
+import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 import org.hibernate.type.Type;
 
 /**
@@ -30,6 +28,8 @@ public class FetchEntityAttributeImpl extends AbstractFetchParent implements Fet
 	private final SingularAttributeEntity fetchedAttribute;
 	private final ImprovedEntityPersister entityPersister;
 	private final FetchStrategy fetchStrategy;
+
+	private final EntityFetchInitializerImpl initializer;
 
 	public FetchEntityAttributeImpl(
 			FetchParent fetchParent,
@@ -42,6 +42,13 @@ public class FetchEntityAttributeImpl extends AbstractFetchParent implements Fet
 		this.fetchedAttribute = fetchedAttribute;
 		this.entityPersister = entityPersister;
 		this.fetchStrategy = fetchStrategy;
+
+		this.initializer = new EntityFetchInitializerImpl(
+				fetchParent.getInitializerParentForFetchInitializers(),
+				this,
+				null,
+				false
+		);
 	}
 
 	@Override
@@ -69,19 +76,19 @@ public class FetchEntityAttributeImpl extends AbstractFetchParent implements Fet
 		return fetchedAttribute.isNullable();
 	}
 
-	@Override
-	public ResolvedFetch resolve(
-			ResolvedFetchParent resolvedFetchParent,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
-			boolean shallow) {
-		return new ResolvedFetchEntityImpl(
-				this,
-				resolvedFetchParent,
-				fetchStrategy,
-				sqlSelectionDescriptors,
-				shallow
-		);
-	}
+//	@Override
+//	public ResolvedFetch resolve(
+//			ResolvedFetchParent resolvedFetchParent,
+//			Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap,
+//			boolean shallow) {
+//		return new ResolvedFetchEntityImpl(
+//				this,
+//				resolvedFetchParent,
+//				fetchStrategy,
+//				sqlSelectionGroupMap,
+//				shallow
+//		);
+//	}
 
 	@Override
 	public ImprovedEntityPersister getEntityPersister() {
@@ -91,5 +98,21 @@ public class FetchEntityAttributeImpl extends AbstractFetchParent implements Fet
 	@Override
 	public EntityIdentifierReference getIdentifierReference() {
 		throw new NotYetImplementedException(  );
+	}
+
+	@Override
+	public void registerInitializers(InitializerCollector collector) {
+		collector.addInitializer( getInitializer() );
+		addFetchInitializers( collector );
+	}
+
+	@Override
+	public Initializer getInitializer() {
+		return initializer;
+	}
+
+	@Override
+	public InitializerParent getInitializerParentForFetchInitializers() {
+		return initializer;
 	}
 }

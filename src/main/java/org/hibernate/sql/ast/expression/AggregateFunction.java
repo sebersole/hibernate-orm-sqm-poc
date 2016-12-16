@@ -6,12 +6,15 @@
  */
 package org.hibernate.sql.ast.expression;
 
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.ast.select.SqlSelectable;
+
 /**
  * Marker interface to more readily identify "aggregate functions".
  *
  * @author Steve Ebersole
  */
-public interface AggregateFunction extends Expression {
+public interface AggregateFunction extends Expression, Selectable, SqlSelectable {
 	Expression getArgument();
 	boolean isDistinct();
 }

@@ -9,7 +9,6 @@ package org.hibernate.persister.collection.internal;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sqm.domain.DomainReference;
@@ -20,7 +19,7 @@ import org.hibernate.type.BasicType;
  * @author Steve Ebersole
  */
 public class PluralAttributeIndexBasic extends AbstractPluralAttributeIndex<BasicType> {
-	public PluralAttributeIndexBasic(ImprovedCollectionPersisterImpl persister, BasicType ormType, Column[] columns) {
+	public PluralAttributeIndexBasic(ImprovedCollectionPersisterImpl persister, BasicType ormType, List<Column> columns) {
 		super( persister, ormType, columns );
 	}
 

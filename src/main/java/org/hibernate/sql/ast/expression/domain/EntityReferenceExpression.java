@@ -11,8 +11,8 @@ import java.util.List;
 import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.convert.results.internal.ReturnEntityImpl;
-import org.hibernate.sql.convert.results.spi.Return;
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.ast.select.SelectableEntityTypeImpl;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
@@ -25,21 +25,28 @@ public class EntityReferenceExpression implements DomainReferenceExpression {
 	private final ImprovedEntityPersister improvedEntityPersister;
 	private final PropertyPath propertyPath;
 
+	private final SelectableEntityTypeImpl selectable;
+
 	public EntityReferenceExpression(
 			ColumnBindingSource columnBindingSource,
 			ImprovedEntityPersister improvedEntityPersister,
-			PropertyPath propertyPath) {
+			PropertyPath propertyPath,
+			boolean isShallow) {
 		this.columnBindingSource = columnBindingSource;
 		this.improvedEntityPersister = improvedEntityPersister;
 		this.propertyPath = propertyPath;
+
+		this.selectable = new SelectableEntityTypeImpl(
+				this,
+				propertyPath,
+				columnBindingSource,
+				improvedEntityPersister,
+				isShallow
+		);
 	}
 
 	public ImprovedEntityPersister getImprovedEntityPersister() {
 		return improvedEntityPersister;
-	}
-
-	public ColumnBindingSource getColumnBindingSource() {
-		return columnBindingSource;
 	}
 
 	@Override
@@ -48,19 +55,13 @@ public class EntityReferenceExpression implements DomainReferenceExpression {
 	}
 
 	@Override
-	public Return toQueryReturn(String resultVariable) {
-		return new ReturnEntityImpl(
-				propertyPath,
-				columnBindingSource.getTableGroup().getUid(),
-				this,
-				improvedEntityPersister,
-				resultVariable
-		);
+	public Selectable getSelectable() {
+		return selectable;
 	}
 
 	@Override
-	public List<ColumnBinding> resolveColumnBindings(boolean shallow) {
-		return columnBindingSource.resolveColumnBindings( this, shallow );
+	public void accept(SqlAstSelectInterpreter walker) {
+		walker.visitEntityExpression( this );
 	}
 
 	@Override
@@ -69,8 +70,8 @@ public class EntityReferenceExpression implements DomainReferenceExpression {
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
-		walker.visitEntityExpression( this, shallow );
+	public List<ColumnBinding> getColumnBindings() {
+		return selectable.getColumnBinding();
 	}
 
 	@Override

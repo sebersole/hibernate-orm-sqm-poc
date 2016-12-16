@@ -6,6 +6,8 @@
  */
 package org.hibernate.persister.collection.spi;
 
+import java.util.List;
+
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainDescriptor;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
@@ -15,10 +17,10 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public interface PluralAttributeIndex<O extends Type> extends OrmTypeExporter,
-		PluralAttributeIndexReference, DomainDescriptor {
+public interface PluralAttributeIndex<O extends Type>
+		extends OrmTypeExporter, PluralAttributeIndexReference, DomainDescriptor {
 	@Override
 	O getOrmType();
 
-	Column[] getColumns();
+	List<Column> getColumns();
 }

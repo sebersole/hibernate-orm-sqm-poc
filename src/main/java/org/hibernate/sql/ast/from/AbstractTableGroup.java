@@ -9,19 +9,15 @@ package org.hibernate.sql.ast.from;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
+import org.hibernate.HibernateException;
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.common.internal.SingularAttributeBasic;
-import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
-import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.Table;
-import org.hibernate.persister.entity.internal.IdentifierSimple;
-import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
-import org.hibernate.sql.ast.expression.domain.EntityReferenceExpression;
-import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.type.Type;
 
 import org.jboss.logging.Logger;
 
@@ -90,40 +86,9 @@ public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSou
 	}
 
 	@Override
-	public ColumnBinding[] resolveBindings(SingularAttributeDescriptor attribute) {
-		final Column[] columns;
-		if ( attribute instanceof SingularAttributeBasic ) {
-			columns = attribute.getColumns();
-		}
-		else if ( attribute instanceof SingularAttributeEntity ) {
-			columns = attribute.getColumns();
-		}
-		else if ( attribute instanceof SingularAttributeEmbedded ) {
-			columns = ( (SingularAttributeEmbedded) attribute ).getEmbeddablePersister().collectColumns();
-		}
-		else if ( attribute instanceof IdentifierSimple ) {
-			columns = attribute.getColumns();
-		}
-		else {
-			throw new NotYetImplementedException( "resolveBindings() : " + attribute );
-		}
-
-		final ColumnBinding[] bindings = new ColumnBinding[columns.length];
-		for ( int i = 0; i < columns.length; i++ ) {
-			final TableBinding tableBinding = locateTableBinding( columns[i].getSourceTable() );
-			bindings[i] = new ColumnBinding( columns[i], columns[i].getJdbcType(), tableBinding );
-		}
-
-		return bindings;
+	public PropertyPath getPropertyPath() {
+		return propertyPath;
 	}
-
-	@Override
-	public EntityReferenceExpression resolveEntityReference() {
-		final ImprovedEntityPersister improvedEntityPersister = resolveEntityReferenceBase();
-		return new EntityReferenceExpression( this, improvedEntityPersister, propertyPath );
-	}
-
-	protected abstract ImprovedEntityPersister resolveEntityReferenceBase();
 
 	@Override
 	public TableBinding locateTableBinding(Table table) {
@@ -146,5 +111,42 @@ public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSou
 			tableJoins = new ArrayList<>();
 		}
 		tableJoins.add( join );
+	}
+
+	private final SortedMap<Column,ColumnBinding> columnBindingMap = new TreeMap<>(
+			(column1, column2) -> {
+				// Sort primarily on table expression
+				final int tableSort = column1.getSourceTable().getTableExpression().compareTo( column2.getSourceTable().getTableExpression() );
+				if ( tableSort != 0 ) {
+					return tableSort;
+				}
+
+				// and secondarily on column expression
+				return column1.getExpression().compareTo( column2.getExpression() );
+			}
+	);
+
+	@Override
+	public ColumnBinding resolveColumnBinding(Column column) {
+		final ColumnBinding existing = columnBindingMap.get( column );
+		if ( existing != null ) {
+			return existing;
+		}
+
+		final TableBinding tableBinding = locateTableBinding( column.getSourceTable() );
+		if ( tableBinding == null ) {
+			throw new HibernateException(
+					"Problem resolving Column(" + column.toLoggableString() +
+							") to ColumnBinding via TableGroup [" + this + "]"
+			);
+		}
+		final ColumnBinding columnBinding = new ColumnBinding( column, tableBinding );
+		columnBindingMap.put( column, columnBinding );
+		return columnBinding;
+	}
+
+	@Override
+	public Type getType() {
+		throw new IllegalStateException( "Cannot treat TableGroup as Expression" );
 	}
 }

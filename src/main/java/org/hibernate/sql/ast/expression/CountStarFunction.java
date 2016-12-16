@@ -7,6 +7,7 @@
 package org.hibernate.sql.ast.expression;
 
 
+import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.Type;
@@ -22,7 +23,7 @@ public class CountStarFunction extends AbstractAggregateFunction {
 	private static Expression STAR = new StarExpression();
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitCountStarFunction( this );
 	}
 
@@ -33,11 +34,11 @@ public class CountStarFunction extends AbstractAggregateFunction {
 		}
 
 		@Override
-		public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+		public void accept(SqlAstSelectInterpreter walker) {
 		}
 
 		@Override
-		public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
+		public Selectable getSelectable() {
 			throw new UnsupportedOperationException(  );
 		}
 	}

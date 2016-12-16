@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.spi;
 
 import java.util.List;
 
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
+import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.spi.ParameterBinder;
 
 /**
@@ -26,6 +26,6 @@ public interface SqlSelectInterpretation {
 
 	// todo : have this subclass SqlInterpretation adding Returns
 
-	List<ResolvedReturn> getReturns();
+	List<Return> getReturns();
 
 }

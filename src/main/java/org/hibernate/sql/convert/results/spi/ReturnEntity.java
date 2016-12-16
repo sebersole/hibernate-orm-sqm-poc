@@ -6,10 +6,13 @@
  */
 package org.hibernate.sql.convert.results.spi;
 
+import org.hibernate.sql.ast.select.SqlSelection;
+
 /**
  * Further defines a first-level Return that is a reference to an entity
  *
  * @author Steve Ebersole
  */
 public interface ReturnEntity extends EntityReference, Return {
+
 }

@@ -34,6 +34,11 @@ public class PhysicalColumn implements Column {
 	}
 
 	@Override
+	public String getExpression() {
+		return name;
+	}
+
+	@Override
 	public int getJdbcType() {
 		return jdbcType;
 	}
@@ -41,6 +46,11 @@ public class PhysicalColumn implements Column {
 	@Override
 	public String render(String identificationVariable) {
 		return identificationVariable + '.' + name;
+	}
+
+	@Override
+	public String toString() {
+		return "PhysicalColumn(" + table.getTableExpression() + " : " + name + ")";
 	}
 
 	@Override

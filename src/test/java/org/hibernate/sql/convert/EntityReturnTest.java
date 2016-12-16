@@ -13,14 +13,14 @@ import javax.persistence.ManyToOne;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.select.Selection;
-import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.results.spi.ReturnEntity;
-import org.hibernate.sql.gen.BaseUnitTest;
+import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
+import org.hibernate.sql.BaseUnitTest;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -30,25 +30,28 @@ public class EntityReturnTest extends BaseUnitTest {
 
 	@Test
 	public void testSelectingIdentificationVariable() {
-		final SelectQuery sqlAstQuery = interpretSelectQuery( "select e from Employee e" );
+		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select e from Employee e" );
+		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
 
 		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
-		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
-		final Return queryReturn = selection.getQueryReturn();
-		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
-		final ReturnEntity entity = (ReturnEntity) queryReturn;
+		assertThat(	interpretation.getQueryReturns().size(), is(1) );
+
+		// make sure the cast is valid
+		@SuppressWarnings("unused") final ReturnEntity entityReturn = (ReturnEntity) interpretation.getQueryReturns().get( 0 );
 	}
 
 	@Test
 	public void testSelectingManyToOneAttribute() {
-		final SelectQuery sqlAstQuery = interpretSelectQuery( "select e.manager from Employee e" );
+		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select e.manager from Employee e" );
+		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
 
 		assertThat(	sqlAstQuery.getQuerySpec().getSelectClause().getSelections().size(), is(1) );
+		assertThat(	interpretation.getQueryReturns().size(), is(1) );
+
 		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
-		final Return queryReturn = selection.getQueryReturn();
-		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
-		// purpose of this test is to ensure we get a ReturnEntity
-		final ReturnEntity entity = (ReturnEntity) queryReturn;
+		final ReturnEntity entityReturn = (ReturnEntity) interpretation.getQueryReturns().get( 0 );
+
+		assertThat( entityReturn.getSelectedExpression(), sameInstance( selection.getSelectExpression() ) );
 	}
 
 	@Override

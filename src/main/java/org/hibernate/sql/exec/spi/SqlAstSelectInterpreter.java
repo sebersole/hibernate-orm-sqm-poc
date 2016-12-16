@@ -7,16 +7,13 @@
 package org.hibernate.sql.exec.spi;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.expression.AvgFunction;
@@ -38,7 +35,6 @@ import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.expression.SumFunction;
 import org.hibernate.sql.ast.expression.UnaryOperationExpression;
-import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
 import org.hibernate.sql.ast.expression.domain.EntityReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.PluralAttributeIndexReferenceExpression;
@@ -64,30 +60,11 @@ import org.hibernate.sql.ast.predicate.NullnessPredicate;
 import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
-import org.hibernate.sql.ast.select.Selection;
-import org.hibernate.sql.ast.select.SqlSelectable;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
-import org.hibernate.sql.convert.expression.internal.DomainReferenceRendererSelectionImpl;
-import org.hibernate.sql.convert.expression.internal.DomainReferenceRendererStandardImpl;
-import org.hibernate.sql.convert.expression.spi.DomainReferenceRenderer;
-import org.hibernate.sql.convert.internal.SqlSelectInterpretationImpl;
-import org.hibernate.sql.convert.results.spi.Fetch;
-import org.hibernate.sql.convert.results.spi.FetchParent;
-import org.hibernate.sql.convert.results.spi.Return;
-import org.hibernate.sql.convert.results.spi.ReturnDynamicInstantiation;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.convert.spi.Helper;
-import org.hibernate.sql.NotYetImplementedException;
-import org.hibernate.sql.convert.spi.Stack;
-import org.hibernate.sql.exec.results.internal.instantiation.ResolvedReturnDynamicInstantiationImpl.ResolvedArgumentImpl;
-import org.hibernate.sql.exec.results.process.internal.SqlSelectionDescriptorImpl;
-import org.hibernate.sql.exec.results.spi.ResolvedFetch;
-import org.hibernate.sql.exec.results.spi.ResolvedFetchParent;
-import org.hibernate.sql.exec.results.spi.ResolvedReturn;
-import org.hibernate.sql.exec.results.spi.ResolvedReturnDynamicInstantiation;
-import org.hibernate.sql.exec.results.spi.ResolvedReturnDynamicInstantiation.ResolvedArgument;
+import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
+import org.hibernate.sql.exec.internal.SqlSelectInterpretationImpl;
 import org.hibernate.sql.spi.ParameterBinder;
-import org.hibernate.sqm.parser.ParsingException;
-import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.LiteralType;
 import org.hibernate.type.Type;
 
@@ -100,13 +77,13 @@ import org.jboss.logging.Logger;
  *
  * @author Steve Ebersole
  */
-public class SqlAstSelectInterpreter implements DomainReferenceRenderer.RenderingContext {
+public class SqlAstSelectInterpreter {
 	private static final Logger log = Logger.getLogger( SqlAstSelectInterpreter.class );
 
 	/**
 	 * Perform interpretation of a select query, returning the SqlSelectInterpretation
 	 *
-	 * @param selectQuery
+	 * @param sqmSelectInterpretation
 	 * @param shallow
 	 * @param sessionFactory
 	 * @param parameterBindings
@@ -114,16 +91,16 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	 * @return The interpretation result
 	 */
 	public static SqlSelectInterpretation interpret(
-			SelectQuery selectQuery,
+			SqmSelectInterpretation sqmSelectInterpretation,
 			boolean shallow,
 			SessionFactoryImplementor sessionFactory,
 			QueryParameterBindings parameterBindings) {
 		final SqlAstSelectInterpreter walker = new SqlAstSelectInterpreter( sessionFactory, parameterBindings, shallow );
-		walker.visitSelectQuery( selectQuery );
+		walker.visitSelectQuery( sqmSelectInterpretation.getSqlSelectAst() );
 		return new SqlSelectInterpretationImpl(
 				walker.sqlBuffer.toString(),
 				walker.parameterBinders,
-				walker.returns
+				sqmSelectInterpretation.getQueryReturns()
 		);
 	}
 
@@ -135,13 +112,8 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	// In-flight state
 	private final StringBuilder sqlBuffer = new StringBuilder();
 	private final List<ParameterBinder> parameterBinders = new ArrayList<>();
-	private final List<ResolvedReturn> returns = new ArrayList<>();
-
-	private Map<SqmFrom, ColumnBindingSource> columnBindingsSourceMap = new HashMap<>();
 
 	// rendering expressions often has to be done differently if it occurs in certain contexts
-	private final Stack<DomainReferenceRenderer> domainReferenceRendererStack = new Stack<>( new DomainReferenceRendererStandardImpl( this ) );
-	private final Stack<SqlSelectableProcessor> sqlSelectableCollectorStack = new Stack<>( SqlSelectableProcessorNoOp.INSTANCE );
 	private boolean currentlyInPredicate;
 	private boolean currentlyInSelections;
 
@@ -158,9 +130,6 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	}
 	public List<ParameterBinder> getParameterBinders() {
 		return parameterBinders;
-	}
-	public List<ResolvedReturn> getReturns() {
-		return returns;
 	}
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -195,273 +164,26 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	// SELECT clause
 
 	public void visitSelectClause(SelectClause selectClause) {
-		domainReferenceRendererStack.push( new DomainReferenceRendererSelectionImpl( this, shallow ) );
-		sqlSelectableCollectorStack.push( new SqlSelectableProcessorCollecting( this, shallow ) );
+		boolean previouslyInSelections = currentlyInSelections;
+		currentlyInSelections = true;
+
 		try {
-			boolean previouslyInSelections = currentlyInSelections;
-			currentlyInSelections = true;
-
-			try {
-				appendSql( "select " );
-				if ( selectClause.isDistinct() ) {
-					appendSql( "distinct " );
-				}
-
-				String separator = "";
-				for ( Selection selection : selectClause.getSelections() ) {
-					appendSql( separator );
-					visitSelection( selection );
-					separator = ", ";
-				}
+			appendSql( "select " );
+			if ( selectClause.isDistinct() ) {
+				appendSql( "distinct " );
 			}
-			finally {
-				currentlyInSelections = previouslyInSelections;
+
+			String separator = "";
+			for ( SqlSelection sqlSelection : selectClause.getSqlSelections() ) {
+				appendSql( separator );
+				sqlSelection.accept( this );
+				separator = ", ";
 			}
 		}
 		finally {
-			sqlSelectableCollectorStack.pop();
-			domainReferenceRendererStack.pop();
+			currentlyInSelections = previouslyInSelections;
 		}
 	}
-
-	public void visitSelection(Selection selection) {
-		visitReturn( selection.getQueryReturn() );
-	}
-
-	private void visitReturn(Return queryReturn) {
-		if ( queryReturn instanceof ReturnDynamicInstantiation ) {
-			sqlSelectableCollectorStack.push(
-					new SqlSelectableProcessorDynamicInstantiation(
-							this,
-							( (ReturnDynamicInstantiation) queryReturn ).getSelectExpression()
-					)
-			);
-		}
-		queryReturn.getSelectExpression().accept( this, shallow );
-
-		sqlSelectableCollectorStack.getCurrent().processReturn( queryReturn );
-	}
-
-	public interface SqlSelectableProcessor {
-		void addSelectable(SqlSelectable selectable);
-		void addSelectables(SqlSelectable... selectables);
-
-		void processReturn(Return queryReturn);
-		void processDynamicInstantiationArgument(DynamicInstantiationArgument argument);
-	}
-
-	private static class SqlSelectableProcessorNoOp implements SqlSelectableProcessor {
-		/**
-		 * Singleton access
-		 */
-		public static final SqlSelectableProcessorNoOp INSTANCE = new SqlSelectableProcessorNoOp();
-
-		@Override
-		public void addSelectable(SqlSelectable selectable) {
-			// nothing to do
-		}
-
-		@Override
-		public void addSelectables(SqlSelectable... selectables) {
-			// nothing to do
-		}
-
-		@Override
-		public void processReturn(Return queryReturn) {
-			// should this be an exception?
-		}
-
-		@Override
-		public void processDynamicInstantiationArgument(DynamicInstantiationArgument argument) {
-			// should this be an exception?
-		}
-	}
-
-	private int numberOfSqlSelectionsConsumedSoFar = 0;
-
-	private static abstract class AbstractSqlSelectableProcessorCollecting implements SqlSelectableProcessor {
-		private final SqlAstSelectInterpreter interpreter;
-
-		private List<SqlSelectionDescriptor> selectionDescriptorList;
-
-		AbstractSqlSelectableProcessorCollecting(SqlAstSelectInterpreter interpreter) {
-			this.interpreter = interpreter;
-		}
-
-		int numberOfSqlSelectionsConsumedSoFarIncrementing() {
-			return interpreter.numberOfSqlSelectionsConsumedSoFar++;
-		}
-
-		void registerReturn(ResolvedReturn resolvedReturn) {
-			interpreter.returns.add( resolvedReturn );
-		}
-
-		@Override
-		public void addSelectable(SqlSelectable selectable) {
-			if ( selectionDescriptorList == null ) {
-				selectionDescriptorList = new ArrayList<>();
-			}
-
-			selectionDescriptorList.add(
-					new SqlSelectionDescriptorImpl( selectable, numberOfSqlSelectionsConsumedSoFarIncrementing() )
-			);
-		}
-
-		@Override
-		public void addSelectables(SqlSelectable... selectables) {
-			if ( selectables == null || selectables.length == 0 ) {
-				return;
-			}
-
-			for ( SqlSelectable selectable : selectables ) {
-				addSelectable( selectable );
-			}
-		}
-
-		List<SqlSelectionDescriptor> makeSelectionDescriptorListCopy() {
-			if ( selectionDescriptorList == null ) {
-				return Collections.emptyList();
-			}
-
-			final List<SqlSelectionDescriptor> copy = CollectionHelper.arrayList( selectionDescriptorList.size() );
-			for ( SqlSelectionDescriptor sqlSelectionDescriptor : selectionDescriptorList ) {
-				copy.add( sqlSelectionDescriptor );
-			}
-
-
-			if ( selectionDescriptorList != null ) {
-				selectionDescriptorList.clear();
-			}
-
-			return copy;
-		}
-	}
-
-
-	private static class SqlSelectableProcessorCollecting extends AbstractSqlSelectableProcessorCollecting {
-		private final boolean shallow;
-
-		SqlSelectableProcessorCollecting(SqlAstSelectInterpreter interpreter, boolean shallow) {
-			super( interpreter );
-			this.shallow = shallow;
-		}
-
-		@Override
-		public void processReturn(Return queryReturn) {
-			final ResolvedReturn resolvedReturn = queryReturn.resolve(
-					makeSelectionDescriptorListCopy(),
-					shallow
-			);
-			applyFetches( resolvedReturn, queryReturn );
-			registerReturn( resolvedReturn );
-		}
-
-		private void applyFetches(ResolvedReturn resolvedReturn, Return queryReturn) {
-			if ( queryReturn instanceof FetchParent ) {
-				if ( ! (resolvedReturn instanceof ResolvedFetchParent) ) {
-					throw new ParsingException( "Non-matching Return and ResolvedReturn as fetch parent" );
-				}
-			}
-		}
-
-		private void applyFetches(ResolvedFetchParent resolvedReturn, FetchParent queryReturn) {
-			for ( Fetch fetch : queryReturn.getFetches() ) {
-			// todo : need to build SqlSelectionDescriptor List for the fetch...
-				final List<SqlSelectionDescriptor> sqlSelectionDescriptors = null;
-				final ResolvedFetch resolvedFetch = resolvedReturn.addFetch(
-						sqlSelectionDescriptors,
-						shallow,
-						fetch
-				);
-				if ( fetch instanceof FetchParent ) {
-					if ( ! (resolvedFetch instanceof ResolvedFetchParent) ) {
-						throw new ParsingException( "Non-matching Return and ResolvedReturn as fetch parent" );
-					}
-					applyFetches( resolvedReturn, queryReturn );
-				}
-			}
-		}
-
-		@Override
-		public void processDynamicInstantiationArgument(DynamicInstantiationArgument argument) {
-			// should this be an exception?
-		}
-	}
-
-	private static class SqlSelectableProcessorDynamicInstantiation extends AbstractSqlSelectableProcessorCollecting {
-		private final DynamicInstantiation dynamicInstantiation;
-
-		private List<ResolvedArgument> resolvedArguments = new ArrayList<>();
-
-		public SqlSelectableProcessorDynamicInstantiation(SqlAstSelectInterpreter interpreter, DynamicInstantiation dynamicInstantiation) {
-			super( interpreter );
-
-			if ( dynamicInstantiation == null ) {
-				throw new IllegalArgumentException( "Dynamic-instantiation expression cannot be null" );
-			}
-			if ( dynamicInstantiation.getTarget() == null ) {
-				throw new IllegalArgumentException( "Dynamic-instantiation target cannot be null" );
-			}
-
-			this.dynamicInstantiation = dynamicInstantiation;
-		}
-
-		@Override
-		public void processDynamicInstantiationArgument(DynamicInstantiationArgument argument) {
-			ResolvedReturn resolvedArgumentReturn = argument.getExpression().toQueryReturn( argument.getAlias() ).resolve(
-					makeSelectionDescriptorListCopy(),
-					// shallow
-					true
-			);
-			add( new ResolvedArgumentImpl( resolvedArgumentReturn, argument.getAlias() ) );
-		}
-
-		void add(ResolvedArgument resolvedArgument) {
-			resolvedArguments.add( resolvedArgument );
-		}
-
-		@Override
-		public void processReturn(Return queryReturn) {
-			final ResolvedReturnDynamicInstantiation resolvedReturn = (ResolvedReturnDynamicInstantiation) queryReturn.resolve(
-					Collections.emptyList(),
-					true
-			);
-
-			resolvedReturn.setArguments( resolvedArguments );
-			registerReturn( resolvedReturn );
-		}
-	}
-
-	private static class SqlSelectableProcessorDynamicInstantiationArgument extends AbstractSqlSelectableProcessorCollecting {
-		private final SqlSelectableProcessorDynamicInstantiation parent;
-
-		public SqlSelectableProcessorDynamicInstantiationArgument(SqlAstSelectInterpreter interpreter, SqlSelectableProcessor parent) {
-			super( interpreter );
-
-			if ( !SqlSelectableProcessorDynamicInstantiation.class.isInstance( parent ) ) {
-				throw new IllegalStateException( "Unexpected parent SqlSelectableProcessor type" );
-			}
-			this.parent = (SqlSelectableProcessorDynamicInstantiation) parent;
-		}
-
-		@Override
-		public void processDynamicInstantiationArgument(DynamicInstantiationArgument argument) {
-			ResolvedReturn resolvedArgumentReturn = argument.getExpression().toQueryReturn( argument.getAlias() ).resolve(
-					makeSelectionDescriptorListCopy(),
-					// shallow
-					true
-			);
-
-			parent.add( new ResolvedArgumentImpl( resolvedArgumentReturn, argument.getAlias() ) );
-		}
-
-		@Override
-		public void processReturn(Return queryReturn) {
-			// should not be called
-			throw new IllegalStateException( "should not be called" );
-		}
-	}
-
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// FROM clause
@@ -524,228 +246,152 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Expressions
 
-	public void visitSingularAttributeReference(SingularAttributeReferenceExpression attributeExpression,
-																			 boolean shallow) {
+	public void visitSingularAttributeReference(SingularAttributeReferenceExpression attributeExpression) {
 		// todo : this needs to operate differently in different contexts (mainly for associations)
 		//		e.g...
 		//			1) In the select clause we should render the complete column bindings for associations
 		//			2) In join predicates
-		domainReferenceRendererStack.getCurrent().render( attributeExpression, shallow );
+		renderColumnBindings( attributeExpression.getColumnBindings() );
 	}
 
-	public void visitEntityExpression(
-			EntityReferenceExpression entityExpression,
-			boolean shallow) {
-		domainReferenceRendererStack.getCurrent().render( entityExpression, shallow );
+	private void renderColumnBindings(List<ColumnBinding> columnBindings) {
+		if ( currentlyInPredicate && columnBindings.size() > 1 ) {
+			appendSql( "(" );
+		}
+
+		for ( ColumnBinding columnBinding : columnBindings ) {
+			appendSql( columnBinding.getColumn().render( columnBinding.getIdentificationVariable() ) );
+		}
+
+		if ( currentlyInPredicate && columnBindings.size() > 1 ) {
+			appendSql( ")" );
+		}
 	}
 
-	public void visitPluralAttributeElement(
-			PluralAttributeElementReferenceExpression elementExpression,
-			boolean shallow) {
-		domainReferenceRendererStack.getCurrent().render( elementExpression, shallow );
+	public void visitEntityExpression(EntityReferenceExpression entityExpression) {
+		renderColumnBindings( entityExpression.getColumnBindings() );
+	}
+
+	public void visitPluralAttributeElement(PluralAttributeElementReferenceExpression elementExpression) {
+		renderColumnBindings( elementExpression.getColumnBindings() );
 
 	}
 
-	public void visitPluralAttributeIndex(
-			PluralAttributeIndexReferenceExpression indexExpression,
-			boolean shallow) {
-		domainReferenceRendererStack.getCurrent().render( indexExpression, shallow );
+	public void visitPluralAttributeIndex(PluralAttributeIndexReferenceExpression indexExpression) {
+		renderColumnBindings( indexExpression.getColumnBindings() );
 	}
 
-	private void visitColumnBinding(ColumnBinding columnBinding) {
+	public void visitColumnBinding(ColumnBinding columnBinding) {
 		appendSql( columnBinding.getColumn().render( columnBinding.getIdentificationVariable() ) );
 	}
 
 	public void visitAvgFunction(AvgFunction avgFunction) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "avg(" );
-			avgFunction.getArgument().accept( this, true );
-			appendSql( ")" );
-		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( avgFunction );
-
+		appendSql( "avg(" );
+		avgFunction.getArgument().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitBinaryArithmeticExpression(BinaryArithmeticExpression arithmeticExpression) {
-		arithmeticExpression.getLeftHandOperand().accept( this, true );
+		arithmeticExpression.getLeftHandOperand().accept( this );
 		appendSql( arithmeticExpression.getOperation().getOperatorSqlText() );
-		arithmeticExpression.getRightHandOperand().accept( this, true );
+		arithmeticExpression.getRightHandOperand().accept( this );
 	}
 
 	public void visitCaseSearchedExpression(CaseSearchedExpression caseSearchedExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "case " );
-			for ( CaseSearchedExpression.WhenFragment whenFragment : caseSearchedExpression.getWhenFragments() ) {
-				appendSql( " when " );
-				whenFragment.getPredicate().accept( this );
-				appendSql( " then " );
-				whenFragment.getResult().accept( this, true );
-			}
-			appendSql( " else " );
-
-			caseSearchedExpression.getOtherwise().accept( this, true );
-			appendSql( " end" );
+		appendSql( "case " );
+		for ( CaseSearchedExpression.WhenFragment whenFragment : caseSearchedExpression.getWhenFragments() ) {
+			appendSql( " when " );
+			whenFragment.getPredicate().accept( this );
+			appendSql( " then " );
+			whenFragment.getResult().accept( this );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
+		appendSql( " else " );
 
-		sqlSelectableCollectorStack.getCurrent().addSelectable( caseSearchedExpression );
+		caseSearchedExpression.getOtherwise().accept( this );
+		appendSql( " end" );
 	}
 
 	public void visitCaseSimpleExpression(CaseSimpleExpression caseSimpleExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "case " );
-			caseSimpleExpression.getFixture().accept( this, true );
-			for ( CaseSimpleExpression.WhenFragment whenFragment : caseSimpleExpression.getWhenFragments() ) {
-				appendSql( " when " );
-				whenFragment.getCheckValue().accept( this, true );
-				appendSql( " then " );
-				whenFragment.getResult().accept( this, true );
-			}
-			appendSql( " else " );
-
-			caseSimpleExpression.getOtherwise().accept( this, true );
-			appendSql( " end" );
+		appendSql( "case " );
+		caseSimpleExpression.getFixture().accept( this );
+		for ( CaseSimpleExpression.WhenFragment whenFragment : caseSimpleExpression.getWhenFragments() ) {
+			appendSql( " when " );
+			whenFragment.getCheckValue().accept( this );
+			appendSql( " then " );
+			whenFragment.getResult().accept( this );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
+		appendSql( " else " );
 
-		sqlSelectableCollectorStack.getCurrent().addSelectable( caseSimpleExpression );
+		caseSimpleExpression.getOtherwise().accept( this );
+		appendSql( " end" );
 	}
 
 	public void visitColumnBindingExpression(ColumnBindingExpression columnBindingExpression) {
-		renderColumnBinding( columnBindingExpression.getColumnBinding() );
+		// need to find a better way to do this
+		final ColumnBinding columnBinding = columnBindingExpression.getColumnBinding();
+		appendSql( columnBinding.getColumn().render( columnBinding.getIdentificationVariable() ) );
 	}
 
 	public void visitCoalesceExpression(CoalesceExpression coalesceExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "coalesce(" );
-			String separator = "";
-			for ( Expression expression : coalesceExpression.getValues() ) {
-				appendSql( separator );
-				expression.accept( this, true );
-				separator = ", ";
-			}
-
-			appendSql( ")" );
-		}
-		finally {
-			sqlSelectableCollectorStack.pop();
+		appendSql( "coalesce(" );
+		String separator = "";
+		for ( Expression expression : coalesceExpression.getValues() ) {
+			appendSql( separator );
+			expression.accept( this );
+			separator = ", ";
 		}
 
-		sqlSelectableCollectorStack.getCurrent().addSelectable( coalesceExpression );
+		appendSql( ")" );
 	}
 
 	public void visitConcatExpression(ConcatExpression concatExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "concat(" );
-			concatExpression.getLeftHandOperand().accept( this, true );
-			appendSql( "," );
-			concatExpression.getRightHandOperand().accept( this, true );
-			appendSql( ")" );
-		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( concatExpression );
+		appendSql( "concat(" );
+		concatExpression.getLeftHandOperand().accept( this );
+		appendSql( "," );
+		concatExpression.getRightHandOperand().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitCountFunction(CountFunction countFunction) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "count(" );
-			if ( countFunction.isDistinct() ) {
-				appendSql( "distinct " );
-			}
-			countFunction.getArgument().accept( this, true );
-			appendSql( ")" );
+		appendSql( "count(" );
+		if ( countFunction.isDistinct() ) {
+			appendSql( "distinct " );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( countFunction );
+		countFunction.getArgument().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitCountStarFunction(CountStarFunction function) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "count(" );
-			if ( function.isDistinct() ) {
-				appendSql( "distinct " );
-			}
-			appendSql( "*)" );
+		appendSql( "count(" );
+		if ( function.isDistinct() ) {
+			appendSql( "distinct " );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( function );
+		appendSql( "*)" );
 	}
 
 	public void visitDynamicInstantiation(DynamicInstantiation<?> dynamicInstantiation) {
-		sqlSelectableCollectorStack.push( new SqlSelectableProcessorDynamicInstantiationArgument( this, sqlSelectableCollectorStack.getCurrent() ) );
-
-		try {
-			// this is highly optimistic in thinking that each argument expression renders values to the select, but for now...
-			String separator = "";
-			for ( DynamicInstantiationArgument argument : dynamicInstantiation.getArguments() ) {
-				appendSql( separator );
-
-				argument.getExpression().accept( this, true );
-				sqlSelectableCollectorStack.getCurrent().processDynamicInstantiationArgument( argument );
-				separator = ", ";
-			}
-		}
-		finally {
-			sqlSelectableCollectorStack.pop();
+		for ( DynamicInstantiationArgument argument : dynamicInstantiation.getArguments() ) {
+			// renders the SQL selections
+			argument.getExpression().accept( this );
 		}
 	}
 
 	public void visitMaxFunction(MaxFunction maxFunction) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "max(" );
-			if ( maxFunction.isDistinct() ) {
-				appendSql( "distinct " );
-			}
-			maxFunction.getArgument().accept( this, true );
-			appendSql( ")" );
+		appendSql( "max(" );
+		if ( maxFunction.isDistinct() ) {
+			appendSql( "distinct " );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( maxFunction );
+		maxFunction.getArgument().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitMinFunction(MinFunction minFunction) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "min(" );
-			if ( minFunction.isDistinct() ) {
-				appendSql( "distinct " );
-			}
-			minFunction.getArgument().accept( this, true );
-			appendSql( ")" );
+		appendSql( "min(" );
+		if ( minFunction.isDistinct() ) {
+			appendSql( "distinct " );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( minFunction );
+		minFunction.getArgument().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitNamedParameter(NamedParameter namedParameter) {
@@ -770,47 +416,29 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 		if ( needsParens ) {
 			appendSql( ")" );
 		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( namedParameter );
 	}
 
 	public void visitNonStandardFunctionExpression(NonStandardFunctionExpression functionExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			// todo : look up function registry entry (maybe even when building the SQL tree)
-			appendSql( functionExpression.getFunctionName() );
-			if ( !functionExpression.getArguments().isEmpty() ) {
-				appendSql( "(" );
-				String separator = "";
-				for ( Expression argumentExpression : functionExpression.getArguments() ) {
-					appendSql( separator );
-					argumentExpression.accept( this, true );
-					separator = ", ";
-				}
-				appendSql( ")" );
+		// todo : look up function registry entry (maybe even when building the SQL tree)
+		appendSql( functionExpression.getFunctionName() );
+		if ( !functionExpression.getArguments().isEmpty() ) {
+			appendSql( "(" );
+			String separator = "";
+			for ( Expression argumentExpression : functionExpression.getArguments() ) {
+				appendSql( separator );
+				argumentExpression.accept( this );
+				separator = ", ";
 			}
+			appendSql( ")" );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( functionExpression );
 	}
 
 	public void visitNullifExpression(NullifExpression nullifExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "nullif(" );
-			nullifExpression.getFirstArgument().accept( this, true );
-			appendSql( ", " );
-			nullifExpression.getSecondArgument().accept( this, true );
-			appendSql( ")" );
-		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( nullifExpression );
+		appendSql( "nullif(" );
+		nullifExpression.getFirstArgument().accept( this );
+		appendSql( ", " );
+		nullifExpression.getSecondArgument().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitPositionalParameter(PositionalParameter positionalParameter) {
@@ -835,12 +463,10 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 		if ( needsParens ) {
 			appendSql( ")" );
 		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( positionalParameter );
 	}
 
 	public void visitQueryLiteral(QueryLiteral queryLiteral) {
-		if ( !currentlyInSelections ) {
+		if ( !queryLiteral.isInSelect() ) {
 			// handle literals via parameter binding if they occur outside the select
 			parameterBinders.add( queryLiteral );
 
@@ -867,7 +493,10 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 			// todo : better scheme for rendering these as literals
 			try {
 				appendSql(
-						( (LiteralType) queryLiteral.getType() ).objectToSQLString( queryLiteral.getValue(), sessionFactory.getDialect() )
+						( (LiteralType) queryLiteral.getType() ).objectToSQLString(
+								queryLiteral.getValue(),
+								sessionFactory.getJdbcServices().getJdbcEnvironment().getDialect()
+						)
 				);
 			}
 			catch (Exception e) {
@@ -882,43 +511,25 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 				);
 			}
 		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( queryLiteral );
 	}
 
 	public void visitSumFunction(SumFunction sumFunction) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			appendSql( "sum(" );
-			if ( sumFunction.isDistinct() ) {
-				appendSql( "distinct " );
-			}
-			sumFunction.getArgument().accept( this, true );
-			appendSql( ")" );
+		appendSql( "sum(" );
+		if ( sumFunction.isDistinct() ) {
+			appendSql( "distinct " );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
-		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( sumFunction );
+		sumFunction.getArgument().accept( this );
+		appendSql( ")" );
 	}
 
 	public void visitUnaryOperationExpression(UnaryOperationExpression unaryOperationExpression) {
-		sqlSelectableCollectorStack.push( SqlSelectableProcessorNoOp.INSTANCE );
-		try {
-			if ( unaryOperationExpression.getOperation() == UnaryOperationExpression.Operation.PLUS ) {
-				appendSql( "+" );
-			}
-			else {
-				appendSql( "-" );
-			}
-			unaryOperationExpression.getOperand().accept( this, true );
+		if ( unaryOperationExpression.getOperation() == UnaryOperationExpression.Operation.PLUS ) {
+			appendSql( "+" );
 		}
-		finally {
-			sqlSelectableCollectorStack.pop();
+		else {
+			appendSql( "-" );
 		}
-
-		sqlSelectableCollectorStack.getCurrent().addSelectable( unaryOperationExpression );
+		unaryOperationExpression.getOperand().accept( this );
 	}
 
 
@@ -926,14 +537,14 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	// Predicates
 
 	public void visitBetweenPredicate(BetweenPredicate betweenPredicate) {
-		betweenPredicate.getExpression().accept( this, true );
+		betweenPredicate.getExpression().accept( this );
 		if ( betweenPredicate.isNegated() ) {
 			appendSql( " not" );
 		}
 		appendSql( " between " );
-		betweenPredicate.getLowerBound().accept( this, true );
+		betweenPredicate.getLowerBound().accept( this );
 		appendSql( " and " );
-		betweenPredicate.getUpperBound().accept( this, true );
+		betweenPredicate.getUpperBound().accept( this );
 	}
 
 	public void visitFilterPredicate(FilterPredicate filterPredicate) {
@@ -951,7 +562,7 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	}
 
 	public void visitInListPredicate(InListPredicate inListPredicate) {
-		inListPredicate.getTestExpression().accept( this, true );
+		inListPredicate.getTestExpression().accept( this );
 		if ( inListPredicate.isNegated() ) {
 			appendSql( " not" );
 		}
@@ -963,7 +574,7 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 			String separator = "";
 			for ( Expression expression : inListPredicate.getListExpressions() ) {
 				appendSql( separator );
-				expression.accept( this, true );
+				expression.accept( this );
 				separator = ", ";
 			}
 		}
@@ -971,7 +582,7 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	}
 
 	public void visitInSubQueryPredicate(InSubQueryPredicate inSubQueryPredicate) {
-		inSubQueryPredicate.getTestExpression().accept( this, true );
+		inSubQueryPredicate.getTestExpression().accept( this );
 		if ( inSubQueryPredicate.isNegated() ) {
 			appendSql( " not" );
 		}
@@ -994,15 +605,15 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	}
 
 	public void visitLikePredicate(LikePredicate likePredicate) {
-		likePredicate.getMatchExpression().accept( this, true );
+		likePredicate.getMatchExpression().accept( this );
 		if ( likePredicate.isNegated() ) {
 			appendSql( " not" );
 		}
 		appendSql( " like " );
-		likePredicate.getPattern().accept( this, true );
+		likePredicate.getPattern().accept( this );
 		if ( likePredicate.getEscapeCharacter() != null ) {
 			appendSql( " escape " );
-			likePredicate.getEscapeCharacter().accept( this, true );
+			likePredicate.getEscapeCharacter().accept( this );
 		}
 	}
 
@@ -1017,7 +628,7 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	}
 
 	public void visitNullnessPredicate(NullnessPredicate nullnessPredicate) {
-		nullnessPredicate.getExpression().accept( this, true );
+		nullnessPredicate.getExpression().accept( this );
 		if ( nullnessPredicate.isNegated() ) {
 			appendSql( " is not null" );
 		}
@@ -1027,63 +638,9 @@ public class SqlAstSelectInterpreter implements DomainReferenceRenderer.Renderin
 	}
 
 	public void visitRelationalPredicate(RelationalPredicate relationalPredicate) {
-		relationalPredicate.getLeftHandExpression().accept( this, true );
+		relationalPredicate.getLeftHandExpression().accept( this );
 		appendSql( relationalPredicate.getOperator().sqlText() );
-		relationalPredicate.getRightHandExpression().accept( this, true );
+		relationalPredicate.getRightHandExpression().accept( this );
 	}
 
-
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// DomainReferenceRenderer.RenderingContext impl
-
-
-	@Override
-	public SessionFactoryImplementor getSessionFactory() {
-		return sessionFactory;
-	}
-
-	@Override
-	public void renderColumnBinding(ColumnBinding binding) {
-		sqlSelectableCollectorStack.getCurrent().addSelectables( binding );
-		appendSql( binding.getColumn().render( binding.getIdentificationVariable() ) );
-	}
-
-	@Override
-	public void renderColumnBindings(List<ColumnBinding> bindings) {
-		final boolean needsParens = bindings.size() > 1 && currentlyInPredicate;
-		if ( needsParens ) {
-			appendSql( "(" );
-		}
-
-		String separator = "";
-		for ( ColumnBinding columnBinding : bindings ) {
-			appendSql( separator );
-			renderColumnBinding( columnBinding );
-			separator = ", ";
-		}
-
-		if ( needsParens ) {
-			appendSql( ")" );
-		}
-	}
-
-	@Override
-	public void renderColumnBindings(ColumnBinding... bindings) {
-		final boolean needsParens = bindings.length > 1 && currentlyInPredicate;
-		if ( needsParens ) {
-			appendSql( "(" );
-		}
-
-		String separator = "";
-		for ( ColumnBinding columnBinding : bindings ) {
-			appendSql( separator );
-			renderColumnBinding( columnBinding );
-			separator = ", ";
-		}
-
-		if ( needsParens ) {
-			appendSql( ")" );
-		}
-	}
 }

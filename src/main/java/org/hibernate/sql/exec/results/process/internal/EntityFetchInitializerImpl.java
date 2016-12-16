@@ -6,13 +6,14 @@
  */
 package org.hibernate.sql.exec.results.process.internal;
 
-import java.util.List;
+import java.util.Map;
 
+import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.sql.NotYetImplementedException;
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.exec.results.process.spi2.FetchInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
-import org.hibernate.sql.exec.results.spi.ResolvedFetchEntity;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionGroup;
 
 /**
  * @author Steve Ebersole
@@ -20,17 +21,11 @@ import org.hibernate.sql.exec.results.spi.ResolvedFetchEntity;
 public class EntityFetchInitializerImpl extends AbstractEntityReferenceInitializer implements FetchInitializer {
 	public EntityFetchInitializerImpl(
 			InitializerParent parent,
-			ResolvedFetchEntity entityReference,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
+			FetchEntityAttribute entityReference,
+			Map<AttributeDescriptor,SqlSelectionGroup> sqlSelectionGroupMap,
 			boolean isShallow) {
-		super( parent, entityReference, false, sqlSelectionDescriptors, isShallow );
+		super( parent, entityReference, false, sqlSelectionGroupMap, isShallow );
 	}
-
-	@Override
-	public ResolvedFetchEntity getEntityReference() {
-		return (ResolvedFetchEntity) super.getEntityReference();
-	}
-
 
 	@Override
 	protected boolean shouldBatchFetch() {

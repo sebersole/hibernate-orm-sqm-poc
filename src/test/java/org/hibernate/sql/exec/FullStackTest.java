@@ -110,11 +110,9 @@ public class FullStackTest extends org.hibernate.testing.junit4.BaseUnitTestCase
 				final List results = query.list();
 
 				assertThat( results.size(), is( 1 ) );
-				assertThat( results.get( 0 ), instanceOf( Object[].class ) );
-				Object[] row = (Object[]) results.get( 0 );
-				assertThat( row.length, is( 1 ) );
-				assertThat( row[0], instanceOf( String.class ) );
-				assertThat( row[0], is("Steve") );
+				Object row = results.get( 0 );
+				assertThat( row, instanceOf( String.class ) );
+				assertThat( row, is("Steve") );
 			}
 		);
 	}

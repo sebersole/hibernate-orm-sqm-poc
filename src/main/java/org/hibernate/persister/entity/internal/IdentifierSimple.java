@@ -6,11 +6,9 @@
  */
 package org.hibernate.persister.entity.internal;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
@@ -25,13 +23,13 @@ import org.hibernate.type.BasicType;
 public class IdentifierSimple
 		extends AbstractSingularAttributeDescriptor<BasicType>
 		implements IdentifierDescriptor, SingularAttributeDescriptor {
-	private final Column[] columns;
+	private final List<Column> columns;
 
 	public IdentifierSimple(
 			AttributeContainer declaringType,
 			String attributeName,
 			BasicType ormType,
-			Column[] columns) {
+			List<Column> columns) {
 		super( declaringType, attributeName, ormType, false );
 		this.columns = columns;
 	}
@@ -47,7 +45,7 @@ public class IdentifierSimple
 	}
 
 	@Override
-	public Column[] getColumns() {
+	public List<Column> getColumns() {
 		return columns;
 	}
 
@@ -69,15 +67,5 @@ public class IdentifierSimple
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return columns.length;
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return Arrays.asList( columns );
 	}
 }

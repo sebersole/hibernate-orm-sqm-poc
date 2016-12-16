@@ -16,8 +16,8 @@ import org.hibernate.type.Type;
  * @author Steve Ebersole
  */
 public class QueryLiteral extends AbstractLiteral {
-	public QueryLiteral(Object value, Type ormType) {
-		super( value, ormType );
+	public QueryLiteral(Object value, Type ormType, boolean inSelect) {
+		super( value, ormType, inSelect );
 	}
 
 	@Override
@@ -26,7 +26,7 @@ public class QueryLiteral extends AbstractLiteral {
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitQueryLiteral( this );
 	}
 }

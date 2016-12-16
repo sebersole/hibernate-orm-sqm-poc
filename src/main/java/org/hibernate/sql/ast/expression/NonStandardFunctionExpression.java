@@ -9,8 +9,9 @@ package org.hibernate.sql.ast.expression;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hibernate.sql.ast.select.SelectableBasicTypeImpl;
+import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.ast.select.SqlSelectable;
-import org.hibernate.sql.convert.results.internal.ReturnScalarImpl;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
@@ -27,6 +28,8 @@ public class NonStandardFunctionExpression implements Expression, SqlSelectable 
 	private final List<Expression> arguments;
 	private final BasicType resultType;
 
+	private final Selectable selectable;
+
 	public NonStandardFunctionExpression(
 			String functionName,
 			List<Expression> arguments,
@@ -34,6 +37,8 @@ public class NonStandardFunctionExpression implements Expression, SqlSelectable 
 		this.functionName = functionName;
 		this.arguments = arguments;
 		this.resultType = resultType;
+
+		this.selectable = new SelectableBasicTypeImpl( this, this, resultType );
 	}
 
 	public NonStandardFunctionExpression(
@@ -61,13 +66,13 @@ public class NonStandardFunctionExpression implements Expression, SqlSelectable 
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
+	public void accept(SqlAstSelectInterpreter walker) {
 		walker.visitNonStandardFunctionExpression( this );
 	}
 
 	@Override
-	public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
-		return new ReturnScalarImpl( this, getType(), resultVariable );
+	public Selectable getSelectable() {
+		return selectable;
 	}
 
 	@Override

@@ -10,12 +10,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.AttributeDescriptor;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.VirtualAttributeDescriptor;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.sqm.domain.EntityReference;
@@ -26,7 +26,7 @@ import org.hibernate.type.CompositeType;
  */
 public class IdentifierCompositeNonAggregated
 		extends AbstractSingularAttributeDescriptor<CompositeType>
-		implements IdentifierDescriptor, SingularAttributeDescriptor, AttributeContainer {
+		implements IdentifierDescriptor, SingularAttributeDescriptor, AttributeContainer, VirtualAttributeDescriptor {
 	// todo : IdClass handling eventually
 
 	private final EmbeddablePersister embeddablePersister;
@@ -37,7 +37,7 @@ public class IdentifierCompositeNonAggregated
 	}
 
 	@Override
-	public Column[] getColumns() {
+	public List<Column> getColumns() {
 		return embeddablePersister.collectColumns();
 	}
 
@@ -89,15 +89,5 @@ public class IdentifierCompositeNonAggregated
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return embeddablePersister.getColumnCount( shallow, factory );
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return embeddablePersister.getColumns( shallow, factory );
 	}
 }

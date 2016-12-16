@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.AttributeDescriptor;
@@ -56,7 +55,7 @@ public class IdentifierCompositeAggregated
 	}
 
 	@Override
-	public Column[] getColumns() {
+	public List<Column> getColumns() {
 		return embeddablePersister.collectColumns();
 	}
 
@@ -87,15 +86,5 @@ public class IdentifierCompositeAggregated
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
-	}
-
-	@Override
-	public int getColumnCount(boolean shallow, SessionFactoryImplementor factory) {
-		return embeddablePersister.getColumnCount( shallow, factory );
-	}
-
-	@Override
-	public List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory) {
-		return embeddablePersister.getColumns( shallow, factory );
 	}
 }

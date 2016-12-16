@@ -6,14 +6,16 @@
  */
 package org.hibernate.sql.exec.results.process.spi2;
 
+import org.hibernate.sql.convert.results.spi.EntityReference;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
-import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
 
 /**
  * @author Steve Ebersole
  */
 public interface EntityReferenceInitializer extends Initializer, InitializerParent {
-	ResolvedEntityReference getEntityReference();
+	EntityReference getEntityReference();
+
+	Object getEntityInstance();
 
 	void hydrateIdentifier(RowProcessingState rowProcessingState);
 

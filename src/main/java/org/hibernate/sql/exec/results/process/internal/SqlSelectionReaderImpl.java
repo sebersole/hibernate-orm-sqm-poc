@@ -10,10 +10,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.sql.ast.select.SqlSelection;
 import org.hibernate.sql.exec.internal.RecommendedJdbcTypeMappings;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionReader;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
@@ -46,17 +45,15 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 	public Object read(
 			ResultSet resultSet,
 			JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-			JdbcValuesSourceProcessingOptions options,
-			SqlSelectionDescriptor sqlSelectionDescriptor)
+			SqlSelection sqlSelection)
 			throws SQLException {
-		return reader.read( resultSet, jdbcValuesSourceProcessingState, options, sqlSelectionDescriptor.getJdbcResultSetIndex() );
+		return reader.read( resultSet, jdbcValuesSourceProcessingState, sqlSelection.getJdbcResultSetIndex() );
 	}
 
 	private static interface Reader {
 		Object read(
 				ResultSet resultSet,
 				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-				JdbcValuesSourceProcessingOptions options,
 				int position)
 				throws SQLException;
 	}
@@ -72,7 +69,6 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 		public Object read(
 				ResultSet resultSet,
 				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-				JdbcValuesSourceProcessingOptions options,
 				int position) throws SQLException {
 			final Class<?> javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode(
 					jdbcTypeCode
@@ -169,7 +165,6 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 		public Object read(
 				ResultSet resultSet,
 				JdbcValuesSourceProcessingState jdbcValuesSourceProcessingState,
-				JdbcValuesSourceProcessingOptions options,
 				int position) throws SQLException {
 			// Any more than a single column is an error at this level
 			final int jdbcTypeCode = basicType.sqlTypes( jdbcValuesSourceProcessingState.getPersistenceContext().getFactory() )[0];

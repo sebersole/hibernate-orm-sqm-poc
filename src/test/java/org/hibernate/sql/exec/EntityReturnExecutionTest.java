@@ -12,6 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
@@ -36,6 +37,7 @@ import org.junit.Test;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Steve Ebersole
@@ -53,25 +55,26 @@ public class EntityReturnExecutionTest extends BaseUnitTestCase {
 	// Tests
 
 	@Test
-	@FailureExpected( jiraKey = "none", message = "Initializers only partially hooked in")
 	public void testSelectionOfIdentificationVariable() {
 		doInSession(
 				session -> {
-					final QuerySqmImpl query = generateQueryImpl(
+					final QuerySqmImpl<Employee> query = generateQueryImpl(
 							session,
 							"select e from Employee e where e.id = :id",
-							null
+							Employee.class
 					);
 
 					query.setParameter( "id", 2 );
-					final List results = query.list();
+					final List<Employee> results = query.list();
 
 					assertThat( results.size(), is( 1 ) );
 					assertThat( results.get( 0 ), instanceOf( Employee.class ) );
-					Object[] row = (Object[]) results.get( 0 );
-					assertThat( row.length, is( 1 ) );
-					assertThat( row[0], instanceOf( String.class ) );
-					assertThat( row[0], is("Steve") );
+					Employee result = results.get( 0 );
+					assertThat( result.name, is( "George Jetson" ) );
+					assertThat( result.manager.id, is(1) );
+
+					// todo : this should not be initialized - but that needs Type changes
+					assertTrue( Hibernate.isInitialized( result.manager ) );
 				}
 		);
 	}

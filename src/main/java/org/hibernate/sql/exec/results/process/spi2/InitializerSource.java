@@ -10,5 +10,6 @@ package org.hibernate.sql.exec.results.process.spi2;
  * @author Steve Ebersole
  */
 public interface InitializerSource {
+	void registerInitializers(InitializerCollector collector);
 	Initializer getInitializer();
 }

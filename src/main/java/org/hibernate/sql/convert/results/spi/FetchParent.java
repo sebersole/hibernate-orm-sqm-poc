@@ -9,6 +9,7 @@ package org.hibernate.sql.convert.results.spi;
 import java.util.List;
 
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 
 /**
  * Contract for things that can be the parent of a fetch
@@ -30,6 +31,7 @@ public interface FetchParent {
 	 */
 	String getTableGroupUniqueIdentifier();
 
+	InitializerParent getInitializerParentForFetchInitializers();
 
 	void addFetch(Fetch fetch);
 

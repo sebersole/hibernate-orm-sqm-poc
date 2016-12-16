@@ -15,14 +15,13 @@ import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
 /**
  * @author Steve Ebersole
  */
-class ArgumentReader implements ReturnAssembler {
+public class ArgumentReader implements ReturnAssembler {
+	private final ReturnAssembler returnAssembler;
 	private final String alias;
 
-	private final ReturnAssembler returnAssembler;
-
-	public ArgumentReader(String alias, ReturnAssembler returnAssembler) {
-		this.alias = alias;
+	public ArgumentReader(ReturnAssembler returnAssembler, String alias) {
 		this.returnAssembler = returnAssembler;
+		this.alias = alias;
 	}
 
 	public String getAlias() {

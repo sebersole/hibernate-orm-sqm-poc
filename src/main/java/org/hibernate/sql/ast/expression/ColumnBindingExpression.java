@@ -7,7 +7,8 @@
 package org.hibernate.sql.ast.expression;
 
 import org.hibernate.sql.ast.from.ColumnBinding;
-import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.ast.select.Selectable;
+import org.hibernate.sql.convert.ConversionException;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.Type;
 
@@ -27,13 +28,13 @@ public class ColumnBindingExpression implements Expression {
 	}
 
 	@Override
-	public void accept(SqlAstSelectInterpreter walker, boolean shallow) {
-		walker.visitColumnBindingExpression( this );
+	public Selectable getSelectable() {
+		throw new ConversionException( "ColumnBindingExpression is not Selectable" );
 	}
 
 	@Override
-	public org.hibernate.sql.convert.results.spi.Return toQueryReturn(String resultVariable) {
-		throw new NotYetImplementedException(  );
+	public void accept(SqlAstSelectInterpreter walker) {
+		walker.visitColumnBindingExpression( this );
 	}
 
 	public ColumnBinding getColumnBinding() {

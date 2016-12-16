@@ -7,13 +7,14 @@
 package org.hibernate.sql.convert.results.spi;
 
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.sql.exec.results.process.spi2.InitializerSource;
 
 /**
  * Represents a reference to an entity either as a return, fetch, or collection element or index.
  *
  * @author Steve Ebersole
  */
-public interface EntityReference extends FetchParent {
+public interface EntityReference extends FetchParent, InitializerSource {
 	/**
 	 * Retrieves the entity persister describing the entity associated with this Return.
 	 *

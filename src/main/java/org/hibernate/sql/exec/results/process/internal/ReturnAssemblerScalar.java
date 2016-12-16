@@ -8,61 +8,36 @@ package org.hibernate.sql.exec.results.process.internal;
 
 import java.sql.SQLException;
 
-import org.hibernate.EntityMode;
+import org.hibernate.sql.ast.select.SqlSelection;
+import org.hibernate.sql.convert.results.spi.ReturnScalar;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.process.spi2.ReturnAssembler;
-import org.hibernate.sql.exec.results.spi.ResolvedReturnScalar;
-import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
 public class ReturnAssemblerScalar implements ReturnAssembler {
-	private final ResolvedReturnScalar resolvedReturn;
+	private final SqlSelection sqlSelection;
+	private final ReturnScalar returnScalar;
 
-	public ReturnAssemblerScalar(ResolvedReturnScalar resolvedReturn) {
-		this.resolvedReturn = resolvedReturn;
+	public ReturnAssemblerScalar(SqlSelection sqlSelection, ReturnScalar returnScalar) {
+		this.sqlSelection = sqlSelection;
+		this.returnScalar = returnScalar;
 	}
 
 	@Override
 	public Class getReturnedJavaType() {
-		return resolvedReturn.getReturnedJavaType();
+		// todo : remove the ReturnAssembler#getReturnedJavaType method.
+		//		It is only used for resolving dynamic-instantiation arguments which should
+		//		not be modeled as Returns anyway...
+		return returnScalar.getReturnedJavaType();
 	}
 
 	@Override
 	public Object assemble(
 			RowProcessingState rowProcessingState,
 			JdbcValuesSourceProcessingOptions options) throws SQLException {
-
-		// NOTE : atm we only support reading scalar values.  Further we assume that the
-		//		jdbcValue is already the correct type.
-
-		final int selectionSpan = resolvedReturn.getNumberOfSelectablesConsumed();
-
-
-		if ( selectionSpan > 1 ) {
-			// has to be a CompositeType for now (and a very basic, one-level one)...
-			final CompositeType ctype = (CompositeType) resolvedReturn.getType();
-			final Object[] values = new Object[ selectionSpan ];
-			for ( int i = 0; i < selectionSpan; i++ ) {
-				values[i] = rowProcessingState.getJdbcValues()[
-						resolvedReturn.getSqlSelectionDescriptors().get( i ).getValuesArrayPosition()
-				];
-			}
-			try {
-				final Object result = ctype.getReturnedClass().newInstance();
-				ctype.setPropertyValues( result, values, EntityMode.POJO );
-				return result;
-			}
-			catch (Exception e) {
-				throw new RuntimeException( "Unable to instantiate composite : " +  ctype.getReturnedClass().getName(), e );
-			}
-		}
-		else {
-			return rowProcessingState.getJdbcValues()[
-					resolvedReturn.getSqlSelectionDescriptors().get( 0 ).getValuesArrayPosition()
-			];
-		}
+		return rowProcessingState.getJdbcValues()[ sqlSelection.getValuesArrayPosition() ];
 	}
 }

@@ -10,26 +10,26 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.loader.plan.spi.EntityFetch;
 import org.hibernate.loader.plan.spi.Fetch;
-import org.hibernate.persister.entity.spi.EntityReference;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 import org.hibernate.sql.exec.results.process.spi.EntityReferenceProcessingState;
 import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingState;
-import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author Steve Ebersole
  */
 public class RowProcessingStateStandardImpl implements RowProcessingState {
+	private static final Logger log = Logger.getLogger( RowProcessingStateStandardImpl.class );
+
 	private final JdbcValuesSourceProcessingStateStandardImpl resultSetProcessingState;
 	private final QueryOptions queryOptions;
-	private final JdbcValuesSourceProcessingOptions resultSetProcessingOptions;
 
 	private final JdbcValuesSource jdbcValuesSource;
 	private Object[] currentRowJdbcValues;
@@ -37,11 +37,9 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 	public RowProcessingStateStandardImpl(
 			JdbcValuesSourceProcessingStateStandardImpl resultSetProcessingState,
 			QueryOptions queryOptions,
-			JdbcValuesSourceProcessingOptions resultSetProcessingOptions,
 			JdbcValuesSource jdbcValuesSource) {
 		this.resultSetProcessingState = resultSetProcessingState;
 		this.queryOptions = queryOptions;
-		this.resultSetProcessingOptions = resultSetProcessingOptions;
 		this.jdbcValuesSource = jdbcValuesSource;
 	}
 
@@ -52,7 +50,7 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 
 //	@Override
 	public boolean next() throws SQLException {
-		if ( jdbcValuesSource.next( this, resultSetProcessingOptions ) ) {
+		if ( jdbcValuesSource.next( this ) ) {
 			currentRowJdbcValues = jdbcValuesSource.getCurrentRowJdbcValues();
 			return true;
 		}
@@ -69,10 +67,6 @@ public class RowProcessingStateStandardImpl implements RowProcessingState {
 
 	@Override
 	public void registerNonExists(EntityFetch fetch) {
-	}
-
-	@Override
-	public void registerHydratedEntity(EntityReference entityReference, EntityKey entityKey, Object entityInstance) {
 	}
 
 	private Map<ResolvedEntityReference, EntityReferenceProcessingState> entityReferenceProcessingStateMap;

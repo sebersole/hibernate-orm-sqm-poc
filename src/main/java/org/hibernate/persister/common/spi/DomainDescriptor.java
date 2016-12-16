@@ -6,9 +6,6 @@
  */
 package org.hibernate.persister.common.spi;
 
-import java.util.List;
-
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sqm.domain.DomainReference;
 
 /**
@@ -17,7 +14,4 @@ import org.hibernate.sqm.domain.DomainReference;
  * @author Steve Ebersole
  */
 public interface DomainDescriptor extends DomainReference {
-	int getColumnCount(boolean shallow, SessionFactoryImplementor factory);
-
-	List<Column> getColumns(boolean shallow, SessionFactoryImplementor factory);
 }

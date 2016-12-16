@@ -6,10 +6,10 @@
  */
 package org.hibernate.sql.exec.results.process.spi;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
+import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 
 /**
@@ -31,11 +31,13 @@ import org.hibernate.sql.exec.results.process.internal.values.JdbcValuesSource;
 public interface JdbcValuesSourceProcessingState {
 	SharedSessionContractImplementor getPersistenceContext();
 
+	QueryOptions getQueryOptions();
+
+	JdbcValuesSourceProcessingOptions getProcessingOptions();
+
 	JdbcValuesSource getJdbcValuesSource();
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// todo : not sure any of these are needed.
-	//		^^ since
+	void registerLoadingEntity(EntityKey entityKey, ImprovedEntityPersister persister, Object entityInstance, Object[] hydratedState);
 
-	void release();
+	void finishUp();
 }

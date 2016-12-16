@@ -8,8 +8,6 @@ package org.hibernate.persister.common.spi;
 
 import java.util.Collection;
 
-import org.hibernate.persister.common.spi.Column;
-
 /**
  * Represents a table in the mapping.  The name "table reference" comes from ANSI SQL
  * to describe the fact that the "table" might be a derived table (in-line view) or

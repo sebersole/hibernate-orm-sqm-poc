@@ -6,11 +6,12 @@
  */
 package org.hibernate.sql.exec.results.process.internal;
 
-import java.util.List;
+import java.util.Map;
 
-import org.hibernate.sql.ast.select.SqlSelectionDescriptor;
+import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.sql.convert.results.spi.EntityReference;
 import org.hibernate.sql.exec.results.process.spi2.EntityReferenceInitializer;
-import org.hibernate.sql.exec.results.spi.ResolvedEntityReference;
+import org.hibernate.sql.exec.results.process.spi2.SqlSelectionGroup;
 
 /**
  * @author Steve Ebersole
@@ -19,9 +20,9 @@ public class EntityReturnInitializerImpl
 		extends AbstractEntityReferenceInitializer
 		implements EntityReferenceInitializer {
 	public EntityReturnInitializerImpl(
-			ResolvedEntityReference entityReference,
-			List<SqlSelectionDescriptor> sqlSelectionDescriptors,
+			EntityReference entityReference,
+			Map<AttributeDescriptor,SqlSelectionGroup> sqlSelectionGroupMap,
 			boolean isShallow) {
-		super( null, entityReference, true, sqlSelectionDescriptors, isShallow );
+		super( null, entityReference, true, sqlSelectionGroupMap, isShallow );
 	}
 }
