@@ -8,7 +8,6 @@ package org.hibernate.sql.exec.results.process.internal.values;
 
 import java.sql.SQLException;
 
-import org.hibernate.sql.exec.results.process.spi.JdbcValuesSourceProcessingOptions;
 import org.hibernate.sql.exec.results.process.spi.RowProcessingState;
 
 /**

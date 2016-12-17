@@ -12,8 +12,31 @@ an "SQL AST" from various sources:
 * get & load handling (single and multi id) 
 * persister-driven DML handling (save, persist, merge, etc)
 
-Building SQM is defined by the hibernate-semantic-query project.
+TBD if persister-based operations would directly produce SQL AST or SQM that runs through the interpreters.
 
+Building SQM is defined by the hibernate-semantic-query project.  From there we have 2 phases
+that happen to actually get all the pieces needed to execute a query.
+
+
+== 1st Phase - SqmSelectToSqlAstConverter
+
+SqmSelectToSqlAstConverter takes in a SQM query (and a few other things) and produces a `SqmSelectInterpretation`.
+The `SqmSelectInterpretation` encapsulates:
+
+* The SQL AST (syntax tree) - SelectQuery
+* a List of Return objects
+
+The SQL AST as produced by SqmSelectToSqlAstConverter is a logic SQL representation.  It has
+no Dialect specific handling.  It is still to-be-determined how to best allow Dialect specific hooks.
+
+The sections below describe these 2 pieces of SqmSelectInterpretation information.
+
+It is also important to note that SqmSelectToSqlAstConverter is responsible for applying
+an EntityGraph hint (if supplied).  It is part of
+
+
+
+See the section below
 question - does SQM incorporate entity-graphs?  seems better to have the thing that interprets SQM to apply
 entity-graphs.
 
@@ -24,26 +47,11 @@ in the EntityPersister hierarchy.  As a follow-on to this... we should incorpora
 MappedSuperclass into the SQM domain model.  Seems that the spec does not allow querying MappedSuperclasses; verify!
 
 
-== SQL AST
+=== SQL AST
 
-The SQL AST is a syntax tree modelling a SQL query:
+The SQL AST is a syntax tree modelling a SQL query.  It is made up of the following parts.
 
-* It is produced from SQM by `org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter`
-* It is produced from Loaders following the old "LoadPlan" paradigm, although we will probably have
- 	room for improvement
-* It is consumed into a `org.hibernate.sql.exec.spi.SqlSelectInterpretation` by `org.hibernate.sql.exec.spi.SqlAstSelectInterpreter`.
-	The `SqlSelectInterpretation` combines (composite) the various interpretations needed to execute and consume PreparedStatements.
-
-[note]
-----
-TODO - it is counter-intuitive that a `SqlSelectInterpretation` is produced by a `SqlTreeWalker` from the result
-	of a `SelectStatementInterpreter`.  The names are just "off".  Maybe instead:
-
-* `SelectStatementInterpreter` -> `SqmToSqlAstConverter`
-* `SqlTreeWalker` -> `SqlAstInterpreter`
-----
-
-=== Tables and Groups and Spaces (oh my)
+==== FromClause - Tables and Groups and Spaces (oh my)
 
 Modeling the from-clause is central to SQM and its translation.  In translating SQM into an SQL AST 
 we build the following types:
@@ -65,7 +73,7 @@ FromClause:: grouping of one or more TableSpaces.
 Let's look at some examples to make this more clear...
 
 [source]
-.select e from Entity e (basic)
+.select e from Entity e (single table)
 ----
 FromClause
     TableSpace
@@ -141,13 +149,52 @@ FromClause
 ----
 
 
+==== SelectClause
+
+The SQL AST `SelectClause` contains one or more `SqlSelection` references representing SQL
+expressions (column reference, aggregate function, literal, etc) that are an individual
+selection in the SQL query.
+
+These `SqlSelection` references have the following characteristics...
+
+First they are uniqued by `SqlSelectable`.  `SqlSelectable` is an interface describing things
+that can be rendered as a SQL selection.  Examples of `SqlSelectable` include:
+
+* `ColumnBinding`
+* `MinFunction`
+* `QueryLiteral`
+* `Parameter`
+* etc
+
+During `SqmSelectToSqlAstConverter` processing, part of resolving a `SqlSelectable` into a
+`SqlSelection` is to make sure we use the same `SqlSelection` for the same `SqlSelectable`
+no matter how many times we see it.  E.g., multiple references to the `ColumnBinding` `p.name`
+will all resolve the the same `SqlSelection`.  In other words, given an HQL query like
+`select p.name, p.name from Person p` we will actually render the following SQL:
+`select p.name from person p`.  Notice the single column reference.  The HQL query will still
+return the 2 values; we will see how that works when we talk about Return objects.
+
+This "uniqueing" is managed through `SqmSelectToSqlAstConverter#sqlSelectionMapByQuerySpec`
+and `SqmSelectToSqlAstConverter#resolveSqlSelection`.
+
+Secondly, a `SqlSelection` incorporates the position in the SQL select clause.  This is
+important when we come back to discuss Returns.
+
+[NOTE]
+====
+I'd like to come back and investigate leveraging the SqlSelection position when
+rendering order-by (and group-by?) clauses.  ANSI SQL defines (and most DBs support)
+referring to a selection by position in the order-by.  For example, given a SQL query like
+`select p.id, p.name from Person p order by 1`, the interpretation would be to order the
+results by the first selection item (p.id).
+====
 
 
-=== Parameters
+==== Parameters
 
 There are multiple "parts" to parameter handling...
 
-==== ParameterSpec
+===== ParameterSpec
 
 A ParameterSpec is the specification of a query parameter (name/position, target, etc).  It represents the
 expectation(s) after parsing a query string.
@@ -179,7 +226,7 @@ interface ParameterSpec {
 ----
 
 
-==== ParameterBinding
+===== ParameterBinding
 
 ParameterBinding is the binding for a parameter.  Defined another way, it represents the value 
 specified by the user for the parameter for this execution of the query.  
@@ -234,7 +281,7 @@ interface ParameterBinding {
 ----
 
 
-==== ParameterBinder
+===== ParameterBinder
 
 This is more of an esoteric concept at this point, but ultimately the idea is the binding of the 
 parameter value to JDBC.  It would be best to drive the binding of parameter values from "nodes 
@@ -242,167 +289,108 @@ embedded in the query AST".  This could be a case where the implementation of Pa
 additionally implements this "binding contract" as well.
 
 
-== Processing ResultSets
 
-Processing a ResultSet means extracting the JDBC values, but also building Object graphs and using/managing the PersistenceContext.
+=== Return (and Fetch)
 
-We decided to (at least initially) reuse most of the concepts from how ResultSet processing is done in the LoadPlan
- work.  That was always meant as a preview or PoC of the work we are doing now, so that makes sense.  We just know somethings
- better now too that we'd like to incorporate.  We will go back and retrofit LoadPlan and the Loaders to use this
- new SQM-intg code.
+The List of Return objects on SqmSelectInterpretation represent the Object-level returns for
+the query.  Each Return in that List represents a single element in the naked Query's `Object[]` result "rows".
 
-That existing LoadPlan consuming code has a few pieces...
+Some `Return` implementations also implement `FetchParent` meaning that they can contain `Fetch` references.
 
+We will see these Return structures when we discuss reading results.
 
+There are a number of concrete Return implementations representing the types of things
+that can be a return in the query result:
 
-=== Return, Fetch and "Reader"
+`ReturnScalar`:: a Return tha is a scalar value (anything representable as a BasicType)
+`ReturnComposite`:: a Return that is a composite/embeddable
+`ReturnEntity`:: a Return that is an entity
+`ReturnDynamicInstantiation`:: a Return that is a dyamic-instantiation
+`ReturnCollection`:: a Return that is a collection.  *This is only valid for collection-loaders.*
 
-[note]
-----
-Maybe create a `HqlSelectable` interface (corollary to `SqlSelectable`) to define expressions that are valid
-as a `org.hibernate.sql.ast.select.Selection`.
-----
+Additionally, the following contracts are important:
 
-The `SelectClause` portion of the SQL AST defines its root return values via an ordered List of the individual
- `org.hibernate.sql.convert.results.spi.Return` descriptors.  Each `Return` in that List represents a single index
-  in the naked Query's `Object[]` result "rows".
-
-Some of these `Return`s represent selections of a particular entity.   This also needs to model the relationship with
- any defined join-fetches relative to that particular entity reference (literally `org.hibernate.sql.exec.results.spi.ResolvedEntityReference`).
- That is the role of `org.hibernate.sql.exec.results.spi.ResolvedFetch`.
-
-Important because we should be able to store this Return/Fetch tree along with results in the cache and be
-able to reconstruct fetch graphs.
-
-As far as relationships:
-
-* As the `Return#getSelectExpression` `Expression` is walked in `SqlAstSelectInterpreter`, we use a
-   `SqlAstSelectInterpreter.SqlSelectableProcessor` to collect any `SqlSelectionDescriptor`s it
-   produces (special handling for dynamic-instantiations).  These `SqlSelectionDescriptor`s represent
-   each of the select expressions in the SQL, positionally.
-* `SqlSelectionDescriptor` encapsulates a `SqlSelectable` such as a ColumnBinding or a AvgFunction call.
-	This `SqlSelectable` knows how to produce a `SqlSelectionReader` for reading its value from the
-	JDBC ResultSet.  This part is the key to improved (imo) integration with the QueryCache.  The first
-	step in processing a row in the JDBC ResultSet is to use these `SqlSelectionReader` to build a
-	`Object[]` view of the JDBC row.  It is this low level of detail that is put into the cache and
-	read back.  The later "ReturnAssemblers" and "initializers" work on top of this "currentJdbcRow".
-	NOTE : that this is currently messed up; see note in
-	`org.hibernate.sql.exec.internal.PreparedStatementExecutorNormalImpl#execute`
-* `Return` knows how to "resolve" itself to a `ResolvedReturn` based on these `SqlSelectionDescriptor`s,
-	whether the Return is to be considered "shallow" and the `Expression` it encapsulates.
-* `ResolvedReturn` resolves to a `ReturnAssembler` which read and "assemble" the return value into the
-	`Query`'s result `Object[]` at the `Return`/`ResolvedReturn`'s position.
-* `ResolvedReturn` may each register different types of "initializers" that perform various
-	levels of "assembly" (fetches, dynamic instantiations, entity and collection multi-phase-loading, etc).
-* The actual process of executing queries and processing results is the purpose of
-	`org.hibernate.sql.exec.spi.SqlTreeExecutor` using `SqlAstSelectInterpreter`, `JdbcServices`,
-	`ParameterBinder`, `PreparedStatementCreator`, `PreparedStatementExecutor`, etc.
-* The "standard" (HQL and Criteria selects) `PreparedStatementExecutor` performs the JDBC
-	PreparedStatement and processes the results using `QueryCacheDataAccessImplementor`,
-	`ResultSetProcessingState`, `RowReader`, etc
+`CollectionReference`:: defines a reference to a collection as either a `ReturnCollection` or `FetchCollectionAttribute`.
+`EntityReference`:: defines a reference to an entity as either a `ReturnEntity` or `FetchEntityAttribute`.
+`CompositeReference`:: todo : add this..
 
 
-The `org.hibernate.sql.exec.results.spi` package defines a number of contracts that it is probably beneficial to discuss:
 
-`ResolvedReturn`:: models a return from the query.  There are 4 distinct types of `ResolvedReturn`:
+== 2nd phase - SqlAstInterpreter
 
-* `ResolvedReturnScalar` this is something like selecting a literal, or selecting a basic singular attribute
-* `ResolvedReturnDynamicInstantiation` specialized handling for dynamic-instantiations
-* `ResolvedReturnEntity` represents selecting an entity either by identification variable (from alias) or to-one association
-* `ResolvedReturnCollection` represents selecting a collection as the root.  This is only relevant for collection loaders
+`SqlAstInterpreter` takes as its input the SqmSelectInterpretation (and some other things)
+and does a number of things and is responsible for mainly 2 tasks:
 
-`ResolvedFetch`:: models a join fetch of a particular embeddable or entity association relative to a `ResolvedFetchParent`:
-
-* `ResolvedFetchComposite` is the fetch of an embeddable (composite)
-* `ResolvedFetchEntity` the fetch of an entity association
-* todo collections (just index and element fetches?)
-
-this stuff below is currently out of date
-
-`CollectionReference`:: defines a reference to a collection as either a `Return` (`CollectionReturn`) or `Fetch` (`CollectionAttributeFetch`).
-
-`EntityReference`:: defines a reference to an entity as either a `Return` (`EntityReturn`) or `Fetch` (`EntityFetch`).
-
-`CompositeReference`:: todo : add this?
+* Rendering the SQL String
+* Building "readers"
 
 
-=== ResultSetProcessor and friends
+=== Rendering SQL String
 
-At a higher level reading and processing ResultSet rows is handled by `org.hibernate.sql.exec.results.process.spi.ResultSetProcessor`
-which is responsible for maintain row-position within the ResultSet.  It is also responsible for triggering "end of ResultSet processing" logic.
-
-`ResultSetProcessor` delegates to its `org.hibernate.sql.exec.results.process.spi.RowReader` for processing each row.  This
-distinction may seem like overkill, but it is important in reusing code between the ResultSetProcessor impl that builds a
-`ScrollableResults` (delayed row processing) and the others (immediate row processing).
-
-The `RowReader` delegates to the individual `ReturnReader` instances as discussed earlier.
-
-todo : describe the usage and purpose of each of the XyzProcessingState objects, as well as the overall flow of reading results.
+One of the functions performed by SqlAstInterpreter is to render the SQL AST into a SQL query String.  It
+does this by walking the nodes of the SelectQuery using the visitation pattern.  Nothing to see here, move
+along... :)
 
 
-Much of this comes down to the following comment I added to SqlSelectionDescriptor:
+=== Building "readers"
 
-[source]
-----
-	// todo : would be nice to hook this in with an array of the raw selection values per row.
-	//		the idea being to have an array of the raw SQL row values for cases where we
-	// 		need them multiple times; plus would help in terms of reading cached
-	//		query results (the value array would be the same).  The array would be the same
-	//		length as the SQL selections.
-	//
-	// also usable when building the cache entries.  Possibly as a builder contract to
-	//		account for no-caching.  Maybe ResultSetProcessor could act as this contract
-	//		to collect the rows to be cached.
-	//
-	// another option is varying levels of "reader": RawValueReader, HydratedValueReader, ResolvedValueReader
-	//		RawValueReader works on the individual SqlSelectionDescriptor instances which would mean
-	//		we need some resolution of SqlSelectionDescriptor->Type (possibly limited to just BasicType).
-	//		But the idea here is that we could use the "RawValueReader" to manage that process from
-	//		the RowProcessor, building the "sql row array" which can be cached directly and can be used
-	//		by the next reader
-----
+There are numerous actors involved in reading back results.  They are all built by this process based
+on the `List<Return>` from `SqmSelectInterpretation` as well as the `SqlSelection` references
+associated with the selected Expression.
 
-todo : create a diagram illustrating what I mean wrt this code comment block
+This will be discussed more in the section describing processing results.
 
 
-== ColumnBinding resolution
+== Processing results
 
-Resolving a "domain reference" to `ColumnBinding` instances involves multiple actors:
+There are quite a few actors involved in processing results and assembling the query returns.
 
-* The "domain reference" expression (and the encapsulated `org.hibernate.persister.common.spi.DomainReferenceImplementor`)
-* The source (lhs, table-group, etc) of the "domain reference" expression
-* The context in which the "domain reference" expression occurs
-* The proper TableGroup(s) are integral as well, as they are needed to convert `Column` -> `ColumnBinding`.  Likely this just gets passed in to the ColumnBinding creation more than being a active actor in the process
+First it is important to understand a major paradigm change in how JDBC results are obtained
+in current Hibernate versions versus this PoC.
+
+Previously all Types worked on the ResultSet directly.  To read a value from a ResultSet we'd ask the
+type of assemble/resolve it (or nullSafeGet).  This has a major drawback in that we cannot hydrate
+results from query-cache or ResultSet using the same code.
+
+The design here is to abstract the actual source of "JDBC values" as `JdbcValuesSource`.  There
+are 2 implementations of `JdbcValuesSource`:
+
+* JdbcValuesSourceResultSetImpl - implements the JdbcValuesSource contract in terms of extracting
+	those values from a JDBC ResultSet
+* JdbcValuesSourceCacheHit - implements the JdbcValuesSource contract in terms of values found in the
+	query cache
+
+The main premise of `JdbcValuesSource` is to expose access to the values as a simple `Object[]` row.
+This is where `SqlSelection` comes back into the picture.  We already discussed how `SqlSelection` knows
+its position in the "JDBC result".  It also gives access to a `SqlSelectionReader` (via its `SqlSelectable`)
+that we can use to read values from the JDBC ResultSet (as part of JdbcValuesSourceResultSetImpl).  At
+this level of reading we are always dealing with simple basic types (single-column BasicType).  Conceptually
+think of the row in the JDBC ResultSet as a Object[] of its extracted values.  This `Object[]` is exposed
+from the `JdbcValuesSource` and ultimately exposed as `RowProcessingStateStandard#getJdbcValues` for higher-
+level readers to access.
 
 
-At the moment this is designed as follows:
+[IMPORTANT]
+====
+It is important to grok the flow of values to/from the query cache.  This handling individual
+`Object[]` rows makes that seamless.  We've already seen the "from" aspect with `JdbcValuesSourceCacheHit`.
+There is also a "to" component abstracted as `QueryCachePutManager`.  Again, this is all handled
+seamlessly behind the scenes via `JdbcValuesSource` and `RowProcessingState`.
+====
 
-* The `DomainReferenceExpression` impls receive a `ColumnBindingSource` reference which is used to convert `Column`s into `ColumnBinding`s
-* `ColumnBindingSource` is generally a `TableGroup`, but in some cases it can be a "composition" of multiple `TableGroup`s.  Can also be a "virtual" source (for `CompositeType`s)
-* `DomainReferenceRenderer` handles the "contextual" aspect of rendering `DomainReferenceExpression`s into `ColumnBinding`s
+Certain Returns (and all Fetches) require some additional work to get the value ready to be a proper
+object query return.  This is the role of `Initializer` impls.  I wont get too in depth in these as they
+are still under active dev/design.  But they hearken back to load-plan work as well, so the initial
+work here follows the lead of the load-plan initializers.
 
-The general flow is
+Finally a ReturnAssembler is responsible for assembling the actual Object to be put in the Query result
+for a given Return.
 
-```
-DomainReferenceRenderer -> DomainReferenceExpression -> ColumnBindingSource -> DomainReference
-```
-
-This is a preliminary design.  I am in no way tied to it if anyone sees something better.
 
 
 == Open Design Questions
 
 Collection of open questions regarding various aspects of the design of this work.
-
-=== SqlSelectionDescriptor and readers
-
-Two questions here specifically:
-
-1. Currently SqlSelectionDescriptor only encompasses ColumnBindings (generally speaking some form of domain reference) and misses
- 	other types of expressions (function calls, literals).  The main takeaway here is that we want to well-define what is a valid
- 	select expression
-2. The other piece is the design of the parts needed to read back the JDBC ResultSet.  This is discussed in detail in
-	the "ResultSetProcessor and friends" section.
 
 
 === Better naming for the various representations of AttributeConverter
