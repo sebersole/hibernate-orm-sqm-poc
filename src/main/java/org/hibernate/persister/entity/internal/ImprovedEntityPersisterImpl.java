@@ -7,18 +7,27 @@
 package org.hibernate.persister.entity.internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.hibernate.HibernateException;
+import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
-import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
+import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
+import org.hibernate.persister.common.internal.SingularAttributeEntity;
+import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AbstractTable;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.JoinColumnMapping;
+import org.hibernate.persister.common.spi.JoinableAttribute;
+import org.hibernate.persister.common.spi.PluralAttribute;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.Loadable;
 import org.hibernate.persister.entity.OuterJoinLoadable;
@@ -28,6 +37,7 @@ import org.hibernate.persister.entity.spi.DiscriminatorDescriptor;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.persister.entity.spi.RowIdDescriptor;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.ColumnBinding;
@@ -40,10 +50,14 @@ import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
 import org.hibernate.sqm.domain.EntityReference;
+import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.CompositeType;
+import org.hibernate.type.EntityType;
+import org.hibernate.type.ForeignKeyDirection;
+import org.hibernate.type.OneToOneType;
 
 import org.jboss.logging.Logger;
 
@@ -62,8 +76,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	private RowIdDescriptor rowIdDescriptor;
 	private DiscriminatorDescriptor discriminatorDescriptor;
 
-	private final Map<String, AbstractAttributeDescriptor> attributeMap = new HashMap<>();
-	private final List<AbstractAttributeDescriptor> attributeList = new ArrayList<>();
+	private final Map<String, AbstractAttribute> attributeMap = new HashMap<>();
+	private final List<AbstractAttribute> attributeList = new ArrayList<>();
 
 	public ImprovedEntityPersisterImpl(EntityPersister persister) {
 		this.persister = persister;
@@ -89,7 +103,10 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 		if ( persister instanceof UnionSubclassEntityPersister ) {
 			tables = new AbstractTable[1];
-			tables[0] =  makeTableReference( databaseModel, ((UnionSubclassEntityPersister) persister).getTableName() );
+			tables[0] = makeTableReference(
+					databaseModel,
+					( (UnionSubclassEntityPersister) persister ).getTableName()
+			);
 		}
 		else {
 			// for now we treat super, self and sub attributes here just as EntityPersister does
@@ -129,6 +146,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 						Helper.INSTANCE.buildEmbeddablePersister(
 								databaseModel,
 								domainMetamodel,
+								this,
 								persister.getEntityName() + '.' + persister.getIdentifierPropertyName(),
 								cidType,
 								idColumns
@@ -141,6 +159,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 						Helper.INSTANCE.buildEmbeddablePersister(
 								databaseModel,
 								domainMetamodel,
+								this,
 								persister.getEntityName() + ".id",
 								cidType,
 								idColumns
@@ -165,9 +184,15 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 			final org.hibernate.type.Type attributeType = ojlPersister.getSubclassPropertyType( attributeNumber );
 
-			final AbstractTable containingTable = tables[ Helper.INSTANCE.getSubclassPropertyTableNumber( persister, attributeNumber ) ];
-			final String [] columns = Helper.INSTANCE.getSubclassPropertyColumnExpressions( persister, attributeNumber );
-			final String [] formulas = Helper.INSTANCE.getSubclassPropertyFormulaExpressions( persister, attributeNumber );
+			final AbstractTable containingTable = tables[Helper.INSTANCE.getSubclassPropertyTableNumber(
+					persister,
+					attributeNumber
+			)];
+			final String[] columns = Helper.INSTANCE.getSubclassPropertyColumnExpressions( persister, attributeNumber );
+			final String[] formulas = Helper.INSTANCE.getSubclassPropertyFormulaExpressions(
+					persister,
+					attributeNumber
+			);
 			final List<Column> values = Helper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					containingTable,
@@ -176,15 +201,14 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 					formulas
 			);
 
-			final AbstractAttributeDescriptor attribute;
+			final AbstractAttribute attribute;
 			if ( attributeType.isCollectionType() ) {
 				attribute = Helper.INSTANCE.buildPluralAttribute(
 						databaseModel,
 						domainMetamodel,
 						this,
 						attributeName,
-						attributeType,
-						values
+						attributeType
 				);
 			}
 			else {
@@ -285,21 +309,28 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		return group;
 	}
 
-	private void addNonRootTables(AbstractTableGroup group, JoinType joinType, int baseAdjust, TableBinding entityRootTableBinding) {
+	private void addNonRootTables(
+			AbstractTableGroup group,
+			JoinType joinType,
+			int baseAdjust,
+			TableBinding entityRootTableBinding) {
 		for ( int i = 1; i < tables.length; i++ ) {
-			final TableBinding tableBinding = new TableBinding( tables[i], group.getAliasBase() + '_' + (i + (baseAdjust-1)) );
+			final TableBinding tableBinding = new TableBinding(
+					tables[i],
+					group.getAliasBase() + '_' + ( i + ( baseAdjust - 1 ) )
+			);
 			group.addTableSpecificationJoin( new TableJoin( joinType, tableBinding, null ) );
 		}
 	}
 
 	@Override
-	public List<AttributeDescriptor> getNonIdentifierAttributes() {
-		final List<AttributeDescriptor> rtn = new ArrayList<>();
+	public List<Attribute> getNonIdentifierAttributes() {
+		final List<Attribute> rtn = new ArrayList<>();
 		collectNonIdentifierAttributes( rtn );
 		return rtn;
 	}
 
-	private void collectNonIdentifierAttributes(List<AttributeDescriptor> list) {
+	private void collectNonIdentifierAttributes(List<Attribute> list) {
 		if ( superType != null ) {
 			superType.collectNonIdentifierAttributes( list );
 		}
@@ -307,7 +338,11 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		list.addAll( attributeList );
 	}
 
-	public void addTableJoins(AbstractTableGroup group, JoinType joinType, List<Column> fkColumns, List<Column> fkTargetColumns) {
+	public void addTableJoins(
+			AbstractTableGroup group,
+			JoinType joinType,
+			List<Column> fkColumns,
+			List<Column> fkTargetColumns) {
 		final int baseAdjust;
 		final TableBinding drivingTableBinding;
 
@@ -325,7 +360,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			drivingTableBinding = new TableBinding( tables[0], group.getAliasBase() + '_' + 0 );
 
 			final Junction joinPredicate = new Junction( Junction.Nature.CONJUNCTION );
-			for ( int i=0; i < fkColumns.size(); i++ ) {
+			for ( int i = 0; i < fkColumns.size(); i++ ) {
 				joinPredicate.add(
 						new RelationalPredicate(
 								RelationalPredicate.Operator.EQUAL,
@@ -351,7 +386,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	}
 
 	@Override
-	public AttributeDescriptor findAttribute(String name) {
+	public Attribute findAttribute(String name) {
 		if ( attributeMap.containsKey( name ) ) {
 			return attributeMap.get( name );
 		}
@@ -365,7 +400,13 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		return null;
 	}
 
-	public Map<String, AbstractAttributeDescriptor> getAttributeMap() {
+	@Override
+	public List<JoinColumnMapping> resolveJoinColumnMappings(Attribute attribute) {
+		// todo : associations defined on entity
+		throw new NotYetImplementedException();
+	}
+
+	public Map<String, AbstractAttribute> getAttributeMap() {
 		return attributeMap;
 	}
 
@@ -393,4 +434,94 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.of( this );
 	}
+
+	@Override
+	public List<JoinColumnMapping> resolveJoinColumnMappings(JoinableAttribute joinableAttribute) {
+		// can be only one of 3 types of attributes:
+		//		1) SingularAttributeEntity
+		if ( joinableAttribute instanceof SingularAttributeEntity ) {
+			return extractEntityAttributeJoinColumnMappings( (SingularAttributeEntity) joinableAttribute );
+		}
+
+		//		2) SingularAttributeEmbedded
+		if ( joinableAttribute instanceof SingularAttributeEmbedded ) {
+			// embeddable joins are conceptual; they are not really rendered into the SQL
+			return Collections.emptyList();
+		}
+
+		//		3) PluralAttribute
+		if ( joinableAttribute instanceof PluralAttribute ) {
+			// for now we only support joining back to our (as the collection owner) identifier columns (aka, no property-ref support)
+			//		this same limitation exists in current ORM as well
+			return ( (PluralAttribute) joinableAttribute ).getForeignKeyDescriptor().buildJoinColumnMappings(
+					getIdentifierDescriptor().getColumns()
+			);
+		}
+
+		throw new HibernateException( "Unrecognized JoinableAttribute type [" + joinableAttribute + "]" );
+	}
+
+	private List<JoinColumnMapping> extractEntityAttributeJoinColumnMappings(SingularAttributeEntity singularAttribute) {
+		final List<Column> lhsJoinColumns;
+		final List<Column> rhsJoinColumns;
+
+		final ImprovedEntityPersister rhsPersister = singularAttribute.getEntityPersister();
+		// because we have SingularAttributeEntity we know the classification will be limited to either
+		//		MANY_TO_ONE or ONE_TO_ONE
+		if ( singularAttribute.getAttributeTypeClassification() == SingularAttributeClassification.ONE_TO_ONE
+				&& !singularAttribute.getOrmType().isLogicalOneToOne() ) {
+			final OneToOneType oneToOneType = (OneToOneType) singularAttribute.getOrmType();
+			if ( oneToOneType.getForeignKeyDirection() == ForeignKeyDirection.FROM_PARENT ) {
+				// the join predicates should point *from* the owner (parent)
+				if ( oneToOneType.getPropertyName() == null ) {
+					lhsJoinColumns = getIdentifierDescriptor().getColumns();
+				}
+				else {
+					final SingularAttribute referencedAttribute = (SingularAttribute) findAttribute( oneToOneType.getPropertyName() );
+					lhsJoinColumns = referencedAttribute.getColumns();
+				}
+				rhsJoinColumns = singularAttribute.getColumns();
+			}
+			else {
+				// the join predicates should point *to* the owner (parent)
+				lhsJoinColumns = singularAttribute.getColumns();
+				if ( oneToOneType.getPropertyName() == null ) {
+					rhsJoinColumns = getIdentifierDescriptor().getColumns();
+				}
+				else {
+					final SingularAttribute referencedAttribute = (SingularAttribute) findAttribute( oneToOneType.getPropertyName() );
+					rhsJoinColumns = referencedAttribute.getColumns();
+				}
+			}
+		}
+		else {
+			lhsJoinColumns = singularAttribute.getColumns();
+			if ( singularAttribute.getOrmType().getRHSUniqueKeyPropertyName() == null ) {
+				rhsJoinColumns = rhsPersister.getIdentifierDescriptor().getColumns();
+			}
+			else {
+				final SingularAttribute rhsPropertyRefAttribute = (SingularAttribute) rhsPersister.findAttribute(
+						singularAttribute.getOrmType().getRHSUniqueKeyPropertyName()
+				);
+				rhsJoinColumns = rhsPropertyRefAttribute.getColumns();
+			}
+		}
+
+		if ( lhsJoinColumns.size() != rhsJoinColumns.size() ) {
+			throw new HibernateException( "Bad resolution of right-hand and left-hand columns for attribute join : " + singularAttribute );
+		}
+
+		final List<JoinColumnMapping> joinColumnMappings = CollectionHelper.arrayList( lhsJoinColumns.size() );
+		for ( int i = 0; i < lhsJoinColumns.size(); i++ ) {
+			joinColumnMappings.add(
+					new JoinColumnMapping(
+							lhsJoinColumns.get( i ),
+							rhsJoinColumns.get( i )
+					)
+			);
+		}
+
+		return joinColumnMappings;
+	}
+
 }

@@ -40,16 +40,6 @@ public class CollectionTableGroup extends AbstractTableGroup {
 		return persister;
 	}
 
-	public List<ColumnBinding> resolveKeyColumnBindings() {
-		final List<Column> columns = persister.getForeignKeyDescriptor().getForeignKeyColumns();
-		final TableBinding tableBinding = getRootTableBinding();
-		final List<ColumnBinding> columnBindings = new ArrayList<>();
-		for ( Column column : columns ) {
-			columnBindings.add( new ColumnBinding( column, tableBinding ) );
-		}
-		return columnBindings;
-	}
-
 	@Override
 	public Selectable getSelectable() {
 		throw new NotYetImplementedException( );

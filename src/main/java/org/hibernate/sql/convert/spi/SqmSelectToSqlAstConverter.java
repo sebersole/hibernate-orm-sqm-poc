@@ -23,11 +23,15 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.graph.spi.AttributeNodeImplementor;
 import org.hibernate.graph.spi.EntityGraphImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.internal.CompositeReference;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.JoinColumnMapping;
+import org.hibernate.persister.common.spi.JoinableAttribute;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.PluralAttribute;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.query.proposed.QueryOptions;
 import org.hibernate.sql.NotYetImplementedException;
@@ -56,8 +60,6 @@ import org.hibernate.sql.ast.expression.UnaryOperationExpression;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
 import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation;
-import org.hibernate.sql.ast.from.CollectionTableGroup;
-import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.from.TableGroupJoin;
@@ -77,6 +79,7 @@ import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.ast.select.SqlSelectable;
 import org.hibernate.sql.ast.select.SqlSelection;
+import org.hibernate.sql.convert.ConversionException;
 import org.hibernate.sql.convert.SyntaxException;
 import org.hibernate.sql.convert.expression.internal.DomainReferenceExpressionBuilderImpl;
 import org.hibernate.sql.convert.expression.spi.DomainReferenceExpressionBuilder;
@@ -93,9 +96,6 @@ import org.hibernate.sql.exec.results.process.internal.SqlSelectionImpl;
 import org.hibernate.sqm.BaseSemanticQueryWalker;
 import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.domain.DomainReference;
-import org.hibernate.sqm.domain.PluralAttributeReference;
-import org.hibernate.sqm.domain.SingularAttributeReference.SingularAttributeClassification;
-import org.hibernate.sqm.parser.SemanticException;
 import org.hibernate.sqm.query.SqmDeleteStatement;
 import org.hibernate.sqm.query.SqmInsertSelectStatement;
 import org.hibernate.sqm.query.SqmQuerySpec;
@@ -390,88 +390,41 @@ public class SqmSelectToSqlAstConverter
 			return fromClauseIndex.findResolvedTableGroup( joinedFromElement );
 		}
 
+		final TableGroup joinedTableGroup = resolveTableGroupProducer( joinedFromElement ).buildTableGroup(
+				joinedFromElement,
+				tableSpace,
+				sqlAliasBaseManager,
+				fromClauseIndex
+		);
+
+		final TableGroup ownerTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
 		final Junction predicate = new Junction( Junction.Nature.CONJUNCTION );
-		final TableGroup group;
 
-		if ( joinedFromElement.getAttributeBinding().getAttribute() instanceof PluralAttributeReference ) {
-			final ImprovedCollectionPersister improvedCollectionPersister = (ImprovedCollectionPersister) joinedFromElement.getAttributeBinding().getAttribute();
-			group = improvedCollectionPersister.buildTableGroup(
-					joinedFromElement,
-					tableSpace,
-					sqlAliasBaseManager,
-					fromClauseIndex
-			);
-
-			final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
-			// I *think* it is a valid assumption here that the underlying TableGroup for an attribute is ultimately an EntityTableGroup
-			// todo : verify this ^^
-			final List<ColumnBinding> joinLhsColumns = ( (EntityTableGroup) lhsTableGroup ).resolveIdentifierColumnBindings();
-			final List<ColumnBinding> joinRhsColumns = ( (CollectionTableGroup) group ).resolveKeyColumnBindings();
-
-			assert joinLhsColumns.size() == joinRhsColumns.size();
-
-			for ( int i = 0; i < joinLhsColumns.size(); i++ ) {
-				predicate.add(
-						new RelationalPredicate(
-								RelationalPredicate.Operator.EQUAL,
-								new ColumnBindingExpression( joinLhsColumns.get( i ) ),
-								new ColumnBindingExpression( joinRhsColumns.get( i ) )
-						)
-				);
-			}
-		}
-		else {
-			final SingularAttributeDescriptor singularAttribute = (SingularAttributeDescriptor) joinedFromElement.getAttributeBinding().getAttribute();
-			if ( singularAttribute.getAttributeTypeClassification() == SingularAttributeClassification.BASIC ) {
-				throw new SemanticException( "Cannot join to attribute of BASIC type" );
-			}
-			else if ( singularAttribute.getAttributeTypeClassification() == SingularAttributeClassification.ANY ) {
-				throw new SemanticException( "Cannot join to attribute of BASIC type" );
-			}
-			else if ( singularAttribute.getAttributeTypeClassification() == SingularAttributeClassification.EMBEDDED ) {
-				group = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
+		final JoinableAttribute joinableAttribute = (JoinableAttribute) joinedFromElement.getAttributeBinding().getAttribute();
+		for ( JoinColumnMapping joinColumnMapping : joinableAttribute.getJoinColumnMappings() ) {
+			// if the joinedAttribute ois a collection, we need to flip the JoinColumnMapping..
+			//		this has to do with "foreign-key directionality"
+			final Column joinLhsColumn;
+			final Column joinRhsColumn;
+			if ( joinableAttribute instanceof PluralAttribute ) {
+				joinLhsColumn = joinColumnMapping.getRightHandSideColumn();
+				joinRhsColumn = joinColumnMapping.getLeftHandSideColumn();
 			}
 			else {
-				final ImprovedEntityPersister entityPersister = Helper.extractEntityPersister(
-						joinedFromElement,
-						factory,
-						sqmDomainMetamodel
-				);
-				group = entityPersister.buildTableGroup(
-						joinedFromElement,
-						tableSpace,
-						sqlAliasBaseManager,
-						fromClauseIndex
-				);
-
-				// todo : building the join needs right- and left- hand side join columns...
-
-				final TableGroup lhsTableGroup = fromClauseIndex.findResolvedTableGroup( joinedFromElement.getAttributeBinding().getLhs() );
-				final List<ColumnBinding> joinLhsColumns = resolveColumnBindings( lhsTableGroup, singularAttribute.getColumns() );
-
-				final List<ColumnBinding> joinRhsColumns;
-
-				final org.hibernate.type.EntityType ormType = (org.hibernate.type.EntityType) singularAttribute.getOrmType();
-				if ( ormType.getRHSUniqueKeyPropertyName() == null ) {
-					joinRhsColumns = ( (EntityTableGroup) group ).resolveIdentifierColumnBindings();
-				}
-				else {
-					final ImprovedEntityPersister lhsPersister = ( (EntityTableGroup) lhsTableGroup ).getPersister();
-					final SingularAttributeDescriptor referencedRhsAttribute = (SingularAttributeDescriptor) lhsPersister.findAttribute( ormType.getRHSUniqueKeyPropertyName() );
-					joinRhsColumns = resolveColumnBindings( group, referencedRhsAttribute.getColumns() );
-				}
-				assert joinLhsColumns.size() == joinRhsColumns.size();
-
-				for ( int i = 0; i < joinLhsColumns.size(); i++ ) {
-					predicate.add(
-							new RelationalPredicate(
-									RelationalPredicate.Operator.EQUAL,
-									new ColumnBindingExpression( joinLhsColumns.get( i ) ),
-									new ColumnBindingExpression( joinRhsColumns.get( i ) )
-							)
-					);
-				}
+				joinLhsColumn = joinColumnMapping.getLeftHandSideColumn();
+				joinRhsColumn = joinColumnMapping.getRightHandSideColumn();
 			}
+			predicate.add(
+					new RelationalPredicate(
+							RelationalPredicate.Operator.EQUAL,
+							new ColumnBindingExpression(
+									ownerTableGroup.resolveColumnBinding( joinLhsColumn )
+							),
+							new ColumnBindingExpression(
+									joinedTableGroup.resolveColumnBinding( joinRhsColumn )
+							)
+					)
+			);
 		}
 
 		// add any additional join restrictions
@@ -479,15 +432,28 @@ public class SqmSelectToSqlAstConverter
 			predicate.add( (Predicate) joinedFromElement.getOnClausePredicate().accept( this ) );
 		}
 
-		return new TableGroupJoin( joinedFromElement.getJoinType(), group, predicate );
+		return new TableGroupJoin( joinedFromElement.getJoinType(), joinedTableGroup, predicate );
 	}
 
-	private List<ColumnBinding> resolveColumnBindings(TableGroup tableGroup, List<Column> columns) {
-		final List<ColumnBinding> columnBindings = new ArrayList<>();
-		for ( Column column : columns ) {
-			columnBindings.add( tableGroup.resolveColumnBinding( column ) );
+	private TableGroupProducer resolveTableGroupProducer(SqmAttributeJoin joinedFromElement) {
+		if ( joinedFromElement.getAttributeBinding().getAttribute() instanceof ImprovedCollectionPersister ) {
+			return (ImprovedCollectionPersister) joinedFromElement.getAttributeBinding().getAttribute();
 		}
-		return columnBindings;
+
+		if ( joinedFromElement.getAttributeBinding().getAttribute() instanceof SingularAttributeEntity ) {
+			return ( (SingularAttributeEntity) joinedFromElement.getAttributeBinding().getAttribute() ).getEntityPersister();
+		}
+
+		if ( joinedFromElement.getAttributeBinding().getAttribute() instanceof CompositeReference ) {
+			return ( (CompositeReference) joinedFromElement.getAttributeBinding().getAttribute() ).resolveTableGroupProducer();
+		}
+		// otherwise - we have an exception condition
+
+		// todo : we could handle composites as well - another good argument for CompositeReference
+		//		or just walking the composite's AttributeContainer until we hit a collection or entity
+
+		throw new ConversionException( "Could not resolve TableGroupProducer from SqmAttributeJoin [" + joinedFromElement + "]" );
+
 	}
 
 	@Override
@@ -623,7 +589,7 @@ public class SqmSelectToSqlAstConverter
 		else if ( attributeJoin.getAttributeBinding() instanceof SingularAttributeBinding ) {
 			// apply the singular attribute fetch join
 			final SingularAttributeBinding attributeBinding = (SingularAttributeBinding) attributeJoin.getAttributeBinding();
-			final SingularAttributeDescriptor boundAttribute = (SingularAttributeDescriptor) attributeBinding.getAttribute();
+			final SingularAttribute boundAttribute = (SingularAttribute) attributeBinding.getAttribute();
 
 			switch ( boundAttribute.getAttributeTypeClassification() ) {
 				case ANY:

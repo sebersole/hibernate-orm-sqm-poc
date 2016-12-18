@@ -27,6 +27,6 @@ public class ConversionException extends HibernateException {
 	}
 
 	public ConversionException(String message, Throwable cause) {
-		super( "A problem occurred in the SQM interpreter - this is likely a bug in Hibernate : " + message, cause );
+		super( "A problem occurred in the SQM interpreter : " + message, cause );
 	}
 }

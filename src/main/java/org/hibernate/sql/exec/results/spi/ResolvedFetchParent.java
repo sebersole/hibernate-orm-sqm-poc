@@ -9,7 +9,7 @@ package org.hibernate.sql.exec.results.spi;
 import java.util.Map;
 
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.sql.convert.results.spi.Fetch;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 import org.hibernate.sql.exec.results.process.spi2.SqlSelectionGroup;
@@ -34,5 +34,5 @@ public interface ResolvedFetchParent {
 
 	InitializerParent getInitializerParentForFetchInitializers();
 
-	ResolvedFetch addFetch(Map<AttributeDescriptor,SqlSelectionGroup> sqlSelectionGroupMap, boolean shallow, Fetch queryFetch);
+	ResolvedFetch addFetch(Map<Attribute,SqlSelectionGroup> sqlSelectionGroupMap, boolean shallow, Fetch queryFetch);
 }

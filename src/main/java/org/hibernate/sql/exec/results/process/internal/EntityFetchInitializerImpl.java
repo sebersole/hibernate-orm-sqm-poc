@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.process.internal;
 
 import java.util.Map;
 
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.exec.results.process.spi2.FetchInitializer;
@@ -22,7 +22,7 @@ public class EntityFetchInitializerImpl extends AbstractEntityReferenceInitializ
 	public EntityFetchInitializerImpl(
 			InitializerParent parent,
 			FetchEntityAttribute entityReference,
-			Map<AttributeDescriptor,SqlSelectionGroup> sqlSelectionGroupMap,
+			Map<Attribute,SqlSelectionGroup> sqlSelectionGroupMap,
 			boolean isShallow) {
 		super( parent, entityReference, false, sqlSelectionGroupMap, isShallow );
 	}

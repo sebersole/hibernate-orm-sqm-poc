@@ -9,7 +9,7 @@ package org.hibernate.persister.common.internal;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sqm.domain.EntityReference;
@@ -18,7 +18,7 @@ import org.hibernate.type.BasicType;
 /**
  * @author Steve Ebersole
  */
-public class SingularAttributeBasic extends AbstractSingularAttributeDescriptor<BasicType> {
+public class SingularAttributeBasic extends AbstractSingularAttribute<BasicType> {
 	private final List<Column> columns;
 
 	public SingularAttributeBasic(

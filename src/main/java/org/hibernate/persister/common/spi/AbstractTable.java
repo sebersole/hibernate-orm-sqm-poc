@@ -50,11 +50,16 @@ public abstract class AbstractTable implements Table {
 
 	@Override
 	public Column getColumn(String name) {
-		final Column match = valueMap.get( name );
+		final Column match = locateColumn( name );
 		if ( match == null ) {
 			throw new MappingException( "Could not locate value : " + name );
 		}
 		return match;
+	}
+
+	@Override
+	public Column locateColumn(String name) {
+		return valueMap.get( name );
 	}
 
 	@Override

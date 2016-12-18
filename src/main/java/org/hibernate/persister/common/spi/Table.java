@@ -18,7 +18,12 @@ import java.util.Collection;
 public interface Table {
 	String getTableExpression();
 
+	Column makeColumn(String column, int jdbcType);
+
+	Column makeFormula(String formula, int jdbcType);
+
 	Column getColumn(String name);
+	Column locateColumn(String name);
 
 	Collection<Column> getColumns();
 }

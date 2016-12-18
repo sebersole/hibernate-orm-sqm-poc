@@ -7,6 +7,7 @@
 package org.hibernate.persister.collection.internal;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
@@ -18,19 +19,24 @@ import org.hibernate.persister.collection.spi.PluralAttributeKey;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
-import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AbstractTable;
-import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.JoinColumnMapping;
+import org.hibernate.persister.common.spi.JoinableAttributeContainer;
+import org.hibernate.persister.common.spi.SingularAttribute;
+import org.hibernate.persister.entity.Joinable;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
+import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassification;
+import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.SqmAttributeJoin;
+import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.AnyType;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.CollectionType;
@@ -40,11 +46,12 @@ import org.hibernate.type.EntityType;
 /**
  * @author Steve Ebersole
  */
-public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor implements ImprovedCollectionPersister {
+public class ImprovedCollectionPersisterImpl extends AbstractAttribute implements ImprovedCollectionPersister {
 	private final AbstractCollectionPersister persister;
 	private final CollectionClassification collectionClassification;
 
-	private PluralAttributeKey foreignKeyDescriptor;
+	private final PluralAttributeKey foreignKeyDescriptor;
+
 	private PluralAttributeId idDescriptor;
 	private PluralAttributeElement elementDescriptor;
 	private PluralAttributeIndex indexDescriptor;
@@ -52,15 +59,24 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 	private AbstractTable separateCollectionTable;
 
 	public ImprovedCollectionPersisterImpl(
-			AttributeContainer declaringType,
+			JoinableAttributeContainer declaringType,
 			String attributeName,
-			CollectionPersister persister,
-			List<Column> foreignKeyColumns) {
+			CollectionPersister persister) {
 		super( declaringType, attributeName );
 
 		this.persister = (AbstractCollectionPersister) persister;
 		this.collectionClassification = Helper.interpretCollectionClassification( persister.getCollectionType() );
 
+		this.foreignKeyDescriptor = new PluralAttributeKey( this );
+	}
+
+	@Override
+	public JoinableAttributeContainer getAttributeContainer() {
+		return (JoinableAttributeContainer) super.getAttributeContainer();
+	}
+
+	public AbstractTable getSeparateCollectionTable() {
+		return separateCollectionTable;
 	}
 
 	@Override
@@ -71,20 +87,10 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 			this.separateCollectionTable = null;
 		}
 		else {
-			collectionTable = makeTableReference( databaseModel, this.persister.getTableName() );
+			collectionTable = makeCollectionTable( databaseModel, this.persister.getTableName() );
 			this.separateCollectionTable = collectionTable;
-		}
 
-		this.foreignKeyDescriptor = new PluralAttributeKey(
-				persister.getKeyType(),
-				Helper.makeValues(
-						domainMetamodel.getSessionFactory(),
-						collectionTable,
-						persister.getKeyType(),
-						persister.getKeyColumnNames(),
-						null
-				)
-		);
+		}
 
 		if ( persister.getIdentifierType() == null ) {
 			this.idDescriptor = null;
@@ -113,6 +119,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 						Helper.INSTANCE.buildEmbeddablePersister(
 								databaseModel,
 								domainMetamodel,
+								this,
 								persister.getRole() + ".key",
 								(CompositeType) persister.getIndexType(),
 								columns
@@ -178,6 +185,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 					Helper.INSTANCE.buildEmbeddablePersister(
 							databaseModel,
 							domainMetamodel,
+							this,
 							persister.getRole() + ".value",
 							(CompositeType) elementType,
 							columns
@@ -256,19 +264,27 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 
 	@Override
 	public CollectionTableGroup buildTableGroup(
-			SqmAttributeJoin joinedFromElement,
+			SqmFrom sqmFrom,
 			TableSpace tableSpace,
 			SqlAliasBaseManager sqlAliasBaseManager,
 			FromClauseIndex fromClauseIndex) {
+		final JoinType joinType;
+		if ( SqmAttributeJoin.class.isInstance( sqmFrom ) ) {
+			joinType = ( (SqmAttributeJoin) sqmFrom ).getJoinType();
+		}
+		else {
+			joinType = JoinType.INNER;
+		}
+
 		final CollectionTableGroup group = new CollectionTableGroup(
 				tableSpace,
-				joinedFromElement.getUniqueIdentifier(),
-				sqlAliasBaseManager.getSqlAliasBase( joinedFromElement ),
+				sqmFrom.getUniqueIdentifier(),
+				sqlAliasBaseManager.getSqlAliasBase( sqmFrom ),
 				this,
-				Helper.convert( joinedFromElement.getPropertyPath() )
+				Helper.convert( sqmFrom.getPropertyPath() )
 		);
 
-		fromClauseIndex.crossReference( joinedFromElement, group );
+		fromClauseIndex.crossReference( sqmFrom, group );
 
 		if ( separateCollectionTable != null ) {
 			group.setRootTableBinding( new TableBinding( separateCollectionTable, group.getAliasBase() ) );
@@ -287,14 +303,14 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 					fkTargetColumns = elementPersister.getIdentifierDescriptor().getColumns();
 				}
 				else {
-					SingularAttributeDescriptor referencedAttribute = (SingularAttributeDescriptor) elementPersister.findAttribute( elementEntity.getOrmType().getRHSUniqueKeyPropertyName() );
+					SingularAttribute referencedAttribute = (SingularAttribute) elementPersister.findAttribute( elementEntity.getOrmType().getRHSUniqueKeyPropertyName() );
 					fkTargetColumns = referencedAttribute.getColumns();
 				}
 			}
 
 			elementPersister.addTableJoins(
 					group,
-					joinedFromElement.getJoinType(),
+					joinType,
 					fkColumns,
 					fkTargetColumns
 			);
@@ -303,7 +319,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 		return group;
 	}
 
-	private AbstractTable makeTableReference(DatabaseModel databaseModel, String tableExpression) {
+	private AbstractTable makeCollectionTable(DatabaseModel databaseModel, String tableExpression) {
 		final AbstractTable table;
 		if ( tableExpression.startsWith( "(" ) && tableExpression.endsWith( ")" ) ) {
 			table = databaseModel.createDerivedTable( tableExpression );
@@ -314,6 +330,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 		else {
 			table = databaseModel.findOrCreatePhysicalTable( tableExpression );
 		}
+
 		return table;
 	}
 
@@ -330,5 +347,20 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttributeDescriptor
 	@Override
 	public String asLoggableText() {
 		return toString();
+	}
+
+	@Override
+	public List<JoinColumnMapping> getJoinColumnMappings() {
+		return foreignKeyDescriptor.getJoinColumnMappings();
+	}
+
+	@Override
+	public Optional<EntityReference> toEntityReference() {
+		if ( elementDescriptor instanceof PluralAttributeElementEntity ) {
+			return Optional.of( ( (PluralAttributeElementEntity) elementDescriptor ).getElementPersister() );
+		}
+		else {
+			return Optional.empty();
+		}
 	}
 }

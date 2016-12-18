@@ -8,7 +8,7 @@ package org.hibernate.sql.exec.results.spi;
 
 import org.hibernate.engine.FetchStrategy;
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.sql.exec.results.process.spi2.FetchInitializer;
 import org.hibernate.sql.exec.results.process.spi2.InitializerParent;
 import org.hibernate.type.Type;
@@ -28,7 +28,7 @@ public interface ResolvedFetch {
 	 */
 	ResolvedFetchParent getFetchParent();
 
-	SingularAttributeDescriptor getFetchedAttributeDescriptor();
+	SingularAttribute getFetchedAttributeDescriptor();
 
 	/**
 	 * Get the property path to this fetch

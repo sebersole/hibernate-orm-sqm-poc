@@ -8,6 +8,8 @@ package org.hibernate.persister.common.spi;
 
 import java.util.List;
 
+import org.hibernate.sql.convert.spi.TableGroupProducer;
+
 /**
  * DomainDescriptor that can define persistent attributes
  *
@@ -20,6 +22,11 @@ public interface AttributeContainer extends DomainDescriptor {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// preliminary definitions
 
-	List<AttributeDescriptor> getNonIdentifierAttributes();
-	AttributeDescriptor findAttribute(String name);
+	List<Attribute> getNonIdentifierAttributes();
+	Attribute findAttribute(String name);
+
+	// todo : overload this for entity- and collection-valued attributes
+	//		but that requires splitting SingularAttributeEntity into interface/impl
+	//		and moving the interface into SPI
+	List<JoinColumnMapping> resolveJoinColumnMappings(Attribute attribute);
 }

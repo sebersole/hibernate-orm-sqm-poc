@@ -17,10 +17,12 @@ import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
-import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.JoinableAttributeContainer;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
@@ -157,7 +159,7 @@ public class Helper {
 
 	public static List<Column> makeValues(
 			SessionFactoryImplementor factory,
-			AbstractTable containingTable,
+			Table containingTable,
 			Type type,
 			String[] columns,
 			String[] formulas) {
@@ -182,7 +184,7 @@ public class Helper {
 		return values;
 	}
 
-	public AbstractAttributeDescriptor buildAttribute(
+	public AbstractAttribute buildAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
 			AttributeContainer source,
@@ -190,13 +192,14 @@ public class Helper {
 			Type propertyType,
 			List<Column> columns) {
 		if ( propertyType.isCollectionType() ) {
+			assert columns == null || columns.isEmpty();
+
 			return buildPluralAttribute(
 					databaseModel,
 					domainMetamodel,
 					source,
 					propertyName,
-					propertyType,
-					columns
+					propertyType
 			);
 		}
 		else {
@@ -211,7 +214,7 @@ public class Helper {
 		}
 	}
 
-	public AbstractAttributeDescriptor buildSingularAttribute(
+	public AbstractAttribute buildSingularAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
 			AttributeContainer source,
@@ -225,10 +228,12 @@ public class Helper {
 		else if ( classification == SingularAttributeClassification.EMBEDDED ) {
 			return new SingularAttributeEmbedded(
 					source,
+					(CompositeContainer) source,
 					attributeName,
 					buildEmbeddablePersister(
 							databaseModel,
 							domainMetamodel,
+							(CompositeContainer) source,
 							source.asLoggableText() + '.' + attributeName,
 							(CompositeType) attributeType,
 							columns
@@ -255,7 +260,7 @@ public class Helper {
 			assert columns != null && columns.size() > 0;
 
 			return new SingularAttributeEntity(
-					source,
+					(JoinableAttributeContainer) source,
 					attributeName,
 					classification,
 					ormEntityType,
@@ -268,10 +273,12 @@ public class Helper {
 	public EmbeddablePersister buildEmbeddablePersister(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
+			CompositeContainer compositeContainer,
 			String role,
 			CompositeType compositeType,
 			List<Column> columns) {
 		return new EmbeddablePersister(
+				compositeContainer,
 				extractEmbeddableName( compositeType ),
 				role,
 				compositeType,
@@ -286,21 +293,19 @@ public class Helper {
 		return attributeType.getName();
 	}
 
-	public AbstractAttributeDescriptor buildPluralAttribute(
+	public AbstractAttribute buildPluralAttribute(
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
 			AttributeContainer source,
 			String subclassPropertyName,
-			Type attributeType,
-			List<Column> columns) {
+			Type attributeType) {
 		final CollectionType collectionType = (CollectionType) attributeType;
 		final CollectionPersister collectionPersister = domainMetamodel.getSessionFactory().getMetamodel().collectionPersister( collectionType.getRole() );
 
 		final ImprovedCollectionPersisterImpl persister = new ImprovedCollectionPersisterImpl(
-				source,
+				(JoinableAttributeContainer) source,
 				subclassPropertyName,
-				collectionPersister,
-				columns
+				collectionPersister
 		);
 
 		domainMetamodel.registerCollectionPersister( persister );

@@ -8,8 +8,11 @@ package org.hibernate.persister.collection.internal;
 
 import java.util.Optional;
 
+import org.hibernate.persister.common.internal.CompositeContainer;
+import org.hibernate.persister.common.internal.CompositeReference;
 import org.hibernate.persister.common.spi.AbstractPluralAttributeIndex;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
+import org.hibernate.sql.convert.spi.TableGroupProducer;
 import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.CompositeType;
@@ -17,9 +20,22 @@ import org.hibernate.type.CompositeType;
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeIndexEmbeddable extends AbstractPluralAttributeIndex<CompositeType> {
+public class PluralAttributeIndexEmbeddable extends AbstractPluralAttributeIndex<CompositeType> implements CompositeReference {
+	private final EmbeddablePersister embeddablePersister;
+
 	public PluralAttributeIndexEmbeddable(ImprovedCollectionPersisterImpl persister, EmbeddablePersister embeddablePersister) {
 		super( persister, embeddablePersister.getOrmType(),embeddablePersister.collectColumns() );
+		this.embeddablePersister = embeddablePersister;
+	}
+
+	@Override
+	public CompositeContainer getCompositeContainer() {
+		return getPersister();
+	}
+
+	@Override
+	public EmbeddablePersister getEmbeddablePersister() {
+		return embeddablePersister;
 	}
 
 	@Override
@@ -35,5 +51,10 @@ public class PluralAttributeIndexEmbeddable extends AbstractPluralAttributeIndex
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public TableGroupProducer resolveTableGroupProducer() {
+		return getCompositeContainer().resolveTableGroupProducer();
 	}
 }

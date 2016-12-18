@@ -9,7 +9,7 @@ package org.hibernate.sql.convert.results.internal;
 import java.util.Map;
 
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.expression.Expression;
@@ -30,7 +30,7 @@ public class ReturnEntityImpl extends AbstractFetchParent implements ReturnEntit
 	private final Expression expression;
 	private final ImprovedEntityPersister entityPersister;
 	private final String resultVariable;
-	private final Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap;
+	private final Map<Attribute, SqlSelectionGroup> sqlSelectionGroupMap;
 
 	private final ReturnAssemblerEntity assembler;
 	private final EntityReturnInitializerImpl initializer;
@@ -40,7 +40,7 @@ public class ReturnEntityImpl extends AbstractFetchParent implements ReturnEntit
 			ImprovedEntityPersister improvedEntityPersister,
 			String resultVariable,
 			boolean isShallow,
-			Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap,
+			Map<Attribute, SqlSelectionGroup> sqlSelectionGroupMap,
 			PropertyPath propertyPath,
 			String tableGroupUid) {
 		super( propertyPath, tableGroupUid );

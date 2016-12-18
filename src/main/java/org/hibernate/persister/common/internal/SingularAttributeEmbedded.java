@@ -6,14 +6,18 @@
  */
 package org.hibernate.persister.common.internal;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.JoinColumnMapping;
+import org.hibernate.persister.common.spi.JoinableAttribute;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
+import org.hibernate.sql.convert.spi.TableGroupProducer;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.CompositeType;
 
@@ -21,17 +25,30 @@ import org.hibernate.type.CompositeType;
  * @author Steve Ebersole
  */
 public class SingularAttributeEmbedded
-		extends AbstractSingularAttributeDescriptor<CompositeType>
-		implements SingularAttributeDescriptor {
+		extends AbstractSingularAttribute<CompositeType>
+		implements SingularAttribute, CompositeReference, JoinableAttribute {
 
+	private final CompositeContainer compositeContainer;
 	private final EmbeddablePersister embeddablePersister;
 
 	public SingularAttributeEmbedded(
 			AttributeContainer declaringType,
+			CompositeContainer compositeContainer,
 			String attributeName,
 			EmbeddablePersister embeddablePersister) {
 		super( declaringType, attributeName, embeddablePersister.getOrmType(), true );
+		this.compositeContainer = compositeContainer;
 		this.embeddablePersister = embeddablePersister;
+	}
+
+	@Override
+	public CompositeContainer getCompositeContainer() {
+		return compositeContainer;
+	}
+
+	@Override
+	public TableGroupProducer resolveTableGroupProducer() {
+		return getCompositeContainer().resolveTableGroupProducer();
 	}
 
 	public EmbeddablePersister getEmbeddablePersister() {
@@ -56,5 +73,11 @@ public class SingularAttributeEmbedded
 	@Override
 	public Optional<EntityReference> toEntityReference() {
 		return Optional.empty();
+	}
+
+	@Override
+	public List<JoinColumnMapping> getJoinColumnMappings() {
+		// there are no columns involved in a join to an embedded/composite attribute
+		return Collections.emptyList();
 	}
 }

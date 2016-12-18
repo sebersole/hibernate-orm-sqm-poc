@@ -8,11 +8,13 @@ package org.hibernate.persister.entity.spi;
 
 import java.util.List;
 
+import org.hibernate.persister.common.internal.CompositeContainer;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.JoinableAttributeContainer;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
@@ -20,6 +22,7 @@ import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableSpace;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.internal.SqlAliasBaseManager;
+import org.hibernate.sql.convert.spi.TableGroupProducer;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.SqmFrom;
@@ -30,7 +33,7 @@ import org.hibernate.sqm.query.from.SqmFrom;
  * @author Steve Ebersole
  */
 public interface ImprovedEntityPersister
-		extends EntityReference, AttributeContainer, OrmTypeExporter {
+		extends EntityReference, JoinableAttributeContainer, TableGroupProducer, OrmTypeExporter, CompositeContainer {
 
 	/**
 	 * Called after all ImprovedEntityPersister instance have been created and
@@ -61,6 +64,7 @@ public interface ImprovedEntityPersister
 	DiscriminatorDescriptor getDiscriminatorDescriptor();
 	RowIdDescriptor getRowIdDescriptor();
 
+	@Override
 	EntityTableGroup buildTableGroup(
 			SqmFrom fromElement,
 			TableSpace tableSpace,
@@ -84,4 +88,8 @@ public interface ImprovedEntityPersister
 	 */
 	void addTableJoins(AbstractTableGroup group, JoinType joinType, List<Column> fkColumns, List<Column> fkTargetColumns);
 
+	@Override
+	default TableGroupProducer resolveTableGroupProducer() {
+		return this;
+	}
 }

@@ -9,10 +9,10 @@ package org.hibernate.persister.entity.internal;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.BasicType;
@@ -21,8 +21,8 @@ import org.hibernate.type.BasicType;
  * @author Steve Ebersole
  */
 public class IdentifierSimple
-		extends AbstractSingularAttributeDescriptor<BasicType>
-		implements IdentifierDescriptor, SingularAttributeDescriptor {
+		extends AbstractSingularAttribute<BasicType>
+		implements IdentifierDescriptor, SingularAttribute {
 	private final List<Column> columns;
 
 	public IdentifierSimple(
@@ -50,7 +50,7 @@ public class IdentifierSimple
 	}
 
 	@Override
-	public SingularAttributeDescriptor getIdAttribute() {
+	public SingularAttribute getIdAttribute() {
 		return this;
 	}
 

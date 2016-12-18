@@ -9,7 +9,7 @@ package org.hibernate.sql.convert.expression.internal;
 import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.internal.Helper;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
@@ -71,7 +71,7 @@ public class DomainReferenceExpressionBuilderImpl implements DomainReferenceExpr
 			);
 		}
 		else {
-			final SingularAttributeDescriptor singularAttribute = (SingularAttributeDescriptor) singularAttributeBinding.getAttribute();
+			final SingularAttribute singularAttribute = (SingularAttribute) singularAttributeBinding.getAttribute();
 			final TableGroup tableGroup = buildingContext.getFromClauseIndex().findResolvedTableGroup( singularAttributeBinding.getLhs() );
 
 			if ( singularAttributeBinding.getFromElement() == null ) {

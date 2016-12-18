@@ -10,11 +10,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.persister.common.spi.AbstractSingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractSingularAttribute;
 import org.hibernate.persister.common.spi.AttributeContainer;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.JoinColumnMapping;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.sqm.domain.EntityReference;
@@ -24,8 +25,8 @@ import org.hibernate.type.CompositeType;
  * @author Steve Ebersole
  */
 public class IdentifierCompositeAggregated
-		extends AbstractSingularAttributeDescriptor<CompositeType>
-		implements IdentifierDescriptor, SingularAttributeDescriptor, AttributeContainer {
+		extends AbstractSingularAttribute<CompositeType>
+		implements IdentifierDescriptor, SingularAttribute, AttributeContainer {
 	private final EmbeddablePersister embeddablePersister;
 
 	public IdentifierCompositeAggregated(
@@ -50,7 +51,7 @@ public class IdentifierCompositeAggregated
 	}
 
 	@Override
-	public SingularAttributeDescriptor getIdAttribute() {
+	public SingularAttribute getIdAttribute() {
 		return this;
 	}
 
@@ -74,13 +75,18 @@ public class IdentifierCompositeAggregated
 	}
 
 	@Override
-	public List<AttributeDescriptor> getNonIdentifierAttributes() {
+	public List<Attribute> getNonIdentifierAttributes() {
 		return Collections.emptyList();
 	}
 
 	@Override
-	public AttributeDescriptor findAttribute(String name) {
+	public Attribute findAttribute(String name) {
 		return embeddablePersister.findAttribute( name );
+	}
+
+	@Override
+	public List<JoinColumnMapping> resolveJoinColumnMappings(Attribute attribute) {
+		return getLeftHandSide().resolveJoinColumnMappings( attribute );
 	}
 
 	@Override

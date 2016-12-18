@@ -13,7 +13,7 @@ import org.hibernate.loader.PropertyPath;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.DomainDescriptor;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.from.ColumnBinding;
 import org.hibernate.sql.ast.select.Selectable;
@@ -30,7 +30,7 @@ import org.hibernate.type.Type;
  */
 public class SingularAttributeReferenceExpression implements DomainReferenceExpression {
 	private final ColumnBindingSource columnBindingSource;
-	private final SingularAttributeDescriptor referencedAttribute;
+	private final SingularAttribute referencedAttribute;
 	private final PropertyPath propertyPath;
 
 	private final Selectable selectable;
@@ -38,7 +38,7 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 
 	public SingularAttributeReferenceExpression(
 			ColumnBindingSource columnBindingSource,
-			SingularAttributeDescriptor referencedAttribute,
+			SingularAttribute referencedAttribute,
 			PropertyPath propertyPath) {
 		this.columnBindingSource = columnBindingSource;
 		this.referencedAttribute = referencedAttribute;
@@ -47,7 +47,7 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 		this.selectable = resolveSelectable( referencedAttribute );
 	}
 
-	private Selectable resolveSelectable(SingularAttributeDescriptor referencedAttribute) {
+	private Selectable resolveSelectable(SingularAttribute referencedAttribute) {
 		switch ( referencedAttribute.getAttributeTypeClassification() ) {
 			case BASIC: {
 				return new SelectableBasicTypeImpl(
@@ -85,7 +85,7 @@ public class SingularAttributeReferenceExpression implements DomainReferenceExpr
 		}
 	}
 
-	public SingularAttributeDescriptor getReferencedAttribute() {
+	public SingularAttribute getReferencedAttribute() {
 		return referencedAttribute;
 	}
 

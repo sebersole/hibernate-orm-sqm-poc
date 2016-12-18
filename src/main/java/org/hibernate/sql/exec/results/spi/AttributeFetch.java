@@ -6,7 +6,7 @@
  */
 package org.hibernate.sql.exec.results.spi;
 
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.sql.convert.results.spi.Fetch;
 
 /**
@@ -21,5 +21,5 @@ public interface AttributeFetch extends Fetch {
 	 *
 	 * @return The fetched attribute descriptor.
 	 */
-	AttributeDescriptor getFetchedAttributeDescriptor();
+	Attribute getFetchedAttributeDescriptor();
 }

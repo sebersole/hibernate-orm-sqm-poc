@@ -10,8 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
+import org.hibernate.persister.common.internal.CompositeContainer;
+import org.hibernate.persister.common.internal.CompositeReference;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
+import org.hibernate.sql.convert.spi.TableGroupProducer;
 import org.hibernate.sqm.domain.DomainReference;
 import org.hibernate.sqm.domain.EntityReference;
 import org.hibernate.type.CompositeType;
@@ -19,7 +22,7 @@ import org.hibernate.type.CompositeType;
 /**
  * @author Steve Ebersole
  */
-public class PluralAttributeElementEmbeddable implements PluralAttributeElement<CompositeType> {
+public class PluralAttributeElementEmbeddable implements PluralAttributeElement<CompositeType>, CompositeReference {
 	private final ImprovedCollectionPersisterImpl collectionPersister;
 	private final EmbeddablePersister embeddablePersister;
 
@@ -28,6 +31,12 @@ public class PluralAttributeElementEmbeddable implements PluralAttributeElement<
 		this.embeddablePersister = embeddablePersister;
 	}
 
+	@Override
+	public CompositeContainer getCompositeContainer() {
+		return collectionPersister;
+	}
+
+	@Override
 	public EmbeddablePersister getEmbeddablePersister() {
 		return embeddablePersister;
 	}
@@ -60,5 +69,10 @@ public class PluralAttributeElementEmbeddable implements PluralAttributeElement<
 	@Override
 	public List<Column> getColumns() {
 		return embeddablePersister.collectColumns();
+	}
+
+	@Override
+	public TableGroupProducer resolveTableGroupProducer() {
+		return getCompositeContainer().resolveTableGroupProducer();
 	}
 }

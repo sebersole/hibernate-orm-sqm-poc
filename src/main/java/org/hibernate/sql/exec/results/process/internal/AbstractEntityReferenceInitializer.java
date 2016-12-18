@@ -17,9 +17,9 @@ import org.hibernate.engine.internal.TwoPhaseLoad;
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.internal.util.MarkerObject;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
-import org.hibernate.persister.common.spi.PluralAttributeDescriptor;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
+import org.hibernate.persister.common.spi.PluralAttribute;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.Loadable;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.convert.results.spi.EntityReference;
@@ -39,7 +39,7 @@ public abstract class AbstractEntityReferenceInitializer
 
 	private final EntityReference entityReference;
 	private final boolean isEntityReturn;
-	private final Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap;
+	private final Map<Attribute, SqlSelectionGroup> sqlSelectionGroupMap;
 	private final boolean isShallow;
 
 	// in-flight processing state
@@ -52,7 +52,7 @@ public abstract class AbstractEntityReferenceInitializer
 			InitializerParent parent,
 			EntityReference entityReference,
 			boolean isEntityReturn,
-			Map<AttributeDescriptor, SqlSelectionGroup> sqlSelectionGroupMap,
+			Map<Attribute, SqlSelectionGroup> sqlSelectionGroupMap,
 			boolean isShallow) {
 		super( parent );
 		this.entityReference = entityReference;
@@ -178,7 +178,7 @@ public abstract class AbstractEntityReferenceInitializer
 
 		final Object[] hydratedState = new Object[ numberOfNonIdentifierAttributes ];
 		int i = 0;
-		for ( AttributeDescriptor attributeDescriptor : concretePersister.getNonIdentifierAttributes() ) {
+		for ( Attribute attribute : concretePersister.getNonIdentifierAttributes() ) {
 			// todo : need to account for non-eager entities by calling something other than Type#resolve (which loads the entity)
 			//		something akin to org.hibernate.persister.entity.AbstractEntityPersister.hydrate() but that operates on Object[], not ResultSet
 			//
@@ -189,13 +189,13 @@ public abstract class AbstractEntityReferenceInitializer
 			//		and later something like: AttributeDescriptor#getResolver#resolve(Object[] hydratedValues, ...)
 
 			final Object hydratedValue;
-			if ( attributeDescriptor instanceof PluralAttributeDescriptor ) {
-				assert attributeDescriptor.getOrmType() instanceof CollectionType;
+			if ( attribute instanceof PluralAttribute ) {
+				assert attribute.getOrmType() instanceof CollectionType;
 				hydratedValue = NOT_NULL_COLLECTION;
 			}
 			else {
-				SingularAttributeDescriptor singularAttributeDescriptor = (SingularAttributeDescriptor) attributeDescriptor;
-				final SqlSelectionGroup selectionGroup = sqlSelectionGroupMap.get( singularAttributeDescriptor );
+				SingularAttribute singularAttribute = (SingularAttribute) attribute;
+				final SqlSelectionGroup selectionGroup = sqlSelectionGroupMap.get( singularAttribute );
 				if ( selectionGroup == null ) {
 					// not selected (lazy group, etc)
 					hydratedValue = LazyPropertyInitializer.UNFETCHED_PROPERTY;

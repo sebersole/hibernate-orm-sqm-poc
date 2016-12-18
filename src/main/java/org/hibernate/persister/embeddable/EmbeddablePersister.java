@@ -12,35 +12,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.hibernate.persister.common.internal.CompositeContainer;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.Helper;
-import org.hibernate.persister.common.spi.AbstractAttributeDescriptor;
+import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AttributeContainer;
-import org.hibernate.persister.common.spi.AttributeDescriptor;
+import org.hibernate.persister.common.spi.Attribute;
 import org.hibernate.persister.common.spi.Column;
+import org.hibernate.persister.common.spi.JoinColumnMapping;
+import org.hibernate.persister.common.spi.JoinableAttribute;
+import org.hibernate.persister.common.spi.JoinableAttributeContainer;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
+import org.hibernate.sql.NotYetImplementedException;
+import org.hibernate.sql.convert.spi.TableGroupProducer;
 import org.hibernate.type.CompositeType;
 
 /**
  * @author Steve Ebersole
  */
-public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer {
+public class EmbeddablePersister
+		implements OrmTypeExporter, AttributeContainer, JoinableAttributeContainer, CompositeContainer {
+	private final CompositeContainer compositeContainer;
 	private final String compositeName;
 	private final String roleName;
 	private final CompositeType ormType;
 	private final List<Column> allColumns;
 
-	private final Map<String, AbstractAttributeDescriptor> attributeMap = new HashMap<>();
-	private final List<AbstractAttributeDescriptor> attributeList = new ArrayList<>();
+	private final Map<String, AbstractAttribute> attributeMap = new HashMap<>();
+	private final List<AbstractAttribute> attributeList = new ArrayList<>();
 
 	public EmbeddablePersister(
+			CompositeContainer compositeContainer,
 			String compositeName,
 			String roleName,
 			CompositeType ormType,
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel,
 			List<Column> allColumns) {
+		this.compositeContainer = compositeContainer;
 		this.compositeName = compositeName;
 		this.roleName = roleName;
 		this.ormType = ormType;
@@ -61,7 +71,7 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 				columns.add( allColumns.get( j ) );
 			}
 
-			final AbstractAttributeDescriptor attribute = Helper.INSTANCE.buildAttribute(
+			final AbstractAttribute attribute = Helper.INSTANCE.buildAttribute(
 					databaseModel,
 					domainMetamodel,
 					this,
@@ -81,13 +91,19 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 	}
 
 	@Override
-	public List<AttributeDescriptor> getNonIdentifierAttributes() {
+	public List<Attribute> getNonIdentifierAttributes() {
 		return attributeList.stream().collect( Collectors.toList() );
 	}
 
 	@Override
-	public AttributeDescriptor findAttribute(String name) {
+	public Attribute findAttribute(String name) {
 		return attributeMap.get( name );
+	}
+
+	@Override
+	public List<JoinColumnMapping> resolveJoinColumnMappings(Attribute attribute) {
+		// todo : associations defined on composites
+		throw new NotYetImplementedException(  );
 	}
 
 	@Override
@@ -98,5 +114,15 @@ public class EmbeddablePersister implements OrmTypeExporter, AttributeContainer 
 	@Override
 	public String asLoggableText() {
 		return "EmdeddablePersister(" + roleName + " [" + compositeName + "])";
+	}
+
+	@Override
+	public TableGroupProducer resolveTableGroupProducer() {
+		return compositeContainer.resolveTableGroupProducer();
+	}
+
+	@Override
+	public List<JoinColumnMapping> resolveJoinColumnMappings(JoinableAttribute joinableAttribute) {
+		throw new NotYetImplementedException();
 	}
 }

@@ -9,13 +9,13 @@ package org.hibernate.persister.entity.spi;
 import java.util.List;
 
 import org.hibernate.persister.common.spi.Column;
-import org.hibernate.persister.common.spi.SingularAttributeDescriptor;
+import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.type.Type;
 
 /**
  * @author Steve Ebersole
  */
-public interface IdentifierDescriptor extends SingularAttributeDescriptor {
+public interface IdentifierDescriptor extends SingularAttribute {
 	Type getIdType();
 
 	/**
@@ -35,7 +35,7 @@ public interface IdentifierDescriptor extends SingularAttributeDescriptor {
 	 *
 	 * @return
 	 */
-	SingularAttributeDescriptor getIdAttribute();
+	SingularAttribute getIdAttribute();
 
 	List<Column> getColumns();
 }
