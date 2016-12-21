@@ -18,7 +18,8 @@ import javax.persistence.OneToMany;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
-import org.hibernate.orm.test.sql.BaseUnitTest;
+import org.hibernate.orm.test.sql.BaseExecutionTest;
+import org.hibernate.orm.test.sql.support.ExecutionContextConversionTestImpl;
 import org.hibernate.orm.test.sql.support.QueryParameterBindingTypeResolverTestingImpl;
 import org.hibernate.query.proposed.QueryParameter;
 import org.hibernate.query.proposed.internal.ParameterMetadataImpl;
@@ -35,6 +36,7 @@ import org.hibernate.sql.exec.spi.SqlSelectInterpretation;
 import org.hibernate.sqm.query.SqmSelectStatement;
 import org.hibernate.sqm.query.SqmStatement;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -46,13 +48,20 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Steve Ebersole
  */
-public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
+public class SqlTreeWalkerSmokeTest extends BaseExecutionTest {
+	private ExecutionContextConversionTestImpl executionContext;
+
 	@Override
 	protected void applyMetadataSources(MetadataSources metadataSources) {
 		super.applyMetadataSources( metadataSources );
 		metadataSources.addAnnotatedClass( Person.class );
 		metadataSources.addAnnotatedClass( Address.class );
 		metadataSources.addAnnotatedClass( Role.class );
+	}
+
+	@Before
+	public void prepare() {
+		executionContext = new ExecutionContextConversionTestImpl( getSessionFactory() );
 	}
 
 	@Test
@@ -85,7 +94,8 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 				interpretation,
 				shallow,
 				getSessionFactory(),
-				buildQueryParameterBindings( statement )
+				buildQueryParameterBindings( statement ),
+				executionContext
 		);
 	}
 

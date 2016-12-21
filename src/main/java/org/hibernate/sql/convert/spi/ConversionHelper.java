@@ -10,8 +10,11 @@ import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
+import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBinding;
+import org.hibernate.query.proposed.spi.QueryParameterBindingTypeResolver;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
+import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.expression.NamedParameter;
 import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sqm.domain.DomainMetamodel;
@@ -23,7 +26,10 @@ import org.hibernate.type.Type;
  * @author Steve Ebersole
  */
 public class ConversionHelper {
-	public static Type resolveType(NamedParameter parameter, QueryParameterBindings bindings) {
+	public static Type resolveType(
+			NamedParameter parameter,
+			QueryParameterBindings bindings,
+			ExecutionContext executionContext) {
 		final QueryParameterBinding binding = bindings.getBinding( parameter.getName() );
 		if ( binding != null ) {
 			if ( binding.getBindType() != null ) {
@@ -35,10 +41,20 @@ public class ConversionHelper {
 			return parameter.getType();
 		}
 
+		if ( binding.isMultiValued() ) {
+			throw new NotYetImplementedException( "Support for Type determination for multi-valued parameters is not yet implemented" );
+		}
+		else if ( binding.isBound() ) {
+			return executionContext.resolveParameterBindType( binding.getBindValue() );
+		}
+
 		throw new QueryException( "Unable to determine Type for named parameter [:" + parameter.getName() + "]" );
 	}
 
-	public static Type resolveType(PositionalParameter parameter, QueryParameterBindings bindings) {
+	public static Type resolveType(
+			PositionalParameter parameter,
+			QueryParameterBindings bindings,
+			ExecutionContext executionContext) {
 		final QueryParameterBinding binding = bindings.getBinding( parameter.getPosition() );
 		if ( binding != null ) {
 			if ( binding.getBindType() != null ) {
@@ -48,6 +64,13 @@ public class ConversionHelper {
 
 		if ( parameter.getType() != null ) {
 			return parameter.getType();
+		}
+
+		if ( binding != null && binding.isMultiValued() ) {
+			throw new NotYetImplementedException( "Support for Type determination for multi-valued parameters is not yet implemented" );
+		}
+		else if ( binding != null && binding.isBound() ) {
+			return executionContext.resolveParameterBindType( binding.getBindValue() );
 		}
 
 		throw new QueryException( "Unable to determine Type for positional parameter [?" + parameter.getPosition() + "]" );

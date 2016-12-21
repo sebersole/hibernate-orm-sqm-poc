@@ -12,6 +12,7 @@ import java.util.Locale;
 
 import org.hibernate.QueryException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.query.proposed.spi.ExecutionContext;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.QuerySpec;
@@ -88,14 +89,16 @@ public class SqlAstSelectInterpreter {
 	 * @param sessionFactory
 	 * @param parameterBindings
 	 *
+	 * @param executionContext
 	 * @return The interpretation result
 	 */
 	public static SqlSelectInterpretation interpret(
 			SqmSelectInterpretation sqmSelectInterpretation,
 			boolean shallow,
 			SessionFactoryImplementor sessionFactory,
-			QueryParameterBindings parameterBindings) {
-		final SqlAstSelectInterpreter walker = new SqlAstSelectInterpreter( sessionFactory, parameterBindings, shallow );
+			QueryParameterBindings parameterBindings,
+			ExecutionContext executionContext) {
+		final SqlAstSelectInterpreter walker = new SqlAstSelectInterpreter( sessionFactory, parameterBindings, executionContext, shallow );
 		walker.visitSelectQuery( sqmSelectInterpretation.getSqlSelectAst() );
 		return new SqlSelectInterpretationImpl(
 				walker.sqlBuffer.toString(),
@@ -107,6 +110,7 @@ public class SqlAstSelectInterpreter {
 	// pre-req state
 	private final SessionFactoryImplementor sessionFactory;
 	private final QueryParameterBindings parameterBindings;
+	private final ExecutionContext executionContext;
 	private final boolean shallow;
 
 	// In-flight state
@@ -117,9 +121,14 @@ public class SqlAstSelectInterpreter {
 	private boolean currentlyInPredicate;
 	private boolean currentlyInSelections;
 
-	private SqlAstSelectInterpreter(SessionFactoryImplementor sessionFactory, QueryParameterBindings parameterBindings, boolean shallow) {
+	private SqlAstSelectInterpreter(
+			SessionFactoryImplementor sessionFactory,
+			QueryParameterBindings parameterBindings,
+			ExecutionContext executionContext,
+			boolean shallow) {
 		this.sessionFactory = sessionFactory;
 		this.parameterBindings = parameterBindings;
+		this.executionContext = executionContext;
 		this.shallow = shallow;
 	}
 
@@ -397,7 +406,7 @@ public class SqlAstSelectInterpreter {
 	public void visitNamedParameter(NamedParameter namedParameter) {
 		parameterBinders.add( namedParameter.getParameterBinder() );
 
-		final Type type = ConversionHelper.resolveType( namedParameter, parameterBindings );
+		final Type type = ConversionHelper.resolveType( namedParameter, parameterBindings, executionContext );
 
 		final int columnCount = type.getColumnSpan( sessionFactory );
 		final boolean needsParens = currentlyInPredicate && columnCount > 1;
@@ -444,7 +453,7 @@ public class SqlAstSelectInterpreter {
 	public void visitPositionalParameter(PositionalParameter positionalParameter) {
 		parameterBinders.add( positionalParameter.getParameterBinder() );
 
-		final Type type = ConversionHelper.resolveType( positionalParameter, parameterBindings );
+		final Type type = ConversionHelper.resolveType( positionalParameter, parameterBindings, executionContext );
 
 		final int columnCount = type.getColumnSpan( sessionFactory );
 		final boolean needsParens = currentlyInPredicate && columnCount > 1;

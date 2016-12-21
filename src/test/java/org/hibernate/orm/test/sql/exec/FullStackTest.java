@@ -9,7 +9,6 @@ package org.hibernate.orm.test.sql.exec;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -18,21 +17,9 @@ import javax.persistence.Tuple;
 
 import org.hibernate.Session;
 import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.orm.test.sql.support.ConsumerContextImpl;
-import org.hibernate.orm.test.sql.support.ExecutionContextTestingImpl;
-import org.hibernate.orm.test.sql.support.QueryProducerTestingImpl;
-import org.hibernate.persister.common.internal.PersisterFactoryImpl;
-import org.hibernate.persister.internal.PersisterFactoryInitiator;
+import org.hibernate.orm.test.sql.BaseExecutionTest;
 import org.hibernate.query.proposed.internal.sqm.QuerySqmImpl;
-import org.hibernate.sqm.SemanticQueryInterpreter;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import org.hamcrest.CoreMatchers;
@@ -44,55 +31,28 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Steve Ebersole
  */
-public class FullStackTest extends org.hibernate.testing.junit4.BaseUnitTestCase {
-	private SessionFactoryImplementor sessionFactory;
-	private ConsumerContextImpl consumerContext;
-
-	@Before
+public class FullStackTest extends BaseExecutionTest {
+	@Override
 	public void before() throws Exception {
-		final StandardServiceRegistry ssr = new StandardServiceRegistryBuilder()
-				.applySetting( AvailableSettings.HBM2DDL_AUTO, "create-drop" )
-				.applySetting( PersisterFactoryInitiator.IMPL_NAME, PersisterFactoryImpl.INSTANCE )
-				.build();
-
-		try {
-			MetadataSources metadataSources = new MetadataSources( ssr );
-			metadataSources.addAnnotatedClass( Person.class );
-			metadataSources.addAnnotatedClass( Address.class );
-
-			this.sessionFactory = (SessionFactoryImplementor) metadataSources.buildMetadata().buildSessionFactory();
-		}
-		catch (Exception e) {
-			StandardServiceRegistryBuilder.destroy( ssr );
-			throw e;
-		}
-
+		super.before();
 		insertRow();
+	}
 
-		consumerContext = new ConsumerContextImpl( sessionFactory );
+	@Override
+	protected void applyMetadataSources(MetadataSources metadataSources) {
+		super.applyMetadataSources( metadataSources );
+		metadataSources.addAnnotatedClass( Person.class );
+		metadataSources.addAnnotatedClass( Address.class );
 	}
 
 	private void insertRow() {
-		Session session = sessionFactory.openSession();
+		Session session = getSessionFactory().openSession();
 		session.beginTransaction();
 		Address addr = new Address( 1, "123 Main", "Anywhere, USA" );
 		session.persist( addr );
 		session.persist( new Person( 1, "Steve", 20, addr ) );
 		session.getTransaction().commit();
 		session.close();
-	}
-
-	@After
-	public void after() {
-		Session session = sessionFactory.openSession();
-		session.beginTransaction();
-		session.createQuery( "delete Person" ).executeUpdate();
-		session.getTransaction().commit();
-		session.close();
-
-		if ( sessionFactory != null ) {
-			sessionFactory.close();
-		}
 	}
 
 	@Test
@@ -113,30 +73,6 @@ public class FullStackTest extends org.hibernate.testing.junit4.BaseUnitTestCase
 				assertThat( row, instanceOf( String.class ) );
 				assertThat( row, is("Steve") );
 			}
-		);
-	}
-
-	private void doInSession(Consumer<SharedSessionContractImplementor> work) {
-		final SharedSessionContractImplementor session = (SharedSessionContractImplementor) sessionFactory.openSession();
-
-		try {
-			work.accept( session );
-		}
-		finally {
-			session.close();
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private <T> QuerySqmImpl<T> generateQueryImpl(SharedSessionContractImplementor session, String qryStr, Class<T> resultType) {
-		return new QuerySqmImpl(
-				qryStr,
-				SemanticQueryInterpreter.interpret( qryStr, consumerContext ),
-				resultType,
-				session,
-				consumerContext.getDomainMetamodel(),
-				new QueryProducerTestingImpl( session ),
-				new ExecutionContextTestingImpl( session )
 		);
 	}
 

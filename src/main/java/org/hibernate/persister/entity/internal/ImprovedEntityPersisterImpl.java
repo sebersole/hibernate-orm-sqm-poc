@@ -14,7 +14,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.hibernate.HibernateException;
+import org.hibernate.cache.spi.access.EntityRegionAccessStrategy;
+import org.hibernate.cache.spi.access.NaturalIdRegionAccessStrategy;
 import org.hibernate.internal.util.collections.CollectionHelper;
+import org.hibernate.mapping.PersistentClass;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
 import org.hibernate.persister.common.internal.PersisterHelper;
@@ -41,6 +44,7 @@ import org.hibernate.persister.entity.spi.DiscriminatorDescriptor;
 import org.hibernate.persister.entity.spi.IdentifierDescriptor;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.persister.entity.spi.RowIdDescriptor;
+import org.hibernate.persister.spi.PersisterCreationContext;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sql.ast.expression.ColumnBindingExpression;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
@@ -88,6 +92,25 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 	private boolean initComplete = false;
 
+	public ImprovedEntityPersisterImpl(
+			EntityPersister legacyPersister,
+			PersistentClass entityBinding,
+			EntityRegionAccessStrategy entityCacheAccessStrategy,
+			NaturalIdRegionAccessStrategy naturalIdCacheAccessStrategy,
+			PersisterCreationContext creationContext) {
+		this( legacyPersister );
+
+		// todo : start moving more of the existing EntityPersister methods to this interface
+		//		^^ this we allow us to better deduce SecondaryTables, etc to better build the understanding
+		//			of that model here.
+		// todo : So... how to model SecondaryTables in the org.hibernate.persister.common.spi.Table model?
+		//		specialized Table type (like UnionSubclassTable)?  Does the distinction matter here at all?
+
+		// *so far we only have tests against persistence-inheritance entities so far as SQM building
+		//		todo : we need tests to make sure queries against entities with persistence defined inheritance work at the SQL level
+		//
+	}
+
 	@Override
 	public void finishInitialization(
 			ImprovedEntityPersister superType,
@@ -104,8 +127,6 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		final Queryable queryable = (Queryable) persister;
 		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
 
-		final ImprovedEntityPersister rootEntityPersister = findRootEntityPersister();
-
 		if ( persister instanceof UnionSubclassEntityPersister ) {
 			// todo : we will need a way to capture both the union query (used for selections) versus the physical tables (used for DML)
 			//		maybe keep both sets and then define buildTableGroup to accept a selector (boolean) as
@@ -119,8 +140,6 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			//		in both sets of Tables for UnionSubclassEntityPersister to account for Column#getSourceTable
 			tables = new Table[1];
 			tables[0] = resolveUnionSubclassTables( this, databaseModel );
-
-			this.identifierDescriptor = rootEntityPersister.getIdentifierDescriptor();
 		}
 		else {
 			// for now we treat super, self and sub attributes here just as EntityPersister does
@@ -132,10 +151,10 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			for ( int i = 1; i < subclassTableCount; i++ ) {
 				tables[i] = makeTableReference( databaseModel, queryable.getSubclassTableName( i ) );
 			}
+		}
 
-			// todo : this should probably just reuse the root persister's id descriptor
-			// todo : ^^ probably the same for ROW_ID, discriminator and version descriptors
-
+		final ImprovedEntityPersister rootEntityPersister = findRootEntityPersister();
+		if ( rootEntityPersister == null || rootEntityPersister == this ) {
 			final List<Column> idColumns = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
 					persister.getIdentifierType(), ojlPersister.getIdentifierColumnNames(), null, tables[0]
@@ -180,6 +199,9 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 					);
 				}
 			}
+		}
+		else {
+			this.identifierDescriptor = rootEntityPersister.getIdentifierDescriptor();
 		}
 
 		final Loadable loadable = (Loadable) persister;
@@ -257,6 +279,11 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		}
 
 		initComplete = true;
+	}
+
+	@Override
+	public ImprovedEntityPersister getSuperEntityPersister() {
+		return superType;
 	}
 
 	private ImprovedEntityPersister findRootEntityPersister() {

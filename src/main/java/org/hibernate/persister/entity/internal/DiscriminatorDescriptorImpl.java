@@ -36,7 +36,11 @@ public class DiscriminatorDescriptorImpl implements DiscriminatorDescriptor {
 		this.persister = persister;
 
 		// here is the hack:
-		this.column = new DerivedColumn( persister.getRootTable(), "clazz_", Types.VARCHAR );
+		this.column = new DerivedColumn(
+				persister.getRootTable(),
+				"clazz_",
+				( (Loadable) persister.getEntityPersister() ).getDiscriminatorType().sqlTypes( persister.getEntityPersister().getFactory() )[0]
+		);
 	}
 
 	@Override

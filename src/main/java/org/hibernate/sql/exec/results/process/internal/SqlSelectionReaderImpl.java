@@ -73,9 +73,12 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 			final Class<?> javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode(
 					jdbcTypeCode
 			);
-			final JavaTypeDescriptor javaTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor(
-					javaClassMapping
-			);
+			final JavaTypeDescriptor javaTypeDescriptor = jdbcValuesSourceProcessingState.getPersistenceContext()
+					.getFactory()
+					.getMetamodel()
+					.getTypeDescriptorRegistryAccess()
+					.getJavaTypeDescriptorRegistry()
+					.getDescriptor( javaClassMapping );
 
 			return javaTypeDescriptor.wrap(
 					extractJdbcValue( resultSet, jdbcTypeCode, position ),
@@ -169,12 +172,12 @@ public class SqlSelectionReaderImpl implements SqlSelectionReader {
 			// Any more than a single column is an error at this level
 			final int jdbcTypeCode = basicType.sqlTypes( jdbcValuesSourceProcessingState.getPersistenceContext().getFactory() )[0];
 
-			final Class<?> javaClassMapping = RecommendedJdbcTypeMappings.INSTANCE.determineJavaClassForJdbcTypeCode(
-					jdbcTypeCode
-			);
-			final JavaTypeDescriptor javaTypeDescriptor = JavaTypeDescriptorRegistry.INSTANCE.getDescriptor(
-					javaClassMapping
-			);
+			final JavaTypeDescriptor javaTypeDescriptor = jdbcValuesSourceProcessingState.getPersistenceContext()
+					.getFactory()
+					.getMetamodel()
+					.getTypeDescriptorRegistryAccess()
+					.getJavaTypeDescriptorRegistry()
+					.getDescriptor( basicType.getReturnedClass() );
 
 			return javaTypeDescriptor.wrap(
 					extractJdbcValue( resultSet, jdbcTypeCode, position ),

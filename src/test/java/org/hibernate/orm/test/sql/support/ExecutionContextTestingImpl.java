@@ -29,12 +29,12 @@ public class ExecutionContextTestingImpl implements ExecutionContext {
 
 	@Override
 	public Type resolveParameterBindType(Object bindValue) {
-		return null;
+		return session.getFactory().getMetamodel().getBasicTypeFactory().getRegisteredType( bindValue.getClass().getName() );
 	}
 
 	@Override
 	public Type resolveParameterBindType(Class clazz) {
-		return null;
+		return session.getFactory().getMetamodel().getBasicTypeFactory().getRegisteredType( clazz.getName() );
 	}
 
 	@Override

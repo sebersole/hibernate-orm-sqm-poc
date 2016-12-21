@@ -32,7 +32,9 @@ public class QueryParameterPositionalImpl<T> extends AbstractQueryParameter<T> {
 				parameter.getPosition(),
 				parameter.allowMultiValuedBinding(),
 				true,
-				( (OrmTypeExporter) parameter.getAnticipatedType() ).getOrmType()
+				parameter.getAnticipatedType() == null
+						? null
+						: ( (OrmTypeExporter) parameter.getAnticipatedType() ).getOrmType()
 		);
 	}
 

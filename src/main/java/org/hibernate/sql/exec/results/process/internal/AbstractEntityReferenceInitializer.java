@@ -263,7 +263,7 @@ public abstract class AbstractEntityReferenceInitializer
 
 		final SqlSelectionGroup selectionGroup = sqlSelectionGroupMap.get( persister.getDiscriminatorDescriptor() );
 		// simple assert here since this should have been validate when building the metamodel
-		assert selectionGroup.getSqlSelections().size() != 1;
+		assert selectionGroup.getSqlSelections().size() == 1;
 
 		final Object discriminatorValue = rowProcessingState.getJdbcValues()[
 				selectionGroup.getSqlSelections().get( 0 ).getValuesArrayPosition()
@@ -276,7 +276,7 @@ public abstract class AbstractEntityReferenceInitializer
 			//woops we got an instance of another class hierarchy branch
 			throw new WrongClassException(
 					"Discriminator: " + discriminatorValue,
-					entityKey.getIdentifier(),
+					(Serializable) identifierHydratedState,
 					legacyLoadable.getEntityName()
 			);
 		}

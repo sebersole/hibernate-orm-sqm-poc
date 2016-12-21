@@ -53,6 +53,8 @@ public interface ImprovedEntityPersister
 			DatabaseModel databaseModel,
 			DomainMetamodelImpl domainMetamodel);
 
+	ImprovedEntityPersister getSuperEntityPersister();
+
 	/**
 	 * In integrating this upstream, the methods here would all be part of EntityPersister
 	 * but here we cannot do that and therefore still need access to EntityPersister

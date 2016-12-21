@@ -48,7 +48,7 @@ configurations {
 }
 
 dependencies {
-	compile 'org.hibernate:hibernate-core:5.2.3.Final'
+	compile 'org.hibernate:hibernate-core:6.0.0-SNAPSHOT'
 	compile( 'org.hibernate:hibernate-sqm:1.0.0-SNAPSHOT' )
 	compile 'org.jboss.logging:jboss-logging:3.3.0.Final'
 

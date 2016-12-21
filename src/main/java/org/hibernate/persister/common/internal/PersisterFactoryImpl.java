@@ -100,7 +100,13 @@ public class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAw
 		final TypeHierarchyNode superTypeNode = interpretSuperTypeNode( entityBinding );
 		final InheritanceType inheritanceType = interpretInheritanceType( entityBinding );
 
-		ImprovedEntityPersisterImpl improvedPersister = new ImprovedEntityPersisterImpl( legacyPersister );
+		final ImprovedEntityPersisterImpl improvedPersister = new ImprovedEntityPersisterImpl(
+				legacyPersister,
+				entityBinding,
+				entityCacheAccessStrategy,
+				naturalIdCacheAccessStrategy,
+				creationContext
+		);
 		typeHierarchyNode.setType( improvedPersister );
 		entityPersisterMap.put( legacyPersister, improvedPersister );
 		nameToHierarchyNodeMap.put( legacyPersister.getEntityName(), typeHierarchyNode );

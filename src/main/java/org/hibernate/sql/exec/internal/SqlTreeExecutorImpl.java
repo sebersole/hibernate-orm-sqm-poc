@@ -91,7 +91,8 @@ public class SqlTreeExecutorImpl implements SqlTreeExecutor {
 				sqmSelectInterpretation,
 				false,
 				persistenceContext.getFactory(),
-				queryParameterBindings
+				queryParameterBindings,
+				executionContext
 		);
 
 		final List<ReturnAssembler> returnAssemblers = new ArrayList<>();

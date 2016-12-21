@@ -12,11 +12,11 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.loader.spi.AfterLoadAction;
+import org.hibernate.orm.test.sql.support.ConsumerContextImpl;
+import org.hibernate.orm.test.sql.support.QueryOptionsTestingImpl;
 import org.hibernate.persister.common.internal.PersisterFactoryImpl;
 import org.hibernate.persister.internal.PersisterFactoryInitiator;
 import org.hibernate.query.proposed.QueryOptions;
-import org.hibernate.orm.test.sql.support.ConsumerContextImpl;
-import org.hibernate.orm.test.sql.support.QueryOptionsTestingImpl;
 import org.hibernate.sql.convert.spi.Callback;
 import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
 import org.hibernate.sql.convert.spi.SqmSelectToSqlAstConverter;
@@ -24,18 +24,15 @@ import org.hibernate.sqm.SemanticQueryInterpreter;
 import org.hibernate.sqm.query.SqmSelectStatement;
 import org.hibernate.sqm.query.SqmStatement;
 
-import org.hibernate.testing.junit4.CustomRunner;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.runner.RunWith;
 
 /**
  * Test for asserting structures, etc.  Does not export the schema
  *
  * @author Steve Ebersole
  */
-@RunWith( CustomRunner.class )
-public abstract class BaseUnitTest {
+public abstract class BaseUnitTest extends org.hibernate.testing.junit4.BaseUnitTestCase {
 	private SessionFactoryImplementor sessionFactory;
 	private ConsumerContextImpl consumerContext;
 
@@ -82,6 +79,7 @@ public abstract class BaseUnitTest {
 	protected final SessionFactoryImplementor getSessionFactory() {
 		return sessionFactory;
 	}
+
 
 	protected final ConsumerContextImpl getConsumerContext() {
 		return consumerContext;
