@@ -15,4 +15,16 @@ import org.hibernate.sql.convert.spi.TableGroupProducer;
  */
 public interface CompositeContainer {
 	TableGroupProducer resolveTableGroupProducer();
+
+	/**
+	 * Holy alliteration Bat Man! :)
+	 * <p/>
+	 * Can the composites belonging to this container contain collections?  This
+	 * would only be {@code false} in cases where the composite-container path
+	 * is itself rooted in a collection element/index.
+	 *
+	 * @return {@code true} if the composites can contain collections; {@code false}
+	 * otherwise.
+	 */
+	boolean canCompositeContainCollections();
 }

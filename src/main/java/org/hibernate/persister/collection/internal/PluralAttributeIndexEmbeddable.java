@@ -57,4 +57,9 @@ public class PluralAttributeIndexEmbeddable extends AbstractPluralAttributeIndex
 	public TableGroupProducer resolveTableGroupProducer() {
 		return getCompositeContainer().resolveTableGroupProducer();
 	}
+
+	@Override
+	public boolean canCompositeContainCollections() {
+		return false;
+	}
 }

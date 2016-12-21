@@ -22,7 +22,7 @@ import org.hibernate.type.Type;
 /**
  * @author Steve Ebersole
  */
-public class Helper {
+public class ConversionHelper {
 	public static Type resolveType(NamedParameter parameter, QueryParameterBindings bindings) {
 		final QueryParameterBinding binding = bindings.getBinding( parameter.getName() );
 		if ( binding != null ) {
@@ -53,7 +53,7 @@ public class Helper {
 		throw new QueryException( "Unable to determine Type for positional parameter [?" + parameter.getPosition() + "]" );
 	}
 
-	private Helper() {
+	private ConversionHelper() {
 	}
 
 	public static ImprovedEntityPersister extractEntityPersister(

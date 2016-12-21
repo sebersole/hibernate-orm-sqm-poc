@@ -2,11 +2,14 @@
  * Hibernate, Relational Persistence for Idiomatic Java
  *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
- * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html
+ * See the lgpl.txt file in the root directory or http://www.gnu.org/licenses/lgpl-2.1.html\
  */
 package org.hibernate.persister.common.spi;
 
 import java.util.Collection;
+
+import org.hibernate.persister.common.internal.DerivedColumn;
+import org.hibernate.persister.common.internal.PhysicalColumn;
 
 /**
  * Represents a table in the mapping.  The name "table reference" comes from ANSI SQL
@@ -18,9 +21,9 @@ import java.util.Collection;
 public interface Table {
 	String getTableExpression();
 
-	Column makeColumn(String column, int jdbcType);
+	PhysicalColumn makeColumn(String column, int jdbcType);
 
-	Column makeFormula(String formula, int jdbcType);
+	DerivedColumn makeFormula(String formula, int jdbcType);
 
 	Column getColumn(String name);
 	Column locateColumn(String name);

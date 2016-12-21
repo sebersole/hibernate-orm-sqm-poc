@@ -8,19 +8,15 @@ package org.hibernate.persister.common.spi;
 
 import java.util.List;
 
-import org.hibernate.sql.convert.spi.TableGroupProducer;
-
 /**
  * DomainDescriptor that can define persistent attributes
  *
  * @author Steve Ebersole
  */
 public interface AttributeContainer extends DomainDescriptor {
-	// todo : add access to (non-id?) attributes
 	// todo : what else would be useful here?
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// preliminary definitions
+	AttributeContainer getSuperAttributeContainer();
 
 	List<Attribute> getNonIdentifierAttributes();
 	Attribute findAttribute(String name);

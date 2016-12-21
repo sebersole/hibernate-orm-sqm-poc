@@ -18,14 +18,14 @@ import javax.persistence.OneToMany;
 
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
+import org.hibernate.orm.test.sql.BaseUnitTest;
+import org.hibernate.orm.test.sql.support.QueryParameterBindingTypeResolverTestingImpl;
 import org.hibernate.query.proposed.QueryParameter;
 import org.hibernate.query.proposed.internal.ParameterMetadataImpl;
 import org.hibernate.query.proposed.internal.QueryParameterBindingsImpl;
 import org.hibernate.query.proposed.internal.QueryParameterNamedImpl;
 import org.hibernate.query.proposed.internal.QueryParameterPositionalImpl;
 import org.hibernate.query.proposed.spi.QueryParameterBindings;
-import org.hibernate.orm.test.sql.BaseUnitTest;
-import org.hibernate.orm.test.sql.support.QueryParameterBindingTypeResolverTestingImpl;
 import org.hibernate.sql.ast.expression.NamedParameter;
 import org.hibernate.sql.ast.expression.PositionalParameter;
 import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
@@ -35,7 +35,6 @@ import org.hibernate.sql.exec.spi.SqlSelectInterpretation;
 import org.hibernate.sqm.query.SqmSelectStatement;
 import org.hibernate.sqm.query.SqmStatement;
 
-import org.hibernate.testing.FailureExpected;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -231,7 +230,6 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	}
 
 	@Test
-	@FailureExpected( jiraKey = "none" )
 	public void testSqlTreeWalking10() {
 		final String qryStr = "select p from Person p";
 		final SqlSelectInterpretation sqlSelectInterpretation = buildSqlSelectInterpretation( qryStr );
@@ -246,7 +244,6 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	}
 
 	@Test
-	@FailureExpected( jiraKey = "none" )
 	public void testSqlTreeWalking11() {
 		final String qryStr = "select a from Person p join p.address a";
 		final SqlSelectInterpretation sqlSelectInterpretation = buildSqlSelectInterpretation( qryStr );
@@ -260,7 +257,6 @@ public class SqlTreeWalkerSmokeTest extends BaseUnitTest {
 	}
 
 	@Test
-	@FailureExpected( jiraKey = "none" )
 	public void testSqlTreeWalking12() {
 		final String qryStr =  "select r from Person p join p.roles r";
 		final SqlSelectInterpretation sqlSelectInterpretation = buildSqlSelectInterpretation( qryStr );

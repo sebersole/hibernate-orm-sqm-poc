@@ -43,7 +43,7 @@ public abstract class BaseUnitTest {
 	public void before() throws Exception {
 		final StandardServiceRegistry ssr = new StandardServiceRegistryBuilder()
 				.applySetting( AvailableSettings.JPAQL_STRICT_COMPLIANCE, strictJpaCompliance() )
-				.applySetting( AvailableSettings.HBM2DDL_AUTO, "create-drop" )
+				.applySetting( AvailableSettings.HBM2DDL_AUTO, exportSchema() ? "create-drop" : "none" )
 				.applySetting( PersisterFactoryInitiator.IMPL_NAME, PersisterFactoryImpl.INSTANCE )
 				.build();
 
@@ -59,6 +59,10 @@ public abstract class BaseUnitTest {
 		}
 
 		consumerContext = new ConsumerContextImpl( sessionFactory );
+	}
+
+	protected boolean exportSchema() {
+		return false;
 	}
 
 	@After

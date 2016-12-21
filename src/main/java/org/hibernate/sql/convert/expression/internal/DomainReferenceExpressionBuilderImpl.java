@@ -7,7 +7,8 @@
 package org.hibernate.sql.convert.expression.internal;
 
 import org.hibernate.loader.PropertyPath;
-import org.hibernate.persister.common.internal.Helper;
+import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
+import org.hibernate.persister.common.internal.PersisterHelper;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.SingularAttribute;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
@@ -16,11 +17,13 @@ import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
 import org.hibernate.sql.ast.expression.domain.CompositeColumnBindingSource;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.EntityReferenceExpression;
+import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
 import org.hibernate.sql.ast.expression.domain.SingularAttributeReferenceExpression;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.convert.expression.spi.DomainReferenceExpressionBuilder;
 import org.hibernate.sqm.query.expression.domain.PluralAttributeBinding;
+import org.hibernate.sqm.query.expression.domain.PluralAttributeElementBinding;
 import org.hibernate.sqm.query.expression.domain.SingularAttributeBinding;
 
 /**
@@ -56,7 +59,7 @@ public class DomainReferenceExpressionBuilderImpl implements DomainReferenceExpr
 	public DomainReferenceExpression buildSingularAttributeExpression(
 			BuildingContext buildingContext,
 			SingularAttributeBinding singularAttributeBinding) {
-		final PropertyPath propertyPath = Helper.convert( singularAttributeBinding.getPropertyPath() );
+		final PropertyPath propertyPath = PersisterHelper.convert( singularAttributeBinding.getPropertyPath() );
 
 		if ( singularAttributeBinding.getAttribute() instanceof SingularAttributeEntity ) {
 			final SingularAttributeEntity entityTypedAttribute = (SingularAttributeEntity) singularAttributeBinding.getAttribute();
@@ -110,5 +113,19 @@ public class DomainReferenceExpressionBuilderImpl implements DomainReferenceExpr
 
 
 		throw new NotYetImplementedException( "resolving AttributeBinding for plural-attributes" );
+	}
+
+	@Override
+	public DomainReferenceExpression buildPluralAttributeElementReferenceExpression(
+			PluralAttributeElementBinding binding,
+			TableGroup resolvedTableGroup,
+			PropertyPath propertyPath) {
+		final ImprovedCollectionPersister collectionPersister = (ImprovedCollectionPersister) binding.getPluralAttributeReference();
+		return new PluralAttributeElementReferenceExpression(
+				collectionPersister,
+				resolvedTableGroup,
+				propertyPath,
+				isShallow()
+		);
 	}
 }

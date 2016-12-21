@@ -14,6 +14,7 @@ import java.util.TreeMap;
 
 import org.hibernate.HibernateException;
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.persister.common.internal.UnionSubclassTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.Table;
 import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
@@ -94,6 +95,12 @@ public abstract class AbstractTableGroup implements TableGroup, ColumnBindingSou
 	public TableBinding locateTableBinding(Table table) {
 		if ( table == getRootTableBinding().getTable() ) {
 			return getRootTableBinding();
+		}
+
+		if ( getRootTableBinding().getTable() instanceof UnionSubclassTable ) {
+			if ( ( (UnionSubclassTable) getRootTableBinding().getTable() ).includes( table ) ) {
+				return getRootTableBinding();
+			}
 		}
 
 		for ( TableJoin tableJoin : getTableJoins() ) {

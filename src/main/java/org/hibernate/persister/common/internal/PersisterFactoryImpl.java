@@ -47,13 +47,13 @@ public class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAw
 	private org.hibernate.persister.internal.PersisterFactoryImpl delegate;
 	private ServiceRegistryImplementor serviceRegistry;
 
-	private Set<TypeHierarchyNode> roots = new HashSet<TypeHierarchyNode>();
-	private Map<String,TypeHierarchyNode> nameToHierarchyNodeMap = new HashMap<String, TypeHierarchyNode>();
+	private Set<TypeHierarchyNode> roots = new HashSet<>();
+	private Map<String,TypeHierarchyNode> nameToHierarchyNodeMap = new HashMap<>();
 
-	private Map<EntityPersister, ImprovedEntityPersisterImpl> entityPersisterMap = new HashMap<EntityPersister, ImprovedEntityPersisterImpl>();
+	private Map<EntityPersister, ImprovedEntityPersisterImpl> entityPersisterMap = new HashMap<>();
 
 	public Map<EntityPersister, ImprovedEntityPersisterImpl> getEntityPersisterMap() {
-		return new HashMap<EntityPersister, ImprovedEntityPersisterImpl>( entityPersisterMap );
+		return new HashMap<>( entityPersisterMap );
 	}
 
 	public void finishUp(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
@@ -149,11 +149,10 @@ public class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAw
 			// 		in this case we want to create the TypeHierarchyNode (if not already there), but not the persisters...
 			// 		that will happen on later call to
 			final String superTypeName = entityBinding.getSuperclass().getEntityName();
-			TypeHierarchyNode node = nameToHierarchyNodeMap.get( superTypeName );
-			if ( node == null ) {
-				node = new TypeHierarchyNode( superTypeName, entityBinding.getSuperclass() );
-				nameToHierarchyNodeMap.put( superTypeName, node );
-			}
+			TypeHierarchyNode node = nameToHierarchyNodeMap.computeIfAbsent(
+					superTypeName,
+					k -> new TypeHierarchyNode( superTypeName, entityBinding.getSuperclass() )
+			);
 			return node;
 		}
 		else {

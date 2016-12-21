@@ -75,6 +75,12 @@ public class IdentifierCompositeAggregated
 	}
 
 	@Override
+	public AttributeContainer getSuperAttributeContainer() {
+		// composite inheritance not supported
+		return null;
+	}
+
+	@Override
 	public List<Attribute> getNonIdentifierAttributes() {
 		return Collections.emptyList();
 	}

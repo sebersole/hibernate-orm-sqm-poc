@@ -9,8 +9,15 @@ package org.hibernate.persister.common.spi;
 import java.util.List;
 
 /**
+ * Specialization of Attributes that are joinable.
+ *
  * @author Steve Ebersole
  */
 public interface JoinableAttribute extends Attribute {
+	// todo : possibly a JoinMetadata contract encapsulating:
+	//		1) "join direction" (ala ForeignKeyDirection
+	//		2) JoinColumnMappings (relative to direction)
+	//		3) ? JoinableAttributeContainer ?
+	//		4) ? JoinableAttribute ?
 	List<JoinColumnMapping> getJoinColumnMappings();
 }

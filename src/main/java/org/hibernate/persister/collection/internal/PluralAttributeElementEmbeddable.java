@@ -75,4 +75,9 @@ public class PluralAttributeElementEmbeddable implements PluralAttributeElement<
 	public TableGroupProducer resolveTableGroupProducer() {
 		return getCompositeContainer().resolveTableGroupProducer();
 	}
+
+	@Override
+	public boolean canCompositeContainCollections() {
+		return false;
+	}
 }

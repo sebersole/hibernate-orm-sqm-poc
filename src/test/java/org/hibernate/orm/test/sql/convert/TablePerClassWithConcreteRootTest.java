@@ -6,24 +6,22 @@
  */
 package org.hibernate.orm.test.sql.convert;
 
+import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
-import java.util.List;
 
 import org.hibernate.boot.MetadataSources;
-import org.hibernate.persister.common.internal.DerivedTable;
-import org.hibernate.persister.common.internal.PhysicalTable;
+import org.hibernate.orm.test.sql.BaseUnitTest;
+import org.hibernate.persister.common.internal.UnionSubclassTable;
 import org.hibernate.persister.common.spi.Table;
 import org.hibernate.sql.ast.QuerySpec;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.from.FromClause;
 import org.hibernate.sql.ast.from.TableBinding;
 import org.hibernate.sql.ast.from.TableSpace;
-import org.hibernate.orm.test.sql.BaseUnitTest;
 
-import org.hibernate.testing.FailureExpected;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -38,7 +36,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 public class TablePerClassWithConcreteRootTest extends BaseUnitTest {
 
 	@Test
-	@FailureExpected( jiraKey = "none" )
 	public void selectRootEntity() {
 		final QuerySpec querySpec = getQuerySpec( "from RootEntity" );
 
@@ -52,7 +49,7 @@ public class TablePerClassWithConcreteRootTest extends BaseUnitTest {
 
 		final TableBinding rootTableBinding = tableSpace.getRootTableGroup().getRootTableBinding();
 		final Table table = rootTableBinding.getTable();
-		assertThat( table, instanceOf( DerivedTable.class ) );
+		assertThat( table, instanceOf( UnionSubclassTable.class ) );
 		assertThat( table.getTableExpression(), containsString( "RootEntity union all" ) );
 		assertThat( table.getTableExpression(), containsString( "from second_child" ) );
 		assertThat( table.getTableExpression(), containsString( "from first_child" ) );
@@ -61,7 +58,6 @@ public class TablePerClassWithConcreteRootTest extends BaseUnitTest {
 	}
 
 	@Test
-	@FailureExpected( jiraKey = "none" )
 	public void selectChild() {
 		final QuerySpec querySpec = getQuerySpec( "from FirstChild" );
 
@@ -75,7 +71,7 @@ public class TablePerClassWithConcreteRootTest extends BaseUnitTest {
 
 		final TableBinding rootTableBinding = tableSpace.getRootTableGroup().getRootTableBinding();
 		final Table table = rootTableBinding.getTable();
-		assertThat( table, instanceOf( PhysicalTable.class ) );
+		assertThat( table, instanceOf( UnionSubclassTable.class ) );
 
 		assertThat( tableSpace.getRootTableGroup().getTableJoins().size(), is( 0 ) );
 	}

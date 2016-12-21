@@ -6,7 +6,6 @@
  */
 package org.hibernate.persister.common.internal;
 
-import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.Table;
 
@@ -14,11 +13,11 @@ import org.hibernate.persister.common.spi.Table;
  * @author Steve Ebersole
  */
 public class PhysicalColumn implements Column {
-	private final AbstractTable table;
+	private final Table table;
 	private final String name;
 	private final int jdbcType;
 
-	public PhysicalColumn(AbstractTable table, String name, int jdbcType) {
+	public PhysicalColumn(Table table, String name, int jdbcType) {
 		this.table = table;
 		this.name = name;
 		this.jdbcType = jdbcType;

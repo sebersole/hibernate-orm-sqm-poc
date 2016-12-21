@@ -51,6 +51,11 @@ public class SingularAttributeEmbedded
 		return getCompositeContainer().resolveTableGroupProducer();
 	}
 
+	@Override
+	public boolean canCompositeContainCollections() {
+		return embeddablePersister.canCompositeContainCollections();
+	}
+
 	public EmbeddablePersister getEmbeddablePersister() {
 		return embeddablePersister;
 	}

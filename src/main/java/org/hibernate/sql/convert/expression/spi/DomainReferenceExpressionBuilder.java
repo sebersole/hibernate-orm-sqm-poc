@@ -12,10 +12,12 @@ import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.Clause;
 import org.hibernate.sql.ast.expression.domain.ColumnBindingSource;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
+import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.convert.internal.FromClauseIndex;
 import org.hibernate.sql.convert.results.spi.ReturnResolutionContext;
 import org.hibernate.sqm.domain.DomainMetamodel;
 import org.hibernate.sqm.query.expression.domain.PluralAttributeBinding;
+import org.hibernate.sqm.query.expression.domain.PluralAttributeElementBinding;
 import org.hibernate.sqm.query.expression.domain.SingularAttributeBinding;
 
 /**
@@ -37,6 +39,11 @@ public interface DomainReferenceExpressionBuilder {
 	DomainReferenceExpression buildPluralAttributeExpression(
 			BuildingContext buildingContext,
 			PluralAttributeBinding attributeBinding);
+
+	DomainReferenceExpression buildPluralAttributeElementReferenceExpression(
+			PluralAttributeElementBinding binding,
+			TableGroup resolvedTableGroup,
+			PropertyPath convert);
 
 	interface BuildingContext {
 		SessionFactoryImplementor getSessionFactory();

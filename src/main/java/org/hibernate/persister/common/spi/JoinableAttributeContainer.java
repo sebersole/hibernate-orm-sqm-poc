@@ -9,6 +9,8 @@ package org.hibernate.persister.common.spi;
 import java.util.List;
 
 /**
+ * Specialization of AttributeContainer which can contain JoinableAttributes.
+ *
  * @author Steve Ebersole
  */
 public interface JoinableAttributeContainer extends AttributeContainer {

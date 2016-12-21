@@ -23,15 +23,14 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.persister.common.internal.PersisterFactoryImpl;
-import org.hibernate.persister.internal.PersisterFactoryInitiator;
-import org.hibernate.query.proposed.internal.sqm.QuerySqmImpl;
 import org.hibernate.orm.test.sql.support.ConsumerContextImpl;
 import org.hibernate.orm.test.sql.support.ExecutionContextTestingImpl;
 import org.hibernate.orm.test.sql.support.QueryProducerTestingImpl;
+import org.hibernate.persister.common.internal.PersisterFactoryImpl;
+import org.hibernate.persister.internal.PersisterFactoryInitiator;
+import org.hibernate.query.proposed.internal.sqm.QuerySqmImpl;
 import org.hibernate.sqm.SemanticQueryInterpreter;
 
-import org.hibernate.testing.FailureExpected;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -268,7 +267,6 @@ public class FullStackTest extends org.hibernate.testing.junit4.BaseUnitTestCase
 	}
 
 	@Test
-	@FailureExpected( jiraKey = "none" )
 	public void testFullStackManyToAttributeSelection() throws SQLException {
 		doInSession(
 				session -> {

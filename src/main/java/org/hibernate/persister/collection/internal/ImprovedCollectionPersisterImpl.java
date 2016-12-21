@@ -18,14 +18,14 @@ import org.hibernate.persister.collection.spi.PluralAttributeIndex;
 import org.hibernate.persister.collection.spi.PluralAttributeKey;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
-import org.hibernate.persister.common.internal.Helper;
+import org.hibernate.persister.common.internal.PersisterHelper;
 import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.JoinColumnMapping;
 import org.hibernate.persister.common.spi.JoinableAttributeContainer;
 import org.hibernate.persister.common.spi.SingularAttribute;
-import org.hibernate.persister.entity.Joinable;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.ast.from.CollectionTableGroup;
 import org.hibernate.sql.ast.from.TableBinding;
@@ -56,7 +56,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 	private PluralAttributeElement elementDescriptor;
 	private PluralAttributeIndex indexDescriptor;
 
-	private AbstractTable separateCollectionTable;
+	private Table separateCollectionTable;
 
 	public ImprovedCollectionPersisterImpl(
 			JoinableAttributeContainer declaringType,
@@ -65,7 +65,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		super( declaringType, attributeName );
 
 		this.persister = (AbstractCollectionPersister) persister;
-		this.collectionClassification = Helper.interpretCollectionClassification( persister.getCollectionType() );
+		this.collectionClassification = PersisterHelper.interpretCollectionClassification( persister.getCollectionType() );
 
 		this.foreignKeyDescriptor = new PluralAttributeKey( this );
 	}
@@ -75,13 +75,13 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		return (JoinableAttributeContainer) super.getAttributeContainer();
 	}
 
-	public AbstractTable getSeparateCollectionTable() {
+	public Table getSeparateCollectionTable() {
 		return separateCollectionTable;
 	}
 
 	@Override
 	public void finishInitialization(DatabaseModel databaseModel, DomainMetamodelImpl domainMetamodel) {
-		final AbstractTable collectionTable;
+		final Table collectionTable;
 		if ( persister.isOneToMany() ) {
 			collectionTable = ( (ImprovedEntityPersister) domainMetamodel.resolveEntityReference( this.persister.getElementPersister().getEntityName() ) ).getRootTable();
 			this.separateCollectionTable = null;
@@ -106,17 +106,17 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 			this.indexDescriptor = null;
 		}
 		else {
-			final List<Column> columns = Helper.makeValues(
+			final List<Column> columns = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
-					collectionTable,
 					persister.getIndexType(),
 					this.persister.getIndexColumnNames(),
-					this.persister.getIndexFormulas()
+					this.persister.getIndexFormulas(),
+					collectionTable
 			);
 			if ( persister.getIndexType().isComponentType() ) {
 				this.indexDescriptor = new PluralAttributeIndexEmbeddable(
 						this,
-						Helper.INSTANCE.buildEmbeddablePersister(
+						PersisterHelper.INSTANCE.buildEmbeddablePersister(
 								databaseModel,
 								domainMetamodel,
 								this,
@@ -155,12 +155,9 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		if ( elementType.isAnyType() ) {
 			assert separateCollectionTable != null;
 
-			final List<Column> columns = Helper.makeValues(
+			final List<Column> columns = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
-					separateCollectionTable,
-					persister.getElementType(),
-					this.persister.getElementColumnNames(),
-					null
+					persister.getElementType(), this.persister.getElementColumnNames(), null, separateCollectionTable
 			);
 
 			return new PluralAttributeElementAny(
@@ -172,17 +169,14 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		else if ( elementType.isComponentType() ) {
 			assert separateCollectionTable != null;
 
-			final List<Column> columns = Helper.makeValues(
+			final List<Column> columns = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
-					separateCollectionTable,
-					persister.getElementType(),
-					this.persister.getElementColumnNames(),
-					null
+					persister.getElementType(), this.persister.getElementColumnNames(), null, separateCollectionTable
 			);
 
 			return new PluralAttributeElementEmbeddable(
 					this,
-					Helper.INSTANCE.buildEmbeddablePersister(
+					PersisterHelper.INSTANCE.buildEmbeddablePersister(
 							databaseModel,
 							domainMetamodel,
 							this,
@@ -194,15 +188,12 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		}
 		else if ( elementType.isEntityType() ) {
 			// NOTE : this only handles the FK, not the all of the columns for the entity
-			final AbstractTable table = separateCollectionTable != null
+			final Table table = separateCollectionTable != null
 					? separateCollectionTable
 					: ( (ImprovedEntityPersister) domainMetamodel.resolveEntityReference( this.persister.getElementPersister().getEntityName() ) ).getRootTable();
-			final List<Column> columns = Helper.makeValues(
+			final List<Column> columns = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
-					table,
-					persister.getElementType(),
-					this.persister.getElementColumnNames(),
-					null
+					persister.getElementType(), this.persister.getElementColumnNames(), null, table
 			);
 
 			return new PluralAttributeElementEntity(
@@ -216,12 +207,9 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		else {
 			assert separateCollectionTable != null;
 
-			final List<Column> columns = Helper.makeValues(
+			final List<Column> columns = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
-					separateCollectionTable,
-					persister.getElementType(),
-					this.persister.getElementColumnNames(),
-					null
+					persister.getElementType(), this.persister.getElementColumnNames(), null, separateCollectionTable
 			);
 
 			return new PluralAttributeElementBasic(
@@ -281,7 +269,7 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 				sqmFrom.getUniqueIdentifier(),
 				sqlAliasBaseManager.getSqlAliasBase( sqmFrom ),
 				this,
-				Helper.convert( sqmFrom.getPropertyPath() )
+				PersisterHelper.convert( sqmFrom.getPropertyPath() )
 		);
 
 		fromClauseIndex.crossReference( sqmFrom, group );
@@ -362,5 +350,10 @@ public class ImprovedCollectionPersisterImpl extends AbstractAttribute implement
 		else {
 			return Optional.empty();
 		}
+	}
+
+	@Override
+	public boolean canCompositeContainCollections() {
+		return false;
 	}
 }

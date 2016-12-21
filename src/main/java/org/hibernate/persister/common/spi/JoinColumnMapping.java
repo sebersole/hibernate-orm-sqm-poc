@@ -7,6 +7,12 @@
 package org.hibernate.persister.common.spi;
 
 /**
+ * Represents one column mapping as part of a join restriction
+ * from a mapped association.
+ * <p/>
+ * NOTE left-hand-side and right-hand-side here are relative to the owner and
+ *
+ *
  * @author Steve Ebersole
  */
 public class JoinColumnMapping {

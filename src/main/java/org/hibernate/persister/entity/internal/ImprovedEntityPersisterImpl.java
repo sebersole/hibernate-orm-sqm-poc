@@ -17,17 +17,21 @@ import org.hibernate.HibernateException;
 import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
-import org.hibernate.persister.common.internal.Helper;
+import org.hibernate.persister.common.internal.PersisterHelper;
+import org.hibernate.persister.common.internal.PhysicalTable;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
+import org.hibernate.persister.common.internal.UnionSubclassTable;
 import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Attribute;
+import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.JoinColumnMapping;
 import org.hibernate.persister.common.spi.JoinableAttribute;
 import org.hibernate.persister.common.spi.PluralAttribute;
 import org.hibernate.persister.common.spi.SingularAttribute;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.entity.Loadable;
 import org.hibernate.persister.entity.OuterJoinLoadable;
@@ -55,7 +59,6 @@ import org.hibernate.sqm.query.JoinType;
 import org.hibernate.sqm.query.from.SqmFrom;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.CompositeType;
-import org.hibernate.type.EntityType;
 import org.hibernate.type.ForeignKeyDirection;
 import org.hibernate.type.OneToOneType;
 
@@ -69,7 +72,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 
 	private final EntityPersister persister;
 
-	private AbstractTable[] tables;
+	private Table[] tables;
 
 	private ImprovedEntityPersisterImpl superType;
 	private IdentifierDescriptor identifierDescriptor;
@@ -101,70 +104,81 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		final Queryable queryable = (Queryable) persister;
 		final OuterJoinLoadable ojlPersister = (OuterJoinLoadable) persister;
 
+		final ImprovedEntityPersister rootEntityPersister = findRootEntityPersister();
+
 		if ( persister instanceof UnionSubclassEntityPersister ) {
-			tables = new AbstractTable[1];
-			tables[0] = makeTableReference(
-					databaseModel,
-					( (UnionSubclassEntityPersister) persister ).getTableName()
-			);
+			// todo : we will need a way to capture both the union query (used for selections) versus the physical tables (used for DML)
+			//		maybe keep both sets and then define buildTableGroup to accept a selector (boolean) as
+			//		to which set of tables to use.
+			//
+			// 		physicalTables versus selectionTables is the initial design to capturing the first part.
+			//
+			//		in buildTableGroup (below) we will need to add the selector to leverage that.
+			//
+			//		this approach has one drawback - it forces us to duplicate the Column definition
+			//		in both sets of Tables for UnionSubclassEntityPersister to account for Column#getSourceTable
+			tables = new Table[1];
+			tables[0] = resolveUnionSubclassTables( this, databaseModel );
+
+			this.identifierDescriptor = rootEntityPersister.getIdentifierDescriptor();
 		}
 		else {
 			// for now we treat super, self and sub attributes here just as EntityPersister does
 			// ultimately would be better to split that across the specific persister impls and link them imo
-			final int subclassTableCount = Helper.INSTANCE.extractSubclassTableCount( persister );
-			this.tables = new AbstractTable[subclassTableCount];
+			final int subclassTableCount = PersisterHelper.INSTANCE.extractSubclassTableCount( persister );
+			this.tables = new Table[subclassTableCount];
 
 			tables[0] = makeTableReference( databaseModel, queryable.getSubclassTableName( 0 ) );
 			for ( int i = 1; i < subclassTableCount; i++ ) {
 				tables[i] = makeTableReference( databaseModel, queryable.getSubclassTableName( i ) );
 			}
-		}
 
-		final List<Column> idColumns = Helper.makeValues(
-				domainMetamodel.getSessionFactory(),
-				tables[0],
-				persister.getIdentifierType(),
-				ojlPersister.getIdentifierColumnNames(),
-				null
-		);
+			// todo : this should probably just reuse the root persister's id descriptor
+			// todo : ^^ probably the same for ROW_ID, discriminator and version descriptors
 
-		if ( persister.getIdentifierType() instanceof BasicType ) {
-			identifierDescriptor = new IdentifierSimple(
-					this,
-					persister.getIdentifierPropertyName(),
-					(BasicType) persister.getIdentifierType(),
-					idColumns
+			final List<Column> idColumns = PersisterHelper.makeValues(
+					domainMetamodel.getSessionFactory(),
+					persister.getIdentifierType(), ojlPersister.getIdentifierColumnNames(), null, tables[0]
 			);
-		}
-		else {
-			final CompositeType cidType = (CompositeType) persister.getIdentifierType();
-			// todo : need to pass along that any built sub attributes are part of the id
-			if ( persister.hasIdentifierProperty() ) {
-				identifierDescriptor = new IdentifierCompositeAggregated(
+
+			if ( persister.getIdentifierType() instanceof BasicType ) {
+				identifierDescriptor = new IdentifierSimple(
 						this,
 						persister.getIdentifierPropertyName(),
-						Helper.INSTANCE.buildEmbeddablePersister(
-								databaseModel,
-								domainMetamodel,
-								this,
-								persister.getEntityName() + '.' + persister.getIdentifierPropertyName(),
-								cidType,
-								idColumns
-						)
+						(BasicType) persister.getIdentifierType(),
+						idColumns
 				);
 			}
 			else {
-				identifierDescriptor = new IdentifierCompositeNonAggregated(
-						this,
-						Helper.INSTANCE.buildEmbeddablePersister(
-								databaseModel,
-								domainMetamodel,
-								this,
-								persister.getEntityName() + ".id",
-								cidType,
-								idColumns
-						)
-				);
+				final CompositeType cidType = (CompositeType) persister.getIdentifierType();
+				// todo : need to pass along that any built sub attributes are part of the id
+				if ( persister.hasIdentifierProperty() ) {
+					identifierDescriptor = new IdentifierCompositeAggregated(
+							this,
+							persister.getIdentifierPropertyName(),
+							PersisterHelper.INSTANCE.buildEmbeddablePersister(
+									databaseModel,
+									domainMetamodel,
+									this,
+									persister.getEntityName() + '.' + persister.getIdentifierPropertyName(),
+									cidType,
+									idColumns
+							)
+					);
+				}
+				else {
+					identifierDescriptor = new IdentifierCompositeNonAggregated(
+							this,
+							PersisterHelper.INSTANCE.buildEmbeddablePersister(
+									databaseModel,
+									domainMetamodel,
+									this,
+									persister.getEntityName() + ".id",
+									cidType,
+									idColumns
+							)
+					);
+				}
 			}
 		}
 
@@ -177,33 +191,49 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			this.discriminatorDescriptor = new DiscriminatorDescriptorImpl( this );
 		}
 
-		final int fullAttributeCount = ( ojlPersister ).countSubclassProperties();
+//		final int fullAttributeCount = ( ojlPersister ).countSubclassProperties();
+		final int fullAttributeCount = ( ojlPersister ).getPropertyTypes().length;
 		for ( int attributeNumber = 0; attributeNumber < fullAttributeCount; attributeNumber++ ) {
-			final String attributeName = ojlPersister.getSubclassPropertyName( attributeNumber );
+//			final String attributeName = ojlPersister.getSubclassPropertyName( attributeNumber );
+			final String attributeName = ojlPersister.getPropertyNames()[ attributeNumber ];
 			log.tracef( "Starting building of Entity attribute : %s#%s", persister.getEntityName(), attributeName );
 
-			final org.hibernate.type.Type attributeType = ojlPersister.getSubclassPropertyType( attributeNumber );
+//			final org.hibernate.type.Type attributeType = ojlPersister.getSubclassPropertyType( attributeNumber );
+			final org.hibernate.type.Type attributeType = ojlPersister.getPropertyTypes()[ attributeNumber ];
 
-			final AbstractTable containingTable = tables[Helper.INSTANCE.getSubclassPropertyTableNumber(
-					persister,
-					attributeNumber
-			)];
-			final String[] columns = Helper.INSTANCE.getSubclassPropertyColumnExpressions( persister, attributeNumber );
-			final String[] formulas = Helper.INSTANCE.getSubclassPropertyFormulaExpressions(
+			final Table table;
+			if ( persister instanceof UnionSubclassEntityPersister ) {
+				table = tables[0];
+			}
+			else {
+//				final int tableIndex = Helper.INSTANCE.getSubclassPropertyTableNumber(
+//						persister,
+//						attributeNumber
+//				);
+//				table = tables[tableIndex];
+				table = PersisterHelper.INSTANCE.getPropertyTable(
+						persister,
+						attributeName,
+						tables
+				);
+			}
+
+			final String[] columns = PersisterHelper.INSTANCE.getSubclassPropertyColumnExpressions( persister, attributeNumber );
+			final String[] formulas = PersisterHelper.INSTANCE.getSubclassPropertyFormulaExpressions(
 					persister,
 					attributeNumber
 			);
-			final List<Column> values = Helper.makeValues(
+			final List<Column> values = PersisterHelper.makeValues(
 					domainMetamodel.getSessionFactory(),
-					containingTable,
 					attributeType,
 					columns,
-					formulas
+					formulas,
+					table
 			);
 
 			final AbstractAttribute attribute;
 			if ( attributeType.isCollectionType() ) {
-				attribute = Helper.INSTANCE.buildPluralAttribute(
+				attribute = PersisterHelper.INSTANCE.buildPluralAttribute(
 						databaseModel,
 						domainMetamodel,
 						this,
@@ -212,7 +242,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 				);
 			}
 			else {
-				attribute = Helper.INSTANCE.buildSingularAttribute(
+				attribute = PersisterHelper.INSTANCE.buildSingularAttribute(
 						databaseModel,
 						domainMetamodel,
 						this,
@@ -229,9 +259,50 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		initComplete = true;
 	}
 
+	private ImprovedEntityPersister findRootEntityPersister() {
+		ImprovedEntityPersisterImpl lastNonNullSuperPersister = this;
+		ImprovedEntityPersisterImpl superPersister = superType;
+		while ( superPersister != null ) {
+			lastNonNullSuperPersister = superPersister;
+			superPersister = superPersister.superType;
+		}
+		return lastNonNullSuperPersister;
+	}
+
+	private UnionSubclassTable resolveUnionSubclassTables(
+			ImprovedEntityPersisterImpl persister,
+			DatabaseModel databaseModel) {
+		assert persister.getEntityPersister() instanceof UnionSubclassEntityPersister;
+
+		// UnionSubclassEntityPersister#getTableName returns the union query
+		final String unionQuery = ( (UnionSubclassEntityPersister) persister.getEntityPersister() ).getTableName();
+		// UnionSubclassEntityPersister#getRootTableName returns the physical table name
+		final PhysicalTable physicalTable = databaseModel.findOrCreatePhysicalTable(
+				( (UnionSubclassEntityPersister) persister.getEntityPersister() ).getRootTableName()
+		);
+
+		if ( persister.superType == null ) {
+			// we have reached the root
+			return new UnionSubclassTable( unionQuery, physicalTable, null );
+		}
+
+		if ( persister.superType .getEntityPersister()instanceof UnionSubclassEntityPersister ) {
+			return new UnionSubclassTable(
+					unionQuery,
+					physicalTable,
+					resolveUnionSubclassTables( persister.superType, databaseModel )
+			);
+		}
+
+		throw new HibernateException(
+				"Could not determine how to resolve union-subclass UnionSubclassTable for super-type [" +
+						persister.superType.getEntityName() + " <- " + persister.getEntityName() + "]"
+		);
+	}
+
 	private AbstractTable makeTableReference(DatabaseModel databaseModel, String tableExpression) {
-		// fugly, but when moved into persister we would know from mapping metamodel which type.
 		if ( tableExpression.trim().startsWith( "select" ) || tableExpression.trim().contains( "( select" ) ) {
+			// fugly, but when moved into persister we would know from mapping metamodel which type.
 			return databaseModel.createDerivedTable( tableExpression );
 		}
 		else {
@@ -260,7 +331,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 	}
 
 	@Override
-	public AbstractTable getRootTable() {
+	public Table getRootTable() {
 		return tables[0];
 	}
 
@@ -293,7 +364,7 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 				fromElement.getUniqueIdentifier(),
 				sqlAliasBaseManager.getSqlAliasBase( fromElement ),
 				this,
-				Helper.convert( fromElement.getPropertyPath() )
+				PersisterHelper.convert( fromElement.getPropertyPath() )
 		);
 
 		fromClauseIndex.crossReference( fromElement, group );
@@ -321,6 +392,11 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 			);
 			group.addTableSpecificationJoin( new TableJoin( joinType, tableBinding, null ) );
 		}
+	}
+
+	@Override
+	public AttributeContainer getSuperAttributeContainer() {
+		return superType;
 	}
 
 	@Override
@@ -524,4 +600,8 @@ public class ImprovedEntityPersisterImpl implements ImprovedEntityPersister {
 		return joinColumnMappings;
 	}
 
+	@Override
+	public boolean canCompositeContainCollections() {
+		return true;
+	}
 }

@@ -18,7 +18,7 @@ import org.hibernate.persister.common.internal.PhysicalColumn;
  * @author Steve Ebersole
  */
 public abstract class AbstractTable implements Table {
-	private final Map<String,Column> valueMap = new TreeMap<String, Column>( String.CASE_INSENSITIVE_ORDER );
+	private final Map<String,Column> valueMap = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
 
 	public PhysicalColumn makeColumn(String name, int jdbcType) {
 		if ( valueMap.containsKey( name ) ) {

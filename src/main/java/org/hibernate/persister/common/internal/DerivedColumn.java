@@ -6,7 +6,6 @@
  */
 package org.hibernate.persister.common.internal;
 
-import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.Table;
 
@@ -14,11 +13,11 @@ import org.hibernate.persister.common.spi.Table;
  * @author Steve Ebersole
  */
 public class DerivedColumn implements Column {
-	private final AbstractTable table;
+	private final Table table;
 	private final String expression;
 	private final int jdbcType;
 
-	public DerivedColumn(AbstractTable table, String expression, int jdbcType) {
+	public DerivedColumn(Table table, String expression, int jdbcType) {
 		this.table = table;
 		this.expression = expression;
 		this.jdbcType = jdbcType;
@@ -41,6 +40,11 @@ public class DerivedColumn implements Column {
 	@Override
 	public String toLoggableString() {
 		return "DerivedColumn( " + expression + ")";
+	}
+
+	@Override
+	public String toString() {
+		return toLoggableString();
 	}
 
 	@Override

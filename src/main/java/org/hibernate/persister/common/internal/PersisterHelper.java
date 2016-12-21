@@ -18,7 +18,6 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.common.spi.AbstractAttribute;
-import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.JoinableAttributeContainer;
@@ -26,6 +25,7 @@ import org.hibernate.persister.common.spi.Table;
 import org.hibernate.persister.embeddable.EmbeddablePersister;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.sql.NotYetImplementedException;
 import org.hibernate.sqm.domain.PluralAttributeElementReference.ElementClassification;
@@ -53,7 +53,7 @@ import org.hibernate.type.Type;
  *
  * @author Steve Ebersole
  */
-public class Helper {
+public class PersisterHelper {
 	private final Method subclassTableSpanMethod;
 	private final Method subclassPropertyTableNumberMethod;
 	private final Method subclassPropertyColumnsMethod;
@@ -62,9 +62,9 @@ public class Helper {
 	/**
 	 * Singleton access
 	 */
-	public static final Helper INSTANCE = new Helper();
+	public static final PersisterHelper INSTANCE = new PersisterHelper();
 
-	private Helper() {
+	private PersisterHelper() {
 		try {
 			subclassTableSpanMethod = AbstractEntityPersister.class.getDeclaredMethod( "getSubclassTableSpan" );
 			subclassTableSpanMethod.setAccessible( true );
@@ -119,6 +119,23 @@ public class Helper {
 		}
 	}
 
+	public Table getPropertyTable(EntityPersister persister, String attributeName, Table[] tables) {
+		final String tableName = ( ( OuterJoinLoadable) persister ).getPropertyTableName( attributeName );
+		for ( Table table : tables ) {
+			if ( table instanceof UnionSubclassTable ) {
+				if ( ( (UnionSubclassTable) table ).includes( tableName ) ) {
+					return table;
+				}
+			}
+			if ( table.getTableExpression().equals( tableName ) ) {
+				return table;
+			}
+		}
+		throw new HibernateException(
+				"Could not locate Table for attribute [" + persister.getEntityName() + ".'" + attributeName + "]"
+		);
+	}
+
 	public String[] getSubclassPropertyColumnExpressions(EntityPersister persister, int subclassPropertyNumber) {
 		try {
 			final String[][] columnExpressions = (String[][]) subclassPropertyColumnsMethod.invoke( persister );
@@ -159,10 +176,10 @@ public class Helper {
 
 	public static List<Column> makeValues(
 			SessionFactoryImplementor factory,
-			Table containingTable,
 			Type type,
 			String[] columns,
-			String[] formulas) {
+			String[] formulas,
+			Table table) {
 		assert formulas == null || columns.length == formulas.length;
 
 		final List<Column> values = new ArrayList<>();
@@ -171,13 +188,13 @@ public class Helper {
 			final int jdbcType = type.sqlTypes( factory )[i];
 
 			if ( columns[i] != null ) {
-				values.add( containingTable.makeColumn( columns[i], jdbcType ) );
+				values.add( table.makeColumn( columns[i], jdbcType ) );
 			}
 			else {
 				if ( formulas == null ) {
 					throw new IllegalStateException( "Column name was null and no formula information was supplied" );
 				}
-				values.add( containingTable.makeFormula( formulas[i], jdbcType ) );
+				values.add( table.makeFormula( formulas[i], jdbcType ) );
 			}
 		}
 

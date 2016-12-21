@@ -88,6 +88,7 @@ public class SelectableEntityTypeImpl implements Selectable {
 			Map<Attribute, ColumnBindingGroup> columnBindingGroupMap) {
 		if ( !SingularAttribute.class.isInstance( attribute ) ) {
 			columnBindingGroupMap.put( attribute, ColumnBindingGroupEmptyImpl.INSTANCE );
+			return;
 		}
 
 		final SingularAttribute singularAttribute = (SingularAttribute) attribute;

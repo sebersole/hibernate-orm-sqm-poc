@@ -6,6 +6,8 @@
  */
 package org.hibernate.sql.ast.from;
 
+import java.util.Locale;
+
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.sql.ast.select.SqlSelectable;
 import org.hibernate.sql.exec.results.process.internal.SqlSelectionReaderImpl;
@@ -76,5 +78,15 @@ public class ColumnBinding implements SqlSelectable {
 		int result = getIdentificationVariable().hashCode();
 		result = 31 * result + getColumn().hashCode();
 		return result;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(
+				Locale.ROOT, 
+				"ColumnBinding(%s.%s)",
+				getIdentificationVariable(),
+				column.getExpression()
+		);
 	}
 }

@@ -24,6 +24,7 @@ import org.hibernate.graph.spi.AttributeNodeImplementor;
 import org.hibernate.graph.spi.EntityGraphImplementor;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.common.internal.CompositeReference;
+import org.hibernate.persister.common.internal.PersisterHelper;
 import org.hibernate.persister.common.internal.SingularAttributeEmbedded;
 import org.hibernate.persister.common.internal.SingularAttributeEntity;
 import org.hibernate.persister.common.spi.Column;
@@ -58,7 +59,6 @@ import org.hibernate.sql.ast.expression.QueryLiteral;
 import org.hibernate.sql.ast.expression.SumFunction;
 import org.hibernate.sql.ast.expression.UnaryOperationExpression;
 import org.hibernate.sql.ast.expression.domain.DomainReferenceExpression;
-import org.hibernate.sql.ast.expression.domain.PluralAttributeElementReferenceExpression;
 import org.hibernate.sql.ast.expression.instantiation.DynamicInstantiation;
 import org.hibernate.sql.ast.from.EntityTableGroup;
 import org.hibernate.sql.ast.from.TableGroup;
@@ -611,7 +611,7 @@ public class SqmSelectToSqlAstConverter
 					final SingularAttributeEntity boundAttributeAsEntity = (SingularAttributeEntity) boundAttribute;
 					final FetchEntityAttributeImpl fetch = new FetchEntityAttributeImpl(
 							fetchParent,
-							org.hibernate.persister.common.internal.Helper.convert( attributeJoin.getPropertyPath() ),
+							PersisterHelper.convert( attributeJoin.getPropertyPath() ),
 							attributeJoin.getUniqueIdentifier(),
 							boundAttributeAsEntity,
 							boundAttributeAsEntity.getEntityPersister(),
@@ -1057,11 +1057,10 @@ public class SqmSelectToSqlAstConverter
 	public Object visitPluralAttributeElementBinding(PluralAttributeElementBinding binding) {
 		final TableGroup resolvedTableGroup = fromClauseIndex.findResolvedTableGroup( binding.getFromElement() );
 
-		final ImprovedCollectionPersister collectionPersister = (ImprovedCollectionPersister) binding.getPluralAttributeReference();
-		return new PluralAttributeElementReferenceExpression(
-				collectionPersister,
+		return getCurrentDomainReferenceExpressionBuilder().buildPluralAttributeElementReferenceExpression(
+				binding,
 				resolvedTableGroup,
-				org.hibernate.persister.common.internal.Helper.convert( binding.getPropertyPath() )
+				PersisterHelper.convert( binding.getPropertyPath() )
 		);
 	}
 

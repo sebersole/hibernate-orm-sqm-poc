@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import org.hibernate.persister.common.internal.CompositeContainer;
 import org.hibernate.persister.common.internal.DatabaseModel;
 import org.hibernate.persister.common.internal.DomainMetamodelImpl;
-import org.hibernate.persister.common.internal.Helper;
+import org.hibernate.persister.common.internal.PersisterHelper;
 import org.hibernate.persister.common.spi.AbstractAttribute;
 import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Attribute;
@@ -71,7 +71,7 @@ public class EmbeddablePersister
 				columns.add( allColumns.get( j ) );
 			}
 
-			final AbstractAttribute attribute = Helper.INSTANCE.buildAttribute(
+			final AbstractAttribute attribute = PersisterHelper.INSTANCE.buildAttribute(
 					databaseModel,
 					domainMetamodel,
 					this,
@@ -88,6 +88,12 @@ public class EmbeddablePersister
 
 	public List<Column> collectColumns() {
 		return allColumns;
+	}
+
+	@Override
+	public AttributeContainer getSuperAttributeContainer() {
+		// for now we do not support composite inheritance
+		return null;
 	}
 
 	@Override
@@ -119,6 +125,11 @@ public class EmbeddablePersister
 	@Override
 	public TableGroupProducer resolveTableGroupProducer() {
 		return compositeContainer.resolveTableGroupProducer();
+	}
+
+	@Override
+	public boolean canCompositeContainCollections() {
+		return compositeContainer.canCompositeContainCollections();
 	}
 
 	@Override

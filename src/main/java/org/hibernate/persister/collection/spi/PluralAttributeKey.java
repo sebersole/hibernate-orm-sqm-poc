@@ -12,10 +12,10 @@ import org.hibernate.HibernateException;
 import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.persister.collection.internal.ImprovedCollectionPersisterImpl;
 import org.hibernate.persister.collection.internal.PluralAttributeElementEntity;
-import org.hibernate.persister.common.spi.AbstractTable;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.JoinColumnMapping;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.persister.entity.Joinable;
 import org.hibernate.persister.entity.spi.ImprovedEntityPersister;
 import org.hibernate.type.Type;
@@ -89,7 +89,7 @@ public class PluralAttributeKey implements OrmTypeExporter {
 
 		assert joinTargetColumns.size() == columnNames.length;
 
-		final AbstractTable separateCollectionTable = improvedCollectionPersister.getSeparateCollectionTable();
+		final Table separateCollectionTable = improvedCollectionPersister.getSeparateCollectionTable();
 		if ( separateCollectionTable != null ) {
 			for ( int i = 0; i < columnNames.length; i++ ) {
 				columns.add(

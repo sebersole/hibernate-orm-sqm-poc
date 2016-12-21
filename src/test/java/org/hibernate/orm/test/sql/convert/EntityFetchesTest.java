@@ -12,20 +12,18 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.orm.test.sql.BaseUnitTest;
 import org.hibernate.sql.ast.SelectQuery;
 import org.hibernate.sql.ast.select.Selection;
 import org.hibernate.sql.convert.results.spi.FetchEntityAttribute;
 import org.hibernate.sql.convert.results.spi.Return;
 import org.hibernate.sql.convert.results.spi.ReturnEntity;
 import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
-import org.hibernate.orm.test.sql.BaseUnitTest;
 
-import org.hibernate.testing.FailureExpected;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -48,6 +46,7 @@ public class EntityFetchesTest extends BaseUnitTest {
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
 		assertThat( entity.getFetches().size(), is(1) );
 	}
+
 	@Test
 	public void testNestedFetching() {
 		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select t from Trunk t join fetch t.tree t2 join fetch t2.forest" );
@@ -69,7 +68,6 @@ public class EntityFetchesTest extends BaseUnitTest {
 	}
 
 	@Test
-	@FailureExpected( jiraKey = "n/a" )
 	public void testBasicOneToOneInverseFetching() {
 		final SqmSelectInterpretation interpretation = interpretSelectQuery( "select t from Tree t join fetch t.trunk" );
 		final SelectQuery sqlAstQuery = interpretation.getSqlSelectAst();
@@ -80,7 +78,6 @@ public class EntityFetchesTest extends BaseUnitTest {
 		final Selection selection = sqlAstQuery.getQuerySpec().getSelectClause().getSelections().get( 0 );
 		final Return queryReturn = interpretation.getQueryReturns().get( 0 );
 
-		assertThat( queryReturn.getSelectedExpression(), sameInstance( selection.getSelectExpression() ) );
 		assertThat( queryReturn, instanceOf( ReturnEntity.class ) );
 		final ReturnEntity entity = (ReturnEntity) queryReturn;
 

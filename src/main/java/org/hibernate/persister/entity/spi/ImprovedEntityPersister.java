@@ -16,6 +16,7 @@ import org.hibernate.persister.common.spi.AttributeContainer;
 import org.hibernate.persister.common.spi.Column;
 import org.hibernate.persister.common.spi.JoinableAttributeContainer;
 import org.hibernate.persister.common.spi.OrmTypeExporter;
+import org.hibernate.persister.common.spi.Table;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.sql.ast.from.AbstractTableGroup;
 import org.hibernate.sql.ast.from.EntityTableGroup;
@@ -79,7 +80,7 @@ public interface ImprovedEntityPersister
 	 * 			and for building the CollectionTableGroup for entity
 	 * 			elements (one2many, many2many)
 	 */
-	AbstractTable getRootTable();
+	Table getRootTable();
 
 	/**
 	 * @todo prefer not exposing this

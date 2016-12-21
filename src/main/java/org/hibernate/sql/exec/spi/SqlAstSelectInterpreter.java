@@ -61,7 +61,7 @@ import org.hibernate.sql.ast.predicate.Predicate;
 import org.hibernate.sql.ast.predicate.RelationalPredicate;
 import org.hibernate.sql.ast.select.SelectClause;
 import org.hibernate.sql.ast.select.SqlSelection;
-import org.hibernate.sql.convert.spi.Helper;
+import org.hibernate.sql.convert.spi.ConversionHelper;
 import org.hibernate.sql.convert.spi.SqmSelectInterpretation;
 import org.hibernate.sql.exec.internal.SqlSelectInterpretationImpl;
 import org.hibernate.sql.spi.ParameterBinder;
@@ -397,7 +397,7 @@ public class SqlAstSelectInterpreter {
 	public void visitNamedParameter(NamedParameter namedParameter) {
 		parameterBinders.add( namedParameter.getParameterBinder() );
 
-		final Type type = Helper.resolveType( namedParameter, parameterBindings );
+		final Type type = ConversionHelper.resolveType( namedParameter, parameterBindings );
 
 		final int columnCount = type.getColumnSpan( sessionFactory );
 		final boolean needsParens = currentlyInPredicate && columnCount > 1;
@@ -444,7 +444,7 @@ public class SqlAstSelectInterpreter {
 	public void visitPositionalParameter(PositionalParameter positionalParameter) {
 		parameterBinders.add( positionalParameter.getParameterBinder() );
 
-		final Type type = Helper.resolveType( positionalParameter, parameterBindings );
+		final Type type = ConversionHelper.resolveType( positionalParameter, parameterBindings );
 
 		final int columnCount = type.getColumnSpan( sessionFactory );
 		final boolean needsParens = currentlyInPredicate && columnCount > 1;

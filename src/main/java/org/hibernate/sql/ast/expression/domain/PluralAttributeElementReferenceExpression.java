@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.loader.PropertyPath;
+import org.hibernate.persister.collection.internal.PluralAttributeElementEntity;
 import org.hibernate.persister.collection.spi.ImprovedCollectionPersister;
 import org.hibernate.persister.collection.spi.PluralAttributeElement;
 import org.hibernate.persister.common.spi.Column;
@@ -20,6 +21,7 @@ import org.hibernate.sql.ast.from.TableGroup;
 import org.hibernate.sql.ast.select.Selectable;
 import org.hibernate.sql.ast.select.SelectableBasicTypeImpl;
 import org.hibernate.sql.ast.select.SelectableEmbeddedTypeImpl;
+import org.hibernate.sql.ast.select.SelectableEntityTypeImpl;
 import org.hibernate.sql.exec.spi.SqlAstSelectInterpreter;
 import org.hibernate.type.BasicType;
 import org.hibernate.type.CompositeType;
@@ -39,7 +41,8 @@ public class PluralAttributeElementReferenceExpression implements DomainReferenc
 	public PluralAttributeElementReferenceExpression(
 			ImprovedCollectionPersister collectionPersister,
 			TableGroup columnBindingSource,
-			PropertyPath propertyPath) {
+			PropertyPath propertyPath,
+			boolean isShallow) {
 		this.collectionPersister = collectionPersister;
 		this.columnBindingSource = columnBindingSource;
 		this.propertyPath = propertyPath;
@@ -72,15 +75,21 @@ public class PluralAttributeElementReferenceExpression implements DomainReferenc
 				);
 				break;
 			}
-			case ONE_TO_MANY: {
-				throw new NotYetImplementedException(
-						"Resolution of Selectable for entity elements of a plural-attribute not yet implemented"
-				);
-			}
+			case ONE_TO_MANY:
 			case MANY_TO_MANY: {
-				throw new NotYetImplementedException(
-						"Resolution of Selectable for entity elements of a plural-attribute not yet implemented"
+				final PluralAttributeElementEntity entityElement = (PluralAttributeElementEntity) collectionPersister.getElementReference();
+				this.columnBindings = new ArrayList<>();
+				for ( Column column : entityElement.getColumns() ) {
+					this.columnBindings.add( columnBindingSource.resolveColumnBinding( column ) );
+				}
+				this.selectable = new SelectableEntityTypeImpl(
+						this,
+						getPropertyPath(),
+						columnBindingSource,
+						( ( PluralAttributeElementEntity) collectionPersister.getElementReference() ).getElementPersister(),
+						isShallow
 				);
+				break;
 			}
 			default: {
 				throw new NotYetImplementedException(

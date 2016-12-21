@@ -28,6 +28,6 @@ public class DerivedTable extends AbstractTable implements Table {
 
 	@Override
 	public String toString() {
-		return "DeridedTable(" + expression + ")";
+		return "DerivedTable(" + expression + ")";
 	}
 }
