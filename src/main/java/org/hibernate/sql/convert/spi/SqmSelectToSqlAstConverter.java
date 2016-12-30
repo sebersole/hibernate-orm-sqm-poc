@@ -153,6 +153,7 @@ import org.hibernate.sqm.query.predicate.LikeSqmPredicate;
 import org.hibernate.sqm.query.predicate.NegatedSqmPredicate;
 import org.hibernate.sqm.query.predicate.NullnessSqmPredicate;
 import org.hibernate.sqm.query.predicate.OrSqmPredicate;
+import org.hibernate.sqm.query.predicate.RelationalPredicateOperator;
 import org.hibernate.sqm.query.predicate.RelationalSqmPredicate;
 import org.hibernate.sqm.query.predicate.SqmWhereClause;
 import org.hibernate.sqm.query.select.SqmDynamicInstantiation;
@@ -264,10 +265,10 @@ public class SqmSelectToSqlAstConverter
 		final QuerySpec querySpec = visitQuerySpec( statement.getQuerySpec() );
 		final SelectQuery sqlAst = new SelectQuery( querySpec );
 
-		if ( statement.getOrderByClause() != null ) {
+		if ( statement.getQuerySpec().getOrderByClause() != null ) {
 			currentClauseStack.push( Clause.ORDER );
 			try {
-				for ( SortSpecification sortSpecification : statement.getOrderByClause().getSortSpecifications() ) {
+				for ( SortSpecification sortSpecification : statement.getQuerySpec().getOrderByClause().getSortSpecifications() ) {
 					sqlAst.addSortSpecification( visitSortSpecification( sortSpecification ) );
 				}
 			}
@@ -1107,7 +1108,7 @@ public class SqmSelectToSqlAstConverter
 		);
 	}
 
-	private RelationalPredicate.Operator interpret(RelationalSqmPredicate.Operator operator) {
+	private RelationalPredicate.Operator interpret(RelationalPredicateOperator operator) {
 		switch ( operator ) {
 			case EQUAL: {
 				return RelationalPredicate.Operator.EQUAL;
